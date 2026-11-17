@@ -10,7 +10,7 @@ namespace proton::test {
 
 namespace {
 
-auto dummy_doc_type_and_subdb_name(DocTypeAndSubDbName::create(DocTypeName("dummy_doc_type_name"), "dummysubdb"));
+auto dummy_doc_type_and_subdb_name(DocTypeAndSubDbName::create("dummy_doc_type_name", "dummysubdb"));
 
 }
 

@@ -80,7 +80,7 @@ AttributePopulatorTest::AttributePopulatorTest()
       _shared(),
       _hwInfo(),
       _mgr(std::make_shared<AttributeManager>(
-          TEST_DIR, DocTypeAndSubDbName::create(DocTypeName("test"), "subdb"), TuneFileAttributes(), _fileHeader,
+          TEST_DIR, DocTypeAndSubDbName::create("test", "subdb"), TuneFileAttributes(), _fileHeader,
           std::make_shared<search::attribute::Interlock>(), _attributeFieldWriter, _shared, _hwInfo)),
       _pop(),
       _ctx() {

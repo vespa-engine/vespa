@@ -23,6 +23,8 @@ public:
     [[nodiscard]] std::string combined_name() const;
     [[nodiscard]] static std::shared_ptr<const DocTypeAndSubDbName> create(const DocTypeName& doc_type_name_in,
                                                                            const std::string& subdb_name_in);
+    [[nodiscard]] static std::shared_ptr<const DocTypeAndSubDbName> create(const std::string& doc_type_name_in,
+                                                                           const std::string& subdb_name_in);
 };
 
 } // namespace proton

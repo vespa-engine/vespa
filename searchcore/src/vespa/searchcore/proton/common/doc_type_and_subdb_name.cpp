@@ -21,4 +21,9 @@ std::shared_ptr<const DocTypeAndSubDbName> DocTypeAndSubDbName::create(const Doc
     return std::make_shared<const DocTypeAndSubDbName>(doc_type_name_in, subdb_name_in);
 }
 
+std::shared_ptr<const DocTypeAndSubDbName> DocTypeAndSubDbName::create(const std::string& doc_type_name_in,
+                                                                       const std::string& subdb_name_in) {
+    return std::make_shared<const DocTypeAndSubDbName>(DocTypeName(doc_type_name_in), subdb_name_in);
+}
+
 } // namespace proton
