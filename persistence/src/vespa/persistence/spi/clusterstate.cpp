@@ -51,6 +51,9 @@ Trinary ClusterState::shouldBeReady(const Bucket& b) const {
             return Trinary::True;
         }
     }
+    if (_distribution->getReadyCopies() == _distribution->getRedundancy()) {
+        return Trinary::Undefined;
+    }
     return Trinary::False;
 }
 

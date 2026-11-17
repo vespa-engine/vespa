@@ -134,6 +134,10 @@ Trinary toTrinary(bool v) {
     return v ? Trinary::True : Trinary::False;
 }
 
+Trinary to_not_false_trinary(bool v) {
+    return v ? Trinary::True : Trinary::Undefined;
+}
+
 } // namespace
 
 TEST(ClusterStateTest, testReady) {
@@ -157,6 +161,14 @@ TEST(ClusterStateTest, testReady) {
         EXPECT_EQ(toTrinary(i == 0), state.shouldBeReady(b));
     }
 
+    // Only node 0 with 1 ready copy.
+    // Don't move bucket on node 1 and node 2 since redundancy == readyCopies.
+    for (uint32_t i = 0; i < 3; ++i) {
+        lib::Distribution d(getCfg(1, 1));
+        ClusterState      state(s, i, d);
+        EXPECT_EQ(to_not_false_trinary(i == 0), state.shouldBeReady(b));
+    }
+
     // All of them with 3 ready copies
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 3));
@@ -164,11 +176,19 @@ TEST(ClusterStateTest, testReady) {
         EXPECT_EQ(toTrinary(true), state.shouldBeReady(b));
     }
 
-    // Node 0 and node 1 with 2 ready copies.
+    // Node 0 and node 2 with 2 ready copies.
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 2));
         ClusterState      state(s, i, d);
         EXPECT_EQ(toTrinary(i == 0 || i == 2), state.shouldBeReady(b));
+    }
+
+    // Node 0 and node 2 with 2 ready copies.
+    // Don't move bucket on node 1 since redundancy == readyCopies.
+    for (uint32_t i = 0; i < 3; ++i) {
+        lib::Distribution d(getCfg(2, 2));
+        ClusterState      state(s, i, d);
+        EXPECT_EQ(to_not_false_trinary(i == 0 || i == 2), state.shouldBeReady(b));
     }
 
     // All of them with 3 ready copies
