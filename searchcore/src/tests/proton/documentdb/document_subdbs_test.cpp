@@ -402,6 +402,7 @@ struct StoreOnlyTraits : public BaseTraitsT<one_attr_schema, ConfigDir1, CFG_SER
 
 using StoreOnlyFixture = FixtureBase<StoreOnlyTraits<SubDbType::READY>>;
 using StoreOnlyFixtureRemoved = FixtureBase<StoreOnlyTraits<SubDbType::REMOVED>>;
+using StoreOnlyFixtureNotReady = FixtureBase<StoreOnlyTraits<SubDbType::NOTREADY>>;
 
 struct FastAccessTraits : public BaseTraits {
     using Config = MyFastAccessConfig<false>;
@@ -489,6 +490,23 @@ TEST(DocumentSubDBsTest, require_that_managers_and_components_are_instantiated_i
     StoreOnlyFixtureRemoved f;
     assertStoreOnly(f._subDb);
     assertCacheCapacity(f._subDb, 0);
+}
+
+TEST(DocumentSubDBsTest, require_that_summary_cache_is_disabled_in_notready_document_subdb) {
+    StoreOnlyFixtureNotReady f;
+    assertCacheCapacity(f._subDb, 0);
+}
+
+template <typename Fixture> void requireCacheCapacityAfterReconfig(size_t expected_cache_capacity) {
+    Fixture f;
+    f.basicReconfig(10);
+    assertCacheCapacity(f._subDb, expected_cache_capacity);
+}
+
+TEST(DocumentSubDBsTest, require_that_summary_cache_is_only_enabled_in_ready_document_subdb_after_reconfig) {
+    requireCacheCapacityAfterReconfig<StoreOnlyFixture>(687194767);
+    requireCacheCapacityAfterReconfig<StoreOnlyFixtureNotReady>(0);
+    requireCacheCapacityAfterReconfig<StoreOnlyFixtureRemoved>(0);
 }
 
 TEST(DocumentSubDBsTest, require_that_managers_and_components_are_instantiated_in_fast_access_document_subdb) {
