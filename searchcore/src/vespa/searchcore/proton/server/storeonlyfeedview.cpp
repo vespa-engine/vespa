@@ -499,7 +499,9 @@ void StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation& u
 
 void StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate& update, bool is_replay,
                                             PromisedDoc promisedDoc, PromisedStream promisedStream) {
-    Document::UP        prevDoc = _summaryAdapter->get(lid, *_repo);
+    // Bypass the summary cache: the document is rewritten right after, so reading it through
+    // the cache would force every updated document into it, evicting genuinely hot entries.
+    Document::UP        prevDoc = _summaryAdapter->get(lid, *_repo, false);
     Document::UP        newDoc;
     vespalib::nbostream newStream(12345);
     CHECK(is_replay || useDocStore);

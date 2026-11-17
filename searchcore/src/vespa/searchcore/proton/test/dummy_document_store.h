@@ -13,7 +13,9 @@ struct DummyDocumentStore : public search::IDocumentStore {
     DummyDocumentStore() = default;
     DummyDocumentStore(const std::string& baseDir) noexcept : _baseDir(baseDir) {}
     ~DummyDocumentStore() = default;
-    DocumentUP read(search::DocumentIdT, const document::DocumentTypeRepo&) const override { return DocumentUP(); }
+    DocumentUP read(search::DocumentIdT, const document::DocumentTypeRepo&, bool = true) const override {
+        return DocumentUP();
+    }
     void write(uint64_t, search::DocumentIdT, const document::Document&) override {}
     void write(uint64_t, search::DocumentIdT, const vespalib::nbostream&) override {}
     void remove(uint64_t, search::DocumentIdT) override {}

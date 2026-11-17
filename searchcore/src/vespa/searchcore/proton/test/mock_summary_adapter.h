@@ -18,7 +18,7 @@ struct MockSummaryAdapter : public ISummaryAdapter {
         const search::IDocumentStore* store = nullptr;
         return *store;
     }
-    std::unique_ptr<document::Document> get(DocumentIdT, const DocumentTypeRepo&) override {
+    std::unique_ptr<document::Document> get(DocumentIdT, const DocumentTypeRepo&, bool = true) override {
         return std::unique_ptr<document::Document>();
     }
     void compactLidSpace(uint32_t wantedDocIdLimit) override { (void)wantedDocIdLimit; }

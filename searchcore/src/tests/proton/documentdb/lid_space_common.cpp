@@ -153,7 +153,7 @@ MyDocumentStore::MyDocumentStore() : _readDoc(), _readLid(0) {
 
 MyDocumentStore::~MyDocumentStore() = default;
 
-document::Document::UP MyDocumentStore::read(search::DocumentIdT lid, const document::DocumentTypeRepo&) const {
+document::Document::UP MyDocumentStore::read(search::DocumentIdT lid, const document::DocumentTypeRepo&, bool) const {
     _readLid = lid;
     return Document::UP(_readDoc->clone());
 }
@@ -186,7 +186,7 @@ DocumentMetadata MyDocumentRetriever::getDocumentMetadata(const DocumentId&) con
     abort();
 }
 
-Document::UP MyDocumentRetriever::getFullDocument(DocumentIdT lid) const {
+Document::UP MyDocumentRetriever::getFullDocument(DocumentIdT lid, bool) const {
     return store.read(lid, *repo);
 }
 

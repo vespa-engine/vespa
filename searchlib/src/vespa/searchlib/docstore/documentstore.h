@@ -60,7 +60,7 @@ public:
     DocumentStore(const Config& config, IDataStore& store);
     ~DocumentStore() override;
 
-    DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo& repo) const override;
+    DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo& repo, bool allowCache = true) const override;
     void visit(const LidVector& lids, const document::DocumentTypeRepo& repo,
                IDocumentVisitor& visitor) const override;
     void write(uint64_t synkToken, DocumentIdT lid, const document::Document& doc) override;

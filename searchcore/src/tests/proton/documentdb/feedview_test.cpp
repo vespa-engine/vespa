@@ -223,7 +223,7 @@ struct MyDocumentStore : public test::DummyDocumentStore {
     MyDocumentStore(const document::DocumentTypeRepo& repo) noexcept
         : test::DummyDocumentStore("."), _repo(repo), _docs(), _lastSyncToken(0), _compactLidSpaceLidLimit(0) {}
     ~MyDocumentStore() override;
-    Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo&) const override {
+    Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo&, bool = true) const override {
         auto itr = _docs.find(lid);
         if (itr != _docs.end()) {
             Document::UP retval(itr->second->clone());
@@ -283,8 +283,9 @@ struct MySummaryAdapter : public test::MockSummaryAdapter {
         _removes.push_back(lid);
     }
     const search::IDocumentStore& getDocumentStore() const override { return _store; }
-    std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo) override {
-        return _store.read(lid, repo);
+    std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo,
+                                  bool allowCache = true) override {
+        return _store.read(lid, repo, allowCache);
     }
     void compactLidSpace(uint32_t wantedDocIdLimit) override { _store.compactLidSpace(wantedDocIdLimit); }
 };

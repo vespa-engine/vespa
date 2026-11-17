@@ -47,7 +47,8 @@ public:
     }
     virtual void heartBeat(SerialNum serialNum) = 0;
     virtual const search::IDocumentStore& getDocumentStore() const = 0;
-    virtual std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo) = 0;
+    virtual std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo,
+                                          bool allowCache = true) = 0;
     virtual void compactLidSpace(uint32_t wantedDocIdLimit) = 0;
 };
 
