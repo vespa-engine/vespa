@@ -11,6 +11,12 @@ namespace search {
  */
 class CommitParam {
 public:
+    /**
+     * Should we update statistics.
+     *  SKIP:        statistics will be updated later.
+     *  SIZES_ONLY:  update size statistics now.
+     *  FORCE:       update all statistics now.
+     */
     enum class UpdateStats { SKIP, FORCE, SIZES_ONLY };
     // explicit CommitParam(SerialNum serialNum) noexcept : CommitParam(serialNum, UpdateStats::SKIP) {}
     CommitParam(SerialNum serialNum, UpdateStats updateStats) noexcept
