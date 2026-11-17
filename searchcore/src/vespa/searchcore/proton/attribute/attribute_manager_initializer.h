@@ -23,27 +23,27 @@ class DocumentMetaStoreAttribute;
  */
 class AttributeManagerInitializer : public initializer::InitializerTask {
 private:
-    search::SerialNum                           _configSerialNum;
-    std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
-    AttributeManager::SP                        _attrMgr;
-    vespa::config::search::AttributesConfig     _attrCfg;
-    AllocStrategy                               _alloc_strategy;
-    bool                                        _fastAccessAttributesOnly;
-    searchcorespi::index::IThreadService&       _master;
-    InitializedAttributesResult                 _attributesResult;
-    std::shared_ptr<AttributeManager::SP>       _attrMgrResult;
+    search::SerialNum                                  _configSerialNum;
+    std::shared_ptr<DocumentMetaStoreAttribute>        _documentMetaStore;
+    std::shared_ptr<AttributeManager>                  _attrMgr;
+    vespa::config::search::AttributesConfig            _attrCfg;
+    AllocStrategy                                      _alloc_strategy;
+    bool                                               _fastAccessAttributesOnly;
+    searchcorespi::index::IThreadService&              _master;
+    InitializedAttributesResult                        _attributesResult;
+    std::shared_ptr<std::shared_ptr<AttributeManager>> _attrMgrResult;
 
     std::unique_ptr<AttributeCollectionSpec> createAttributeSpec() const;
 
 public:
     AttributeManagerInitializer(search::SerialNum                              configSerialNum,
-                                initializer::InitializerTask::SP               documentMetaStoreInitTask,
+                                std::shared_ptr<initializer::InitializerTask>  documentMetaStoreInitTask,
                                 std::shared_ptr<DocumentMetaStoreAttribute>    documentMetaStore,
                                 const AttributeManager&                        baseAttrMgr,
                                 const vespa::config::search::AttributesConfig& attrCfg,
                                 const AllocStrategy& alloc_strategy, bool fastAccessAttributesOnly,
-                                searchcorespi::index::IThreadService& master,
-                                std::shared_ptr<AttributeManager::SP> attrMgrResult);
+                                searchcorespi::index::IThreadService&              master,
+                                std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult);
     ~AttributeManagerInitializer() override;
 
     void run() override;

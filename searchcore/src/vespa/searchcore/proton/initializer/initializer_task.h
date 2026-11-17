@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "initializer_task_visitor.h"
-
 #include <memory>
 #include <vector>
 
 namespace proton::initializer {
 
+class InitializerTaskVisitor;
 class LoadMemoryUsage;
 
 /*

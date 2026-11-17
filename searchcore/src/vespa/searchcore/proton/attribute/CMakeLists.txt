@@ -13,6 +13,7 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_factory.cpp
     attribute_initialization_status_collector.cpp
     attribute_initializer.cpp
+    attribute_initializer_task.cpp
     attribute_initializer_result.cpp
     attribute_load_memory_calculator.cpp
     attribute_manager_explorer.cpp
