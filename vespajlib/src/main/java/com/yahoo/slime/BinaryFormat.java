@@ -57,6 +57,14 @@ public class BinaryFormat {
     }
 
     /**
+     * As {@link #encode_and_compress(Slime, Compressor)}, starting with a buffer of {@code sizeHint} bytes
+     * instead of the default 4 KiB. The buffer grows when the hint is too small.
+     **/
+    public static Compressor.Compression encode_and_compress(Slime slime, Compressor compressor, int sizeHint) {
+        return new BinaryEncoder(new BufferedOutput(sizeHint)).encode(slime).compress(compressor);
+    }
+
+    /**
      * Take binary data and deserialize it into a Slime object.
      * The data is assumed to be the binary representation
      * as if obtained by a call to the @ref encode() method.

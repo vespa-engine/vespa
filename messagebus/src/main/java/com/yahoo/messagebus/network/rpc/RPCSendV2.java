@@ -35,6 +35,9 @@ import java.util.Optional;
  */
 public class RPCSendV2 extends RPCSend {
 
+    /** Room in the encoding buffer for the fields beside the payload, such as the version, route and protocol. */
+    private static final int HEADROOM_BYTES = 256;
+
     private final static String METHOD_NAME = "mbus.slime";
     private final static String METHOD_PARAMS = "bixbix";
     private final static String METHOD_RETURN = "bixbix";
@@ -151,7 +154,7 @@ public class RPCSendV2 extends RPCSend {
         root.setLong(TRACELEVEL_F, traceLevel);
         root.setData(BLOB_F, payload);
 
-        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
+        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor, payload.length + HEADROOM_BYTES);
 
         v.add(new Int8Value(compressionResult.type().getCode()));
         v.add(new Int32Value(compressionResult.uncompressedSize()));
@@ -273,7 +276,7 @@ public class RPCSendV2 extends RPCSend {
             }
         }
 
-        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
+        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor, payload.length + HEADROOM_BYTES);
 
         ret.add(new Int8Value(compressionResult.type().getCode()));
         ret.add(new Int32Value(compressionResult.uncompressedSize()));
