@@ -245,6 +245,21 @@ TEST_P(PostingStoreTest, require_that_bitvectors_are_compacted) {
     test_compact_sequence(huge_sequence_length);
 }
 
+TEST_P(PostingStoreTest, require_that_aggregated_min_max_is_correct_for_bitvector) {
+    auto root = add_sequence(4, 4 + huge_sequence_length);
+    ASSERT_TRUE(_store.has_bitvector(root));
+    auto aggregated = _store.getAggregated(root);
+    if (GetParam().enable_only_bitvector) {
+        EXPECT_FALSE(_store.has_btree(root));
+        EXPECT_EQ(MyPostingStore::AggregatedType(1, 1), aggregated);
+    } else {
+        EXPECT_TRUE(_store.has_btree(root));
+        // All weights in the btree are 0 (see add_sequence())
+        EXPECT_EQ(MyPostingStore::AggregatedType(0, 0), aggregated);
+    }
+    _store.clear(root);
+}
+
 namespace {
 
 /*
@@ -389,13 +404,14 @@ protected:
 
     /*
      * Check frozen content, aggregated min/max and frozen iteration of the posting list.
-     * A bitvector without a btree has no aggregated min/max and no btree to iterate.
+     * A bitvector without a btree reports aggregated min/max [1, 1] (the implicit
+     * bitvector weight) and has no btree to iterate.
      */
     void check(EntryRef root, const ExpMap& exp) {
         inc_generation();
         EXPECT_EQ(exp, get_frozen(root));
         if (_store.has_bitvector(root) && !_store.has_btree(root)) {
-            EXPECT_TRUE(_store.getAggregated(root) == FloatPostingStore::AggregatedType());
+            EXPECT_TRUE(_store.getAggregated(root) == FloatPostingStore::AggregatedType(1.0f, 1.0f));
             EXPECT_FALSE(_store.beginFrozen(root).valid());
             return;
         }
