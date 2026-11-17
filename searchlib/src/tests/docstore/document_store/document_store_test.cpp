@@ -112,30 +112,30 @@ std::unique_ptr<document::Document> make_test_doc(const document::DocumentTypeRe
 
 } // namespace
 
-TEST(DocumentStoreTest, require_that_move_keeps_cached_document_cached_under_new_lid) {
+TEST(DocumentStoreTest, require_that_move_does_not_populate_cache_under_new_lid) {
     auto                  test_repo = make_test_repo();
     DocumentStore::Config config(CompressionConfig::NONE, 100000);
     MemoryDataStore       backing_store;
     DocumentStore         store(config, backing_store);
     store.write(1, 2, *make_test_doc(*test_repo));
-    EXPECT_TRUE(store.read(2, *test_repo));
+    // Lid space compaction reads the document from the old lid before moving it,
+    // so it is always cached under the old lid at this point.
     EXPECT_TRUE(store.read(2, *test_repo));
     EXPECT_EQ(1u, backing_store._reads);
-    EXPECT_EQ(1u, store.getCacheStats().hits);
     EXPECT_EQ(1u, store.getCacheStats().elements);
 
     // Move document from lid 2 to lid 1, as done by lid space compaction
     store.move(2, 2, 1, *make_test_doc(*test_repo));
     EXPECT_EQ(1u, backing_store._docs.count(1)); // Written to backing store
-    EXPECT_EQ(2u, backing_store._reads);          // Read back into cache under new lid
+    EXPECT_EQ(1u, backing_store._reads);         // Not read back into cache under new lid
     store.remove(3, 2);
-    EXPECT_EQ(1u, store.getCacheStats().elements);
+    EXPECT_EQ(0u, store.getCacheStats().elements);
 
     auto doc = store.read(1, *test_repo);
     ASSERT_TRUE(doc);
     EXPECT_EQ("id:ns:test::1", doc->getId().toString());
-    EXPECT_EQ(2u, backing_store._reads); // Served from cache
-    EXPECT_EQ(2u, store.getCacheStats().hits);
+    EXPECT_EQ(2u, backing_store._reads); // Read from backing store
+    EXPECT_EQ(0u, store.getCacheStats().hits);
     EXPECT_FALSE(store.read(2, *test_repo));
     EXPECT_EQ(3u, backing_store._reads);
 }
