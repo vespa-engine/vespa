@@ -275,7 +275,8 @@ namespace {
 search::LogDocumentStore::Config createStoreConfig(const search::LogDocumentStore::Config& original,
                                                    SubDbType                               subDbType) {
     search::LogDocumentStore::Config cfg = original;
-    if (subDbType == SubDbType::REMOVED) {
+    // Only the ready subdb serves summaries; avoid spending cache memory on the others.
+    if (subDbType != SubDbType::READY) {
         cfg.disableCache();
     }
     return cfg;
@@ -450,7 +451,7 @@ void StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config& conf
     cfg.setGrowStrategy(grow);
     cfg.setCompactionStrategy(computeCompactionStrategy(alloc_strategy.get_compaction_strategy()));
     _dms->update_config(cfg); // Update grow and compaction config
-    _rSummaryMgr->reconfigure(config);
+    _rSummaryMgr->reconfigure(createStoreConfig(config, _subDbType));
 }
 
 void StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator>& calc, OnDone onDone) {
