@@ -48,9 +48,8 @@ final class BufferedOutput {
 
     void put(byte[] bytes) {
         reserve(bytes.length);
-        for (byte b : bytes) {
-            buf[pos++] = b;
-        }
+        System.arraycopy(bytes, 0, buf, pos, bytes.length);
+        pos += bytes.length;
     }
 
     byte[] toArray() {
