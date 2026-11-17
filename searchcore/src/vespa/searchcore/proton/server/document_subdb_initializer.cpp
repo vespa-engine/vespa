@@ -29,8 +29,9 @@ void DocumentSubDbInitializer::run() {
     auto tracer = get_tracer();
     auto span = tracer->StartSpan(
         "Initialize document subdb",
-        {{vespa_opentelemetry::span_attribute_names::document_type, _subDB.doc_type_name().getName()},
-         {vespa_opentelemetry::span_attribute_names::subdb, _subDB.getName()}});
+        {{vespa_opentelemetry::span_attribute_names::document_type,
+          _subDB.doc_type_and_subdb_name()->doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, _subDB.doc_type_and_subdb_name()->subdb_name()}});
     auto               scope = tracer->WithActiveSpan(span);
     std::promise<void> promise;
     auto               future = promise.get_future();

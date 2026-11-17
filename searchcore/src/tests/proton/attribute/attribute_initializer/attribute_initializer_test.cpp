@@ -119,8 +119,8 @@ Fixture::~Fixture() = default;
 std::unique_ptr<AttributeInitializer> Fixture::createInitializer(AttributeSpec&&          spec,
                                                                  std::optional<SerialNum> serialNum) {
     return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()),
-                                                  DocTypeName("test"), "subdb", std::move(spec), serialNum, _factory,
-                                                  _executor);
+                                                  DocTypeAndSubDbName::create(DocTypeName("test"), "subdb"),
+                                                  std::move(spec), serialNum, _factory, _executor);
 }
 
 class AttributeInitializerTest : public ::testing::Test {

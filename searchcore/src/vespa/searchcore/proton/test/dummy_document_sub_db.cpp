@@ -10,7 +10,7 @@ namespace proton::test {
 
 namespace {
 
-const DocTypeName dummy_doc_type_name("dummy_doc_type_name");
+auto dummy_doc_type_and_subdb_name(DocTypeAndSubDbName::create(DocTypeName("dummy_doc_type_name"), "dummysubdb"));
 
 }
 
@@ -31,8 +31,8 @@ ResourceUsage DummyDocumentSubDb::get_resource_usage() const {
     return {};
 }
 
-const DocTypeName& DummyDocumentSubDb::doc_type_name() const noexcept {
-    return dummy_doc_type_name;
+const std::shared_ptr<const DocTypeAndSubDbName>& DummyDocumentSubDb::doc_type_and_subdb_name() const noexcept {
+    return dummy_doc_type_and_subdb_name;
 }
 
 } // namespace proton::test

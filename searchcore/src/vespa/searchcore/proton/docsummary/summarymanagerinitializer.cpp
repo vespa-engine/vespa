@@ -12,8 +12,8 @@
 namespace proton {
 
 SummaryManagerInitializer::SummaryManagerInitializer(
-    const search::GrowStrategy& grow, const std::string& baseDir, const DocTypeName& doc_type_name_in,
-    const std::string& subdb_name_in, vespalib::Executor& shared_executor,
+    const search::GrowStrategy& grow, const std::string& baseDir,
+    std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in, vespalib::Executor& shared_executor,
     const search::LogDocumentStore::Config& storeCfg, const search::TuneFileSummary& tuneFile,
     const search::common::FileHeaderContext& fileHeaderContext, search::transactionlog::SyncProxy& tlSyncer,
     IBucketizerSP bucketizer, std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
@@ -21,8 +21,7 @@ SummaryManagerInitializer::SummaryManagerInitializer(
     : proton::initializer::InitializerTask(),
       _grow(grow),
       _baseDir(baseDir),
-      _doc_type_name(doc_type_name_in),
-      _subdb_name(subdb_name_in),
+      _doc_type_and_subdb_name(std::move(doc_type_and_subdb_name_in)),
       _shared_executor(shared_executor),
       _storeCfg(storeCfg),
       _tuneFile(tuneFile),
@@ -37,12 +36,13 @@ SummaryManagerInitializer::~SummaryManagerInitializer() = default;
 
 void SummaryManagerInitializer::run() {
     auto tracer = get_tracer();
-    auto span = tracer->StartSpan(
-        "Load document store", {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},
-                                {vespa_opentelemetry::span_attribute_names::subdb, _subdb_name}});
+    auto span = tracer->StartSpan("Load document store", {{vespa_opentelemetry::span_attribute_names::document_type,
+                                                           _doc_type_and_subdb_name->doc_type_name().getName()},
+                                                          {vespa_opentelemetry::span_attribute_names::subdb,
+                                                           _doc_type_and_subdb_name->subdb_name()}});
     auto scope = tracer->WithActiveSpan(span);
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
-    std::string     document_type_and_subdb_name = std::format("{}.{}", _doc_type_name.getName(), _subdb_name);
+    std::string     document_type_and_subdb_name = _doc_type_and_subdb_name->combined_name();
     vespalib::Timer timer;
     EventLogger::loadDocumentStoreStart(document_type_and_subdb_name);
     MemoryUsageLogger::log("start load document store", document_type_and_subdb_name);

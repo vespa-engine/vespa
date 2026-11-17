@@ -11,6 +11,7 @@ vespa_add_library(searchcore_pcommon STATIC
     commit_time_tracker.cpp
     dbdocumentid.cpp
     doctypename.cpp
+    doc_type_and_subdb_name.cpp
     document_type_inspector.cpp
     eventlogger.cpp
     feeddebugger.cpp

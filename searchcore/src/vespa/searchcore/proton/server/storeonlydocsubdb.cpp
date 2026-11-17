@@ -94,8 +94,7 @@ StoreOnlyDocSubDB::Context::~Context() = default;
 
 StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config& cfg, const Context& ctx)
     : DocSubDB(ctx._owner, ctx._tlSyncer),
-      _docTypeName(cfg._docTypeName),
-      _subName(cfg._subName),
+      _doc_type_and_subdb_name(DocTypeAndSubDbName::create(cfg._docTypeName, cfg._subName)),
       _baseDir(cfg._baseDir),
       _bucketDB(ctx._bucketDB),
       _bucketDBHandlerInitializer(ctx._bucketDBHandlerInitializer),
@@ -121,7 +120,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config& cfg, const Context& ctx)
       _lastConfiguredCompactionStrategy(),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
-      _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
+      _fileHeaderContext(ctx._fileHeaderContext, _doc_type_and_subdb_name->doc_type_name(), _baseDir),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>()) {
     std::filesystem::create_directory(std::filesystem::path(_baseDir)); // Assume parent is created.
     vespalib::File::sync(vespalib::dirname(_baseDir));
@@ -136,8 +135,8 @@ StoreOnlyDocSubDB::~StoreOnlyDocSubDB() {
     _rSummaryMgr.reset();
 }
 
-const DocTypeName& StoreOnlyDocSubDB::doc_type_name() const noexcept {
-    return _docTypeName;
+const std::shared_ptr<const DocTypeAndSubDbName>& StoreOnlyDocSubDB::doc_type_and_subdb_name() const noexcept {
+    return _doc_type_and_subdb_name;
 }
 
 void StoreOnlyDocSubDB::clearViews() {
@@ -218,7 +217,7 @@ initializer::InitializerTask::SP StoreOnlyDocSubDB::createSummaryManagerInitiali
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     std::string  baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>(
-        grow, baseDir, _docTypeName, _subName, _writeService.shared(), storeCfg, tuneFile, _fileHeaderContext,
+        grow, baseDir, _doc_type_and_subdb_name, _writeService.shared(), storeCfg, tuneFile, _fileHeaderContext,
         _tlSyncer, std::move(bucketizer), std::move(document_id_provider), std::move(result));
 }
 
@@ -244,7 +243,7 @@ InitializerTask::SP StoreOnlyDocSubDB::createDocumentMetaStoreInitializer(
     *result = std::make_shared<DocumentMetaStoreInitializerResult>(
         std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, store_full_document_ids, _subDbType),
         tuneFile);
-    return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>(baseDir, _docTypeName, _subName,
+    return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>(baseDir, _doc_type_and_subdb_name,
                                                                              (*result)->documentMetaStore());
 }
 
@@ -318,7 +317,8 @@ void StoreOnlyDocSubDB::setup(const DocumentSubDbInitializerResult& initResult) 
 IFlushTarget::List StoreOnlyDocSubDB::getFlushTargets() {
     IFlushTarget::List ret;
     for (const auto& target : getFlushTargetsInternal()) {
-        ret.push_back(std::make_shared<ThreadedFlushTarget>(_writeService.master(), _getSerialNum, target, _subName));
+        ret.push_back(std::make_shared<ThreadedFlushTarget>(_writeService.master(), _getSerialNum, target,
+                                                            _doc_type_and_subdb_name->subdb_name()));
     }
     return ret;
 }
@@ -339,7 +339,7 @@ StoreOnlyFeedView::Context StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const 
 StoreOnlyFeedView::PersistentParams StoreOnlyDocSubDB::getFeedViewPersistentParams() {
     SerialNum flushedDMSSN(_flushedDocumentMetaStoreSerialNum);
     SerialNum flushedDSSN(_flushedDocumentStoreSerialNum);
-    return {flushedDMSSN, flushedDSSN, _docTypeName, _subDbId, _subDbType};
+    return {flushedDMSSN, flushedDSSN, _doc_type_and_subdb_name->doc_type_name(), _subDbId, _subDbType};
 }
 
 void StoreOnlyDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
@@ -352,7 +352,8 @@ void StoreOnlyDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
 }
 
 void StoreOnlyDocSubDB::validateDocStore(FeedHandler& feedHandler, SerialNum serialNum) const {
-    LOG(info, "Validating document store for sub db %u doctype %s", _subDbId, _docTypeName.toString().c_str());
+    LOG(info, "Validating document store for sub db %u doctype %s", _subDbId,
+        _doc_type_and_subdb_name->doc_type_name().getName().c_str());
 
     search::IDocumentStore&              docStore = _iSummaryMgr->getBackingStore();
     DocStoreValidator                    validator(_metaStoreCtx->get(), _dmsFlushTarget);
@@ -364,8 +365,8 @@ void StoreOnlyDocSubDB::validateDocStore(FeedHandler& feedHandler, SerialNum ser
 
     LOG(info,
         "Validated document store for sub db %u, doctype %s, %u orphans, %u invalid, %u visits, %u empty visits",
-        _subDbId, _docTypeName.toString().c_str(), validator.getOrphanCount(), validator.getInvalidCount(),
-        validator.getVisitCount(), validator.getVisitEmptyCount());
+        _subDbId, _doc_type_and_subdb_name->doc_type_name().getName().c_str(), validator.getOrphanCount(),
+        validator.getInvalidCount(), validator.getVisitCount(), validator.getVisitEmptyCount());
 
     validator.killOrphans(docStore, serialNum);
     if (validator.getInvalidCount() != 0u) {
@@ -385,7 +386,7 @@ void StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig& configSnapshot) {
 }
 
 std::string StoreOnlyDocSubDB::get_document_type_and_subdb_name() const {
-    return std::format("{}.{}", _docTypeName.getName(), _subName);
+    return _doc_type_and_subdb_name->combined_name();
 }
 
 std::unique_ptr<DocumentSubDBReconfig>
@@ -498,9 +499,9 @@ search::IndexStats StoreOnlyDocSubDB::get_index_stats(bool) const {
 }
 
 std::shared_ptr<IDocumentRetriever> StoreOnlyDocSubDB::getDocumentRetriever() {
-    return std::make_shared<MinimalDocumentRetriever>(_docTypeName, _iFeedView.get()->getDocumentTypeRepo(),
-                                                      *_metaStoreCtx, _iSummaryMgr->getBackingStore(),
-                                                      _subDbType != SubDbType::REMOVED);
+    return std::make_shared<MinimalDocumentRetriever>(
+        _doc_type_and_subdb_name->doc_type_name(), _iFeedView.get()->getDocumentTypeRepo(), *_metaStoreCtx,
+        _iSummaryMgr->getBackingStore(), _subDbType != SubDbType::REMOVED);
 }
 
 MatchingStats StoreOnlyDocSubDB::getMatcherStats(const std::string& rankProfile) const {

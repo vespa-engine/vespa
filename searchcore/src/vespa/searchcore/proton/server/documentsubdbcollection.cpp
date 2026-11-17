@@ -130,15 +130,18 @@ DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consi
 void DocumentSubDBCollection::maintenanceSync(MaintenanceController& mc) {
     RetrieversSP             retrievers = _retrievers.get();
     MaintenanceDocumentSubDB readySubDB(
-        getReadySubDB()->getName(), _readySubDbId, getReadySubDB()->getDocumentMetaStoreContext().getSP(),
+        getReadySubDB()->doc_type_and_subdb_name()->subdb_name(), _readySubDbId,
+        getReadySubDB()->getDocumentMetaStoreContext().getSP(),
         wrapRetriever((*retrievers)[_readySubDbId], getReadySubDB()->getUncommittedLidsTracker()),
         getReadySubDB()->getFeedView(), &getReadySubDB()->getUncommittedLidsTracker());
     MaintenanceDocumentSubDB remSubDB(
-        getRemSubDB()->getName(), _remSubDbId, getRemSubDB()->getDocumentMetaStoreContext().getSP(),
+        getRemSubDB()->doc_type_and_subdb_name()->subdb_name(), _remSubDbId,
+        getRemSubDB()->getDocumentMetaStoreContext().getSP(),
         wrapRetriever((*retrievers)[_remSubDbId], getRemSubDB()->getUncommittedLidsTracker()),
         getRemSubDB()->getFeedView(), &getRemSubDB()->getUncommittedLidsTracker());
     MaintenanceDocumentSubDB notReadySubDB(
-        getNotReadySubDB()->getName(), _notReadySubDbId, getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
+        getNotReadySubDB()->doc_type_and_subdb_name()->subdb_name(), _notReadySubDbId,
+        getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
         wrapRetriever((*retrievers)[_notReadySubDbId], getNotReadySubDB()->getUncommittedLidsTracker()),
         getNotReadySubDB()->getFeedView(), &getNotReadySubDB()->getUncommittedLidsTracker());
     mc.syncSubDBs(readySubDB, remSubDB, notReadySubDB);

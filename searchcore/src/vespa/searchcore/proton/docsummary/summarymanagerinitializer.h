@@ -5,6 +5,7 @@
 #include "summarymanager.h"
 
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
 namespace proton {
@@ -17,8 +18,7 @@ class SummaryManagerInitializer : public initializer::InitializerTask {
     using IBucketizerSP = std::shared_ptr<search::IBucketizer>;
     const search::GrowStrategy                         _grow;
     const std::string                                  _baseDir;
-    const DocTypeName                                  _doc_type_name;
-    const std::string                                  _subdb_name;
+    const std::shared_ptr<const DocTypeAndSubDbName>   _doc_type_and_subdb_name;
     vespalib::Executor&                                _shared_executor;
     const search::LogDocumentStore::Config             _storeCfg;
     const search::TuneFileSummary                      _tuneFile;
@@ -33,7 +33,7 @@ public:
 
     // Note: lifetime of result must be handled by caller.
     SummaryManagerInitializer(const search::GrowStrategy& grow, const std::string& baseDir,
-                              const DocTypeName& doc_type_name_in, const std::string& subdb_name_in,
+                              std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
                               vespalib::Executor& shared_executor, const search::LogDocumentStore::Config& storeCfg,
                               const search::TuneFileSummary&           tuneFile,
                               const search::common::FileHeaderContext& fileHeaderContext,

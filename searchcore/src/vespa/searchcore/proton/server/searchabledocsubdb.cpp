@@ -88,7 +88,7 @@ initializer::InitializerTask::SP SearchableDocSubDB::createIndexManagerInitializ
     std::string   vespaIndexDir(_baseDir + "/index");
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>(
-        vespaIndexDir, _docTypeName, _subName, indexCfg, schema, configSerialNum,
+        vespaIndexDir, _doc_type_and_subdb_name, indexCfg, schema, configSerialNum,
         const_cast<SearchableDocSubDB&>(*this), _writeService, _warmupExecutor,
         configSnapshot.getTuneFileDocumentDBSP()->_index, configSnapshot.getTuneFileDocumentDBSP()->_attr,
         _fileHeaderContext, _posting_list_cache, std::move(indexManager));

@@ -5,7 +5,7 @@
 #include "attribute_collection_spec.h"
 #include "i_attribute_manager.h"
 
-#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -87,20 +87,19 @@ private:
     using AttributeMap = vespalib::hash_map<std::string, AttributeWrap>;
     using FlushableMap = vespalib::hash_map<std::string, FlushableWrap>;
 
-    AttributeMap                                  _attributes;
-    FlushableMap                                  _flushables;
-    std::vector<search::AttributeVector*>         _writableAttributes;
-    std::shared_ptr<AttributeDiskLayout>          _diskLayout;
-    const DocTypeName                             _doc_type_name;
-    const std::string                             _subdb_name;
-    const search::TuneFileAttributes              _tuneFileAttributes;
-    const search::common::FileHeaderContext&      _fileHeaderContext;
-    std::shared_ptr<IAttributeFactory>            _factory;
-    std::shared_ptr<search::attribute::Interlock> _interlock;
-    vespalib::ISequencedTaskExecutor&             _attributeFieldWriter;
-    vespalib::Executor&                           _shared_executor;
-    vespalib::HwInfo                              _hwInfo;
-    std::unique_ptr<ImportedAttributesRepo>       _importedAttributes;
+    AttributeMap                                     _attributes;
+    FlushableMap                                     _flushables;
+    std::vector<search::AttributeVector*>            _writableAttributes;
+    std::shared_ptr<AttributeDiskLayout>             _diskLayout;
+    const std::shared_ptr<const DocTypeAndSubDbName> _doc_type_and_subdb_name;
+    const search::TuneFileAttributes                 _tuneFileAttributes;
+    const search::common::FileHeaderContext&         _fileHeaderContext;
+    std::shared_ptr<IAttributeFactory>               _factory;
+    std::shared_ptr<search::attribute::Interlock>    _interlock;
+    vespalib::ISequencedTaskExecutor&                _attributeFieldWriter;
+    vespalib::Executor&                              _shared_executor;
+    vespalib::HwInfo                                 _hwInfo;
+    std::unique_ptr<ImportedAttributesRepo>          _importedAttributes;
 
     AttributeVectorSP internalAddAttribute(AttributeSpec&& spec, uint64_t serialNum,
                                            const IAttributeFactory& factory);
@@ -116,15 +115,17 @@ private:
 public:
     using SP = std::shared_ptr<AttributeManager>;
 
-    AttributeManager(const std::string& baseDir, const DocTypeName& doc_type_name_in,
-                     const std::string& subdb_name_in, const search::TuneFileAttributes& tuneFileAttributes,
+    AttributeManager(const std::string&                            baseDir,
+                     std::shared_ptr<const DocTypeAndSubDbName>    doc_type_and_subdb_name_in,
+                     const search::TuneFileAttributes&             tuneFileAttributes,
                      const search::common::FileHeaderContext&      fileHeaderContext,
                      std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor& attributeFieldWriter, vespalib::Executor& shared_executor,
                      const vespalib::HwInfo& hwInfo);
 
-    AttributeManager(const std::string& baseDir, const DocTypeName& doc_type_name_in,
-                     const std::string& subdb_name_in, const search::TuneFileAttributes& tuneFileAttributes,
+    AttributeManager(const std::string&                            baseDir,
+                     std::shared_ptr<const DocTypeAndSubDbName>    doc_type_and_subdb_name_in,
+                     const search::TuneFileAttributes&             tuneFileAttributes,
                      const search::common::FileHeaderContext&      fileHeaderContext,
                      std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor& attributeFieldWriter, vespalib::Executor& shared_executor,
@@ -203,8 +204,10 @@ public:
 
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
     static uint64_t get_size_on_disk_overhead() noexcept;
-    [[nodiscard]] const DocTypeName& doc_type_name() const noexcept { return _doc_type_name; }
-    [[nodiscard]] const std::string& subdb_name() const noexcept { return _subdb_name; }
+    [[nodiscard]] const DocTypeName& doc_type_name() const noexcept {
+        return _doc_type_and_subdb_name->doc_type_name();
+    }
+    [[nodiscard]] const std::string& subdb_name() const noexcept { return _doc_type_and_subdb_name->subdb_name(); }
 };
 
 } // namespace proton
