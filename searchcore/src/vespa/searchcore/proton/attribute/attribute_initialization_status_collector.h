@@ -6,6 +6,7 @@
 
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
+#include <vespa/searchcore/proton/initializer/initializer_task_visitor.h>
 
 namespace proton {
 
@@ -25,6 +26,7 @@ private:
 public:
     AttributeInitializationStatusCollector(
         std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>>& initialization_statuses);
+    ~AttributeInitializationStatusCollector();
     void visit_attribute_initializer(AttributeInitializer& attribute_initializer) override;
 };
 

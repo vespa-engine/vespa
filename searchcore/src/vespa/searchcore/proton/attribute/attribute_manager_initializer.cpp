@@ -3,21 +3,17 @@
 #include "attribute_manager_initializer.h"
 
 #include "attribute_collection_spec_factory.h"
-#include "attribute_directory.h"
+#include "attribute_initializer_task.h"
 #include "attributes_initializer_base.h"
 
 #include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
-#include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
 #include <future>
 
 using opentelemetry::trace::Span;
-using proton::initializer::LoadMemoryUsage;
-using search::AttributeVector;
-using search::GrowStrategy;
 using search::SerialNum;
 using vespa::config::search::AttributesConfig;
 using vespalib::datastore::CompactionStrategy;
@@ -25,84 +21,30 @@ using vespalib::datastore::CompactionStrategy;
 namespace proton {
 
 using initializer::InitializerTask;
-using initializer::LoadMemoryUsage;
 
 namespace {
-
-class AttributeInitializerTask : public InitializerTask {
-private:
-    AttributeInitializer::UP                    _initializer;
-    std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
-    InitializedAttributesResult&                _result;
-    LoadMemoryUsage                             _load_memory_usage;
-
-public:
-    AttributeInitializerTask(AttributeInitializer::UP                    initializer,
-                             std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                             InitializedAttributesResult&                result) noexcept;
-    ~AttributeInitializerTask() override;
-    void run() override;
-    [[nodiscard]] LoadMemoryUsage get_load_memory_usage() const noexcept override;
-    void accept_visitor(initializer::InitializerTaskVisitor& visitor) override;
-};
-
-AttributeInitializerTask::AttributeInitializerTask(AttributeInitializer::UP                    initializer,
-                                                   std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                                   InitializedAttributesResult&                result) noexcept
-    : _initializer(std::move(initializer)),
-      _documentMetaStore(std::move(documentMetaStore)),
-      _result(result),
-      _load_memory_usage(_initializer->get_load_memory_usage()) {
-}
-
-AttributeInitializerTask::~AttributeInitializerTask() = default;
-
-void AttributeInitializerTask::run() {
-    auto tracer = get_tracer();
-    auto span = tracer->StartSpan(
-        "Load attribute",
-        {{vespa_opentelemetry::span_attribute_names::document_type, _initializer->doc_type_name().getName()},
-         {vespa_opentelemetry::span_attribute_names::subdb, _initializer->subdb_name()},
-         {vespa_opentelemetry::span_attribute_names::attribute, _initializer->attr_dir()->getAttrName()}});
-    auto                       scope = tracer->WithActiveSpan(span);
-    AttributeInitializerResult result = _initializer->init();
-    if (result) {
-        AttributesInitializerBase::considerPadAttribute(*result.getAttribute(), _initializer->getCurrentSerialNum(),
-                                                        _documentMetaStore->getCommittedDocIdLimit());
-        _result.add(result);
-    }
-    span->End();
-}
-
-LoadMemoryUsage AttributeInitializerTask::get_load_memory_usage() const noexcept {
-    return _load_memory_usage;
-}
-
-void AttributeInitializerTask::accept_visitor(initializer::InitializerTaskVisitor& visitor) {
-    visitor.visit_attribute_initializer(*_initializer);
-    InitializerTask::accept_visitor(visitor);
-}
 
 class AttributeManagerInitializerTask : public vespalib::Executor::Task {
     std::shared_ptr<Span>                       _span;
     std::promise<void>                          _promise;
-    search::SerialNum                           _configSerialNum;
+    SerialNum                                   _configSerialNum;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
-    AttributeManager::SP                        _attrMgr;
+    std::shared_ptr<AttributeManager>           _attrMgr;
     InitializedAttributesResult&                _attributesResult;
 
 public:
     AttributeManagerInitializerTask(std::shared_ptr<Span> span, std::promise<void>&& promise,
-                                    search::SerialNum                           configSerialNum,
+                                    SerialNum                                   configSerialNum,
                                     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                    AttributeManager::SP attrMgr, InitializedAttributesResult& attributesResult);
+                                    std::shared_ptr<AttributeManager>           attrMgr,
+                                    InitializedAttributesResult&                attributesResult);
     ~AttributeManagerInitializerTask() override;
     void run() override;
 };
 
 AttributeManagerInitializerTask::AttributeManagerInitializerTask(
     std::shared_ptr<Span> span, std::promise<void>&& promise, search::SerialNum configSerialNum,
-    std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, AttributeManager::SP attrMgr,
+    std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, std::shared_ptr<AttributeManager> attrMgr,
     InitializedAttributesResult& attributesResult)
     : _span(std::move(span)),
       _promise(std::move(promise)),
@@ -127,12 +69,13 @@ void AttributeManagerInitializerTask::run() {
 class AttributeInitializerTasksBuilder : public IAttributeInitializerRegistry {
 private:
     InitializerTask&                            _attrMgrInitTask;
-    InitializerTask::SP                         _documentMetaStoreInitTask;
+    std::shared_ptr<InitializerTask>            _documentMetaStoreInitTask;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
     InitializedAttributesResult&                _attributesResult;
 
 public:
-    AttributeInitializerTasksBuilder(InitializerTask& attrMgrInitTask, InitializerTask::SP documentMetaStoreInitTask,
+    AttributeInitializerTasksBuilder(InitializerTask&                            attrMgrInitTask,
+                                     std::shared_ptr<InitializerTask>            documentMetaStoreInitTask,
                                      std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                      InitializedAttributesResult&                attributesResult);
     ~AttributeInitializerTasksBuilder() override;
@@ -140,7 +83,7 @@ public:
 };
 
 AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(
-    InitializerTask& attrMgrInitTask, InitializerTask::SP documentMetaStoreInitTask,
+    InitializerTask& attrMgrInitTask, std::shared_ptr<InitializerTask> documentMetaStoreInitTask,
     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, InitializedAttributesResult& attributesResult)
     : _attrMgrInitTask(attrMgrInitTask),
       _documentMetaStoreInitTask(std::move(documentMetaStoreInitTask)),
@@ -151,7 +94,7 @@ AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(
 AttributeInitializerTasksBuilder::~AttributeInitializerTasksBuilder() = default;
 
 void AttributeInitializerTasksBuilder::add(AttributeInitializer::UP initializer) {
-    InitializerTask::SP attributeInitTask =
+    std::shared_ptr<InitializerTask> attributeInitTask =
         std::make_shared<AttributeInitializerTask>(std::move(initializer), _documentMetaStore, _attributesResult);
     attributeInitTask->addDependency(_documentMetaStoreInitTask);
     _attrMgrInitTask.addDependency(attributeInitTask);
@@ -166,10 +109,10 @@ std::unique_ptr<AttributeCollectionSpec> AttributeManagerInitializer::createAttr
 }
 
 AttributeManagerInitializer::AttributeManagerInitializer(
-    SerialNum configSerialNum, initializer::InitializerTask::SP documentMetaStoreInitTask,
+    SerialNum configSerialNum, std::shared_ptr<InitializerTask> documentMetaStoreInitTask,
     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, const AttributeManager& baseAttrMgr,
     const AttributesConfig& attrCfg, const AllocStrategy& alloc_strategy, bool fastAccessAttributesOnly,
-    searchcorespi::index::IThreadService& master, std::shared_ptr<AttributeManager::SP> attrMgrResult)
+    searchcorespi::index::IThreadService& master, std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult)
     : _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),
       _attrMgr(),
