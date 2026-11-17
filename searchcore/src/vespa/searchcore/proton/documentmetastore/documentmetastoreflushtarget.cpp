@@ -62,7 +62,7 @@ public:
 DocumentMetaStoreFlushTarget::Flusher::Flusher(DocumentMetaStoreFlushTarget& dmsft, SerialNum syncToken,
                                                std::unique_ptr<AttributeDirectory::Writer> writer)
     : _dmsft(dmsft), _saver(), _syncToken(syncToken), _flushDir(""), _writer(std::move(writer)) {
-    // Called by document db executor
+    // Called by document db main executor
     DocumentMetaStore& dms = *_dmsft._dms;
     dms.commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     _flushDir = _writer->getSnapshotDir(syncToken);
@@ -202,7 +202,7 @@ IFlushTarget::Time DocumentMetaStoreFlushTarget::getLastFlushTime() const {
 
 void DocumentMetaStoreFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                               TaskPromise task_promise) {
-    // Called by document db executor
+    // Called by document db main executor
     _dms->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _dms->getStatus().getLastSyncToken());
     auto      writer = _dmsDir->tryGetWriter();

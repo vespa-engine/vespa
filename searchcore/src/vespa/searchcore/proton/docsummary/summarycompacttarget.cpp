@@ -91,7 +91,7 @@ SerialNum SummaryGCTarget::getFlushedSerialNum() const {
 
 void SummaryGCTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                  TaskPromise task_promise) {
-    // Called by document db executor
+    // Called by document db main executor
     TaskPromise proxied_task_promise;
     auto        future_task = proxied_task_promise.get_future();
     _summaryService.execute(
@@ -127,7 +127,7 @@ size_t SummaryCompactBloatTarget::getBloat(const search::IDocumentStore& docStor
 
 void SummaryCompactBloatTarget::create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial,
                                        TaskPromise task_promise) {
-    // called by summary executor
+    // called by document db summary executor
     task_promise.set_value(std::make_unique<CompactBloat>(docStore, stats, currSerial));
 }
 
@@ -141,7 +141,7 @@ size_t SummaryCompactSpreadTarget::getBloat(const search::IDocumentStore& docSto
 
 void SummaryCompactSpreadTarget::create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial,
                                         TaskPromise task_promise) {
-    // called by summary executor
+    // called by document db summary executor
     task_promise.set_value(std::make_unique<CompactSpread>(docStore, stats, currSerial));
 }
 

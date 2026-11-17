@@ -24,7 +24,7 @@ void call_init_flush(IFlushTarget* target, IFlushTarget::SerialNum serial, const
                      std::shared_ptr<search::IFlushToken> flush_token,
                      IFlushTarget::TaskPromise            target_task_promise) {
     /*
-     * Called by document db executor
+     * Called by document db main executor
      * Serial number from flush engine might have become stale, obtain a fresh serial number now.
      */
     (void)serial;

@@ -147,7 +147,7 @@ bool IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection& coll) {
 }
 
 void IndexMaintainer::updateDiskIndexSchema(const std::string& indexDir, const Schema& schema, SerialNum serialNum) {
-    // Called by a flush worker thread OR document db executor thread
+    // Called by a flush worker thread OR document db main executor thread
     LockGuard lock(_schemaUpdateLock);
     IndexWriteUtilities::updateDiskIndexSchema(indexDir, schema, serialNum);
 }
@@ -219,7 +219,7 @@ std::shared_ptr<IDiskIndex> IndexMaintainer::loadDiskIndex(const string& indexDi
 }
 
 std::shared_ptr<IDiskIndex> IndexMaintainer::reloadDiskIndex(const IDiskIndex& oldIndex) {
-    // Called by a flush worker thread OR document db executor thread
+    // Called by a flush worker thread OR document db main executor thread
     const string indexDir = oldIndex.getIndexDir();
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
@@ -611,7 +611,7 @@ void IndexMaintainer::warmupDone(std::shared_ptr<WarmupIndexCollection> current)
 
 void IndexMaintainer::doneSetSchema(SetSchemaArgs& args, std::shared_ptr<IMemoryIndex>& newIndex,
                                     SerialNum serial_num) {
-    CHECK(_ctx.getThreadingService().master().isCurrentThread()); // with idle index executor
+    CHECK(_ctx.getThreadingService().master().isCurrentThread()); // with idle document db index executor
     LockGuard state_lock(_state_lock);
     using SaveInfo = FixedSourceSelector::SaveInfo;
     args._oldSchema = _schema;          // Delay destruction

@@ -105,7 +105,7 @@ void FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResul
 }
 
 void FastAccessDocSubDB::initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig& configSnapshot) {
-    // Called by executor thread
+    // Called by document db main executor thread
     auto feedView = std::make_shared<FastAccessFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
                                                          getFeedViewPersistentParams(),
                                                          FastAccessFeedView::Context(std::move(writer), _docIdLimit));
@@ -177,7 +177,7 @@ void FastAccessDocSubDB::setup(const DocumentSubDbInitializerResult& initResult)
 }
 
 void FastAccessDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
-    // Called by executor thread
+    // Called by document db main executor thread
     _iSearchView.set(std::make_shared<EmptySearchView>());
     auto writer = std::make_shared<AttributeWriter>(getAndResetInitAttributeManager());
     {
@@ -251,7 +251,7 @@ std::shared_ptr<IDocumentRetriever> FastAccessDocSubDB::getDocumentRetriever() {
 }
 
 void FastAccessDocSubDB::onReplayDone() {
-    // Called by document db executor thread
+    // Called by document db main executor thread
     Parent::onReplayDone();
     // Normalize attribute vector sizes
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();

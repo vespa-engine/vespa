@@ -63,7 +63,7 @@ void MaintenanceController::killJobs() {
     if (_state == State::STARTED) {
         _state = State::PAUSED;
     }
-    // Called by master write thread
+    // Called by document db main executor thread
     CHECK(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", as_zu(std::this_thread::get_id()));
     _periodicTaskHandles.clear();

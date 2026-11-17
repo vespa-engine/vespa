@@ -23,8 +23,8 @@ public:
 
 ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget& target, SerialNum flushSerialNum)
     : FlushTask(), _target(target), _flushSerialNum(flushSerialNum) {
-    // Called by document db executor for document meta store and attribute vectors.
-    // Called by summary executor for docstore (via derived class ShrinkSummaryLidSpaceFlushTarget)
+    // Called by document db main executor for document meta store and attribute vectors.
+    // Called by document db summary executor for docstore (via derived class ShrinkSummaryLidSpaceFlushTarget)
     _target._target->shrinkLidSpace();
 }
 
@@ -69,8 +69,8 @@ IFlushTarget::Time ShrinkLidSpaceFlushTarget::getLastFlushTime() const {
 void ShrinkLidSpaceFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                            TaskPromise task_promise) {
     /*
-     * Called by document db executor for document meta store.
-     * Called by summary executor for docstore (via derived class ShrinkSummaryLidSpaceFlushTarget)
+     * Called by document db main executor for document meta store.
+     * Called by document db summary executor for docstore (via derived class ShrinkSummaryLidSpaceFlushTarget)
      * Called by attribute writer executor for attribute vectors (via derived class
      * ShrinkAttributeLidSpaceFlushTarget)
      */

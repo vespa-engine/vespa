@@ -59,13 +59,13 @@ SerialNum SummaryFlushTarget::getFlushedSerialNum() const {
 }
 
 void SummaryFlushTarget::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise) {
-    // called by summary executor
+    // called by document db summary executor
     task_promise.set_value(std::make_unique<Flusher>(_docStore, _lastStats, currentSerial));
 }
 
 void SummaryFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                     TaskPromise task_promise) {
-    // Called by document db executor
+    // Called by document db main executor
     TaskPromise proxied_task_promise;
     auto        future_task = proxied_task_promise.get_future();
     _summaryService.execute(

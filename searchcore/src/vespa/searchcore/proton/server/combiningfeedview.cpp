@@ -189,7 +189,7 @@ void CombiningFeedView::handleMove(const MoveOperation& moveOp, const DoneCallba
     uint32_t prevSubDbId = moveOp.getPrevSubDbId();
     if (moveOp.getValidPrevDbdId() && prevSubDbId != subDbId) {
         _views[subDbId]->handleMove(moveOp, moveDoneCtx);
-        // XXX: index executor not synced.
+        // XXX: document db index executor not synced.
         _views[prevSubDbId]->handleMove(moveOp, moveDoneCtx);
     } else {
         _views[subDbId]->handleMove(moveOp, moveDoneCtx);
@@ -220,7 +220,7 @@ void CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation& op
 }
 
 void CombiningFeedView::setCalculator(const std::shared_ptr<IBucketStateCalculator>& newCalc) {
-    // Called by document db executor
+    // Called by document db main executor
     _calc = newCalc;
     _clusterUp = _calc && _calc->clusterUp();
     _forceReady = !_clusterUp || !hasNotReadyFeedView();
