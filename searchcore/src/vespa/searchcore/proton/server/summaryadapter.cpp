@@ -76,8 +76,8 @@ const search::IDocumentStore& SummaryAdapter::getDocumentStore() const {
     return imgr().getBackingStore();
 }
 
-std::unique_ptr<Document> SummaryAdapter::get(const DocumentIdT lid, const DocumentTypeRepo& repo, bool allowCache) {
-    auto result = imgr().getBackingStore().read(lid, repo, allowCache);
+std::unique_ptr<Document> SummaryAdapter::get(const DocumentIdT lid, const DocumentTypeRepo& repo) {
+    auto result = imgr().getBackingStore().read(lid, repo);
     LOG(spam, "SummaryAdapter::get(lid = %u, docId = '%s', document = '%s')", lid,
         (result ? result->getId().toString().c_str() : "null"), (result ? result->toString(true).c_str() : "null"));
     return result;

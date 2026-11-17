@@ -70,11 +70,9 @@ public:
     /**
      * Make a Document from a stored serialized data blob.
      * @param lid The local ID associated with the document.
-     * @param allowCache If false, bypass the cache so the document is not pulled into it.
      * @return NULL if there is no document associated with the lid.
      **/
-    virtual DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo& repo,
-                            bool allowCache = true) const = 0;
+    virtual DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo& repo) const = 0;
     virtual void visit(const LidVector& lidVector, const document::DocumentTypeRepo& repo,
                        IDocumentVisitor& visitor) const;
 

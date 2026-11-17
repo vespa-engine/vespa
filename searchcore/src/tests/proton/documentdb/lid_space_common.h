@@ -117,8 +117,7 @@ struct MyDocumentStore : public proton::test::DummyDocumentStore {
     mutable uint32_t _readLid;
     MyDocumentStore();
     ~MyDocumentStore() override;
-    document::Document::UP read(search::DocumentIdT lid, const document::DocumentTypeRepo&,
-                                bool = true) const override;
+    document::Document::UP read(search::DocumentIdT lid, const document::DocumentTypeRepo&) const override;
 };
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
@@ -134,7 +133,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&,
                            bool populate_docid) const override;
     DocumentMetadata getDocumentMetadata(const DocumentId&) const override;
-    Document::UP getFullDocument(DocumentIdT lid, bool allowCache = true) const override;
+    Document::UP getFullDocument(DocumentIdT lid) const override;
     bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;
     CachedSelect::SP parseSelect(const std::string&) const override;
 };

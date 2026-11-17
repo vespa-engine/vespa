@@ -244,8 +244,8 @@ private:
 
 } // namespace
 
-Document::UP DocumentRetriever::getFullDocument(DocumentIdT lid, bool allowCache) const {
-    Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo(), allowCache);
+Document::UP DocumentRetriever::getFullDocument(DocumentIdT lid) const {
+    Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo());
     if (doc) {
         populate(lid, *doc);
     }

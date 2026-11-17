@@ -170,7 +170,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
 
     ~MyDocumentStore() override;
 
-    Document::UP read(DocumentIdT lid, const DocumentTypeRepo& r, bool = true) const override {
+    Document::UP read(DocumentIdT lid, const DocumentTypeRepo& r) const override {
         if (lid == 0) {
             return Document::UP();
         }

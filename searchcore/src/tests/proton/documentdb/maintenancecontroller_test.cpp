@@ -148,7 +148,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     bool can_populate_document_metadata_docid() const noexcept override { return false; }
     void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool) const override { abort(); }
     DocumentMetadata getDocumentMetadata(const DocumentId&) const override { return {}; }
-    Document::UP getFullDocument(DocumentIdT lid, bool = true) const override { return _subDB.getDocument(lid); }
+    Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
     bool need_fetch_from_doc_store(const document::FieldSet&) const override { return true; }
     CachedSelect::SP parseSelect(const std::string&) const override { return {}; }
 };

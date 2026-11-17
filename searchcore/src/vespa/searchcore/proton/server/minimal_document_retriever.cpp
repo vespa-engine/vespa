@@ -27,8 +27,8 @@ MinimalDocumentRetriever::MinimalDocumentRetriever(const DocTypeName&           
 
 MinimalDocumentRetriever::~MinimalDocumentRetriever() = default;
 
-Document::UP MinimalDocumentRetriever::getFullDocument(DocumentIdT lid, bool allowCache) const {
-    return _doc_store.read(lid, *_repo, allowCache);
+Document::UP MinimalDocumentRetriever::getFullDocument(DocumentIdT lid) const {
+    return _doc_store.read(lid, *_repo);
 }
 
 bool MinimalDocumentRetriever::need_fetch_from_doc_store(const FieldSet& field_set) const {

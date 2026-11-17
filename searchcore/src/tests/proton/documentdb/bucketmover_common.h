@@ -88,7 +88,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 
     DocumentMetadata getDocumentMetadata(const DocumentId&) const override { return {}; }
 
-    Document::UP getFullDocument(DocumentIdT lid, bool = true) const override {
+    Document::UP getFullDocument(DocumentIdT lid) const override {
         return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();
     }
     bool need_fetch_from_doc_store(const document::FieldSet&) const override { return true; }

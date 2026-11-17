@@ -34,11 +34,10 @@ search::DocumentMetadata CommitAndWaitDocumentRetriever::getDocumentMetadata(con
     return _retriever->getDocumentMetadata(id);
 }
 
-document::Document::UP CommitAndWaitDocumentRetriever::getFullDocument(search::DocumentIdT lid,
-                                                                       bool                allowCache) const {
+document::Document::UP CommitAndWaitDocumentRetriever::getFullDocument(search::DocumentIdT lid) const {
     // Ensure that attribute vectors are committed
     _uncommittedLidsTracker.waitComplete(lid);
-    return _retriever->getFullDocument(lid, allowCache);
+    return _retriever->getFullDocument(lid);
 }
 
 document::Document::UP CommitAndWaitDocumentRetriever::getPartialDocument(search::DocumentIdT         lid,
