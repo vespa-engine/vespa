@@ -250,17 +250,45 @@ TEST_F(CacheTest, read_no_populate_does_not_insert_or_reorder) {
     cache.write(1, "foo");
     cache.write(2, "bar");
     m[3] = "baz";
+    CacheReadContext ctx;
     // Cache miss is served from backing store, but not inserted.
-    EXPECT_EQ(cache.read_no_populate(3), "baz");
+    EXPECT_EQ(cache.read_no_populate(3, ctx), "baz");
+    EXPECT_FALSE(ctx.found_in_cache);
     EXPECT_FALSE(cache.hasKey(3));
     // Non-existing key yields empty value.
-    EXPECT_EQ(cache.read_no_populate(4), "");
+    EXPECT_EQ(cache.read_no_populate(4, ctx), "");
+    EXPECT_FALSE(ctx.found_in_cache);
     // Cache hit does not move element to head of LRU list; 1 is still evicted first.
-    EXPECT_EQ(cache.read_no_populate(1), "foo");
+    EXPECT_EQ(cache.read_no_populate(1, ctx), "foo");
+    EXPECT_TRUE(ctx.found_in_cache);
+    EXPECT_FALSE(ctx.was_protected);
     cache.write(5, "zoid");
     EXPECT_FALSE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(5));
+}
+
+TEST_F(CacheTest, read_with_use_no_populate_dispatches_to_read_no_populate) {
+    cache<CacheParam<P, B>> cache(m, -1);
+    cache.maxElements(2);
+    cache.write(1, "foo");
+    cache.write(2, "bar");
+    m[3] = "baz";
+    CacheReadContext ctx;
+    ctx.use_no_populate = true;
+    EXPECT_EQ(cache.read(3, ctx), "baz");
+    EXPECT_FALSE(ctx.found_in_cache);
+    EXPECT_FALSE(cache.hasKey(3));
+    EXPECT_EQ(cache.read(1, ctx), "foo");
+    EXPECT_TRUE(ctx.found_in_cache);
+    cache.write(5, "zoid");
+    EXPECT_FALSE(cache.hasKey(1));
+    EXPECT_TRUE(cache.hasKey(2));
+    // Normal read populates the cache.
+    ctx.use_no_populate = false;
+    EXPECT_EQ(cache.read(3, ctx), "baz");
+    EXPECT_FALSE(ctx.found_in_cache);
+    EXPECT_TRUE(cache.hasKey(3));
 }
 
 TEST_F(CacheTest, fetching_element_moves_it_to_head_of_lru_list) {

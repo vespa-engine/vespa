@@ -297,17 +297,24 @@ template <typename P> std::unique_lock<std::mutex> cache<P>::getGuard() const {
 
 template <typename P>
 template <typename... BackingStoreArgs>
-typename P::Value cache<P>::read_no_populate(const K& key, BackingStoreArgs&&... backing_store_args) {
+typename P::Value cache<P>::read_no_populate(const K& key, CacheReadContext& context,
+                                             BackingStoreArgs&&... backing_store_args) {
     V value;
     {
         std::lock_guard guard(_hashLock);
         if (_probationary_segment.has_key(key)) {
+            context.found_in_cache = true;
+            context.was_protected = false;
             return _probationary_segment.get_existing(key);
         }
         if (multi_segment() && _protected_segment.has_key(key)) {
+            context.found_in_cache = true;
+            context.was_protected = true;
             return _protected_segment.get_existing(key);
         }
     }
+    context.found_in_cache = false;
+    context.was_protected = false;
     std::lock_guard store_guard(getLock(key));
     if (!_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
         _non_existing.fetch_add(1, std::memory_order_relaxed); // Atomic since we're outside _hashLock
@@ -317,26 +324,30 @@ typename P::Value cache<P>::read_no_populate(const K& key, BackingStoreArgs&&...
 
 template <typename P>
 template <typename... BackingStoreArgs>
-typename P::Value cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args) {
+typename P::Value cache<P>::read(const K& key, CacheReadContext& context, BackingStoreArgs&&... backing_store_args) {
+    if (context.use_no_populate) {
+        return read_no_populate(key, context, std::forward<BackingStoreArgs>(backing_store_args)...);
+    }
     V value;
     {
         std::lock_guard guard(_hashLock);
-        if (try_fill_from_cache(key, value, guard)) {
+        if (try_fill_from_cache(key, value, guard, context)) {
             increment_stat(_hit, guard);
             return value;
         } else {
             increment_stat(_miss, guard);
         }
     }
-
     std::lock_guard store_guard(getLock(key));
     {
         std::lock_guard guard(_hashLock);
-        if (try_fill_from_cache(key, value, guard)) {
+        if (try_fill_from_cache(key, value, guard, context)) {
             increment_stat(_race, guard); // Somebody else just fetched it ahead of me.
             return value;
         }
     }
+    context.found_in_cache = false;
+    context.was_protected = false;
     if (_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
         std::lock_guard guard(_hashLock);
         const auto      new_freq = lfu_add_and_count(key);
@@ -354,8 +365,11 @@ typename P::Value cache<P>::read(const K& key, BackingStoreArgs&&... backing_sto
 }
 
 template <typename P>
-bool cache<P>::try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard) {
+bool cache<P>::try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard,
+                                   CacheReadContext& context) {
     if (_probationary_segment.try_get_and_ref(key, val_out)) {
+        context.found_in_cache = true;
+        context.was_protected = false;
         // Hitting the cache bumps the sketch count regardless of LRU vs SLRU mode.
         const auto new_freq = lfu_add_and_count(key);
         if (multi_segment()) {
@@ -374,6 +388,8 @@ bool cache<P>::try_fill_from_cache(const K& key, V& val_out, const std::lock_gua
         }
         return true;
     } else if (multi_segment() && _protected_segment.try_get_and_ref(key, val_out)) {
+        context.found_in_cache = true;
+        context.was_protected = true;
         lfu_add(key);
         return true;
     }

@@ -36,6 +36,12 @@ struct CacheParam : P {
     using SizeV = sizeV;
 };
 
+struct CacheReadContext {
+    bool use_no_populate = false;
+    bool found_in_cache = false;
+    bool was_protected = false;
+};
+
 enum class CacheSegment { Probationary, Protected };
 
 /**
@@ -198,6 +204,7 @@ protected:
 
 public:
     using key_type = K;
+    static constexpr CacheReadContext normal_cache_read() { return {}; }
 
     cache(BackingStore& backing_store, size_t max_probationary_bytes, size_t max_protected_bytes);
 
@@ -305,14 +312,21 @@ public:
      * backing store in case of a cache miss. They are entirely ignored if there is a cache hit.
      */
     template <typename... BackingStoreArgs>
-    [[nodiscard]] V read(const K& key, BackingStoreArgs&&... backing_store_args);
+    [[nodiscard]] V read(const K& key, BackingStoreArgs&&... backing_store_args) {
+        CacheReadContext dummy;
+        return read(key, dummy, std::forward<BackingStoreArgs>(backing_store_args)...);
+    }
+
+    template <typename... BackingStoreArgs>
+    [[nodiscard]] V read(const K& key, CacheReadContext& context, BackingStoreArgs&&... backing_store_args);
 
     /**
      * Return the cached value for key if present, without updating LRU/LFU state.
      * Otherwise read it from the backing store without inserting it into the cache.
      */
     template <typename... BackingStoreArgs>
-    [[nodiscard]] V read_no_populate(const K& key, BackingStoreArgs&&... backing_store_args);
+    [[nodiscard]] V read_no_populate(const K& key, CacheReadContext& context,
+                                     BackingStoreArgs&&... backing_store_args);
 
     /**
      * Update the cache and write through to backing store.
@@ -362,7 +376,8 @@ protected:
 private:
     // Implicitly updates LRU segment(s) on hit.
     // Precondition: _hashLock is held.
-    [[nodiscard]] bool try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard);
+    [[nodiscard]] bool try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard,
+                                           CacheReadContext& context);
 
     [[nodiscard]] bool multi_segment() const noexcept { return _protected_segment.capacity_bytes() != 0; }
     void lfu_add(const K& key) noexcept;
