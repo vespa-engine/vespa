@@ -53,6 +53,7 @@ public class PartialSummaryHandler {
     private Set<String> fillMarkers = new HashSet<>();
     private Set<String> fieldsFromQuery = null;
     private Set<String> resultHasFilled = null;
+    private Set<String> requestedFields = null;
     private Set<String> askForFields = null;
 
     public PartialSummaryHandler(DocumentDatabase docDb) {
@@ -76,6 +77,7 @@ public class PartialSummaryHandler {
         computeAskForFields();
         computeAskForSum(result.getQuery());
         computeFillMarker();
+        omitAlreadyFilledFields();
         computeEffectiveDocsumDef();
     }
 
@@ -88,6 +90,7 @@ public class PartialSummaryHandler {
         computeAskForFields();
         computeAskForSum(query);
         computeFillMarker();
+        omitAlreadyFilledFields();
         computeEffectiveDocsumDef();
     }
 
@@ -211,6 +214,22 @@ public class PartialSummaryHandler {
         }
     }
 
+    private void omitAlreadyFilledFields() {
+        // Keep the original request for fill checks and markers. The reduced set is only for fetching and decoding.
+        requestedFields = askForFields;
+        if (resultHasFilled == null || resultHasFilled.isEmpty()) return;
+
+        // These markers are common to every fillable hit, so omitting their fields is safe for the whole request.
+        var availableFields = fieldsAlreadyFilled(resultHasFilled);
+        if (availableFields.isEmpty()) return;
+        var missingFields = new TreeSet<>(requestedFields == null ? getFieldsForClass(askForSummary) : requestedFields);
+        if (missingFields.removeAll(availableFields) && ! missingFields.isEmpty()) {
+            askForFields = missingFields;
+        }
+        // If nothing is missing, resultAlreadyFilled() skips the request. Never send an empty field list:
+        // the backend interprets it as requesting every field in the summary.
+    }
+
     private static String syntheticName(Set<String> summaryFields) {
         // ensure deterministic ordering:
         var sorted = new TreeSet<String>(summaryFields);
@@ -319,7 +338,7 @@ public class PartialSummaryHandler {
     private Set<String> fieldsAlreadyFilled(Set<String> alreadyFilled) {
         var gotFields = new HashSet<String>();
         for (var hasSummary : alreadyFilled) {
-            if (hasSummary == PRESENTATION) continue;
+            if (PRESENTATION.equals(hasSummary)) continue;
             var hasSome = getFieldsForClass(hasSummary);
             for (String field : hasSome) {
                 gotFields.add(field);
@@ -343,7 +362,7 @@ public class PartialSummaryHandler {
         var gotFields = fieldsAlreadyFilled(alreadyFilled);
 
         // check if got covers all that we want:
-        var wantFields = (askForFields == null ? getFieldsForClass(askForSummary) : askForFields);
+        var wantFields = (requestedFields == null ? getFieldsForClass(askForSummary) : requestedFields);
         for (String field : wantFields) {
             if (! gotFields.contains(field)) {
                 // need this field
