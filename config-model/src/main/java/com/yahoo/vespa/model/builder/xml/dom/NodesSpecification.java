@@ -55,8 +55,6 @@ public class NodesSpecification {
      */
     private final boolean required;
 
-    private final boolean canFail;
-
     private final boolean exclusive;
 
     /** The repo part of a docker image (without tag), optional */
@@ -82,7 +80,7 @@ public class NodesSpecification {
                                IntRange groupSize,
                                double maxCostFactor,
                                boolean dedicated, Version version,
-                               boolean required, boolean canFail, boolean exclusive,
+                               boolean required, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
                                CloudAccount cloudAccount,
                                CloudResourceTags cloudResourceTags,
@@ -110,7 +108,6 @@ public class NodesSpecification {
         this.dedicated = dedicated;
         this.version = version;
         this.required = required;
-        this.canFail = canFail;
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
@@ -120,7 +117,7 @@ public class NodesSpecification {
         this.profile = profile;
     }
 
-    static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
+    static NodesSpecification create(boolean dedicated, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
                                      CloudAccount cloudAccount,
                                      CloudResourceTags cloudResourceTags,
@@ -139,7 +136,6 @@ public class NodesSpecification {
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
-                                      canFail,
                                       resolvedElement.booleanAttribute("exclusive", false),
                                       dockerImageToUse(resolvedElement, dockerImageRepo, deployState),
                                       cloudAccount,
@@ -189,7 +185,6 @@ public class NodesSpecification {
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
     public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
         return create(true,
-                      ! context.getDeployState().getProperties().isBootstrap(),
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
@@ -210,7 +205,6 @@ public class NodesSpecification {
         ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
         return Optional.of(create(nodesElement.booleanAttribute("dedicated", false),
-                                  ! context.getDeployState().getProperties().isBootstrap(),
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
@@ -229,7 +223,6 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
-                                      ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().getCloudAccount(),
@@ -248,7 +241,6 @@ public class NodesSpecification {
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
-                                      ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().getCloudAccount(),
@@ -278,7 +270,6 @@ public class NodesSpecification {
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       allContent.stream().anyMatch(content -> content.required),
-                                      ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().getCloudAccount(),
@@ -295,8 +286,8 @@ public class NodesSpecification {
     public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     /**
-     * Returns whether this requires dedicated nodes.
-     * Otherwise the model encountering this request should reuse nodes requested for other purposes whenever possible.
+     * Returns whether this requires dedicated nodes,
+     * otherwise the model encountering this request should reuse nodes requested for other purposes whenever possible.
      */
     public boolean isDedicated() { return dedicated; }
 
@@ -326,14 +317,14 @@ public class NodesSpecification {
         return setClusterSpecFrom(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of());
     }
 
-    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}, and returns this. */
+    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}), and returns this. */
     public NodesSpecification setClusterSpecFrom(ClusterSpec.Type clusterType,
                                                  ClusterSpec.Id clusterId,
                                                  ZoneEndpoint zoneEndpoint,
                                                  boolean stateful,
                                                  ClusterInfo clusterInfo,
                                                  List<SidecarSpec> sidecars) {
-        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, clusterInfo);
+        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required);
         cluster = ClusterSpec.builder(clusterType, clusterId, capacity, version)
                              .exclusive(exclusive)
                              .dockerImageRepository(dockerImageRepo)
@@ -342,6 +333,9 @@ public class NodesSpecification {
                              .sidecars(sidecars)
                              .availabilityZones(availabilityZones)
                              .profile(profile)
+                             .cloudAccount(cloudAccount)
+                             .cloudResourceTags(cloudResourceTags)
+                             .clusterInfo(clusterInfo)
                              .build();
         return this;
     }

@@ -281,7 +281,7 @@ public class NodesSpecificationTest {
     void testOperatorGivenDockerImageAllowedInPublicCloudSystems() {
         Document nodesXml = XML.getDocument("<nodes count='3'/>");
         var operatorImage = DockerImage.fromString("example.invalid/vespa/operator-selected");
-        var spec = NodesSpecification.create(false, false, Version.emptyVersion,
+        var spec = NodesSpecification.create(false, Version.emptyVersion,
                                              new ModelElement(nodesXml.getDocumentElement()),
                                              Optional.of(operatorImage), CloudAccount.unspecified(),
                                              CloudResourceTags.empty(), List.of(),
@@ -301,7 +301,7 @@ public class NodesSpecificationTest {
 
     private NodesSpecification nodesSpecification(String nodesElement, DeployState deployState) {
         Document nodesXml = XML.getDocument(nodesElement);
-        return NodesSpecification.create(false, false, Version.emptyVersion,
+        return NodesSpecification.create(false, Version.emptyVersion,
                                          new ModelElement(nodesXml.getDocumentElement()),
                                          Optional.empty(), CloudAccount.unspecified(),
                                          CloudResourceTags.empty(), List.of(),

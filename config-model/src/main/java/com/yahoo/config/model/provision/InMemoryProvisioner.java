@@ -165,11 +165,11 @@ public class InMemoryProvisioner implements HostProvisioner {
         IntRange groupRange = IntRange.of(requested.minResources().groups(), requested.maxResources().groups());
         if (useMaxResources) {
             int groups = groupRange.fit(requested.maxResources().nodes() / requested.groupSize().to().orElse(1));
-            return prepare(cluster, requested.maxResources(),groups, requested.isRequired(), requested.canFail());
+            return prepare(cluster, requested.maxResources(),groups, requested.isRequired(), context.canFail());
         }
         else {
             int groups = groupRange.fit(requested.minResources().nodes() / requested.groupSize().from().orElse(1));
-            return prepare(cluster, requested.minResources(), groups, requested.isRequired(), requested.canFail());
+            return prepare(cluster, requested.minResources(), groups, requested.isRequired(), context.canFail());
         }
     }
 
