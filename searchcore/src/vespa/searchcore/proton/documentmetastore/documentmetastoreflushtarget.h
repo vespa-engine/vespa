@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -32,16 +33,18 @@ private:
     using DocumentMetaStoreSP = std::shared_ptr<DocumentMetaStore>;
     using FlushStats = searchcorespi::FlushStats;
 
-    DocumentMetaStoreSP                      _dms;
-    ITlsSyncer&                              _tlsSyncer;
-    std::string                              _baseDir;
-    bool                                     _cleanUpAfterFlush;
-    FlushStats                               _lastStats;
-    const search::TuneFileAttributes         _tuneFileAttributes;
-    const search::common::FileHeaderContext& _fileHeaderContext;
-    vespalib::HwInfo                         _hwInfo;
-    std::shared_ptr<AttributeDiskLayout>     _diskLayout;
-    std::shared_ptr<AttributeDirectory>      _dmsDir;
+    DocumentMetaStoreSP                              _dms;
+    ITlsSyncer&                                      _tlsSyncer;
+    std::string                                      _baseDir;
+    bool                                             _cleanUpAfterFlush;
+    FlushStats                                       _lastStats;
+    const search::TuneFileAttributes                 _tuneFileAttributes;
+    const search::common::FileHeaderContext&         _fileHeaderContext;
+    vespalib::HwInfo                                 _hwInfo;
+    std::shared_ptr<AttributeDiskLayout>             _diskLayout;
+    std::shared_ptr<AttributeDirectory>              _dmsDir;
+    const std::shared_ptr<const DocTypeAndSubDbName> _doc_type_and_subdb_name;
+    const std::string                                _subdb_name;
 
 public:
     using SP = std::shared_ptr<DocumentMetaStoreFlushTarget>;
@@ -51,9 +54,10 @@ public:
      * given base dir where all attribute vectors are located.
      **/
     DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms, ITlsSyncer& tlsSyncer, const std::string& baseDir,
-                                 const search::TuneFileAttributes&        tuneFileAttributes,
-                                 const search::common::FileHeaderContext& fileHeaderContext,
-                                 const vespalib::HwInfo&                  hwInfo);
+                                 std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_sub_db_name_in,
+                                 const search::TuneFileAttributes&          tuneFileAttributes,
+                                 const search::common::FileHeaderContext&   fileHeaderContext,
+                                 const vespalib::HwInfo&                    hwInfo);
 
     ~DocumentMetaStoreFlushTarget() override;
 

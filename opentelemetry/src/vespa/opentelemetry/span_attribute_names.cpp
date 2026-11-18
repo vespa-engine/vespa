@@ -7,6 +7,7 @@ namespace vespa_opentelemetry::span_attribute_names {
 const std::string attribute("ai.vespa.searchlib.attribute");
 const std::string ddb_prev_state("ai.vespa.proton.ddb.prev_state");
 const std::string document_type("ai.vespa.document_type");
+const std::string serial("ai.vespa.searchlib.serial");
 const std::string subdb("ai.vespa.proton.subdb");
 
 } // namespace vespa_opentelemetry::span_attribute_names

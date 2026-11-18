@@ -6,7 +6,9 @@
 #include "attributedisklayout.h"
 
 #include <vespa/check_require.h>
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
@@ -29,6 +31,7 @@ LOG_SETUP(".proton.attribute.flushableattribute");
 
 using namespace search;
 using namespace vespalib;
+using opentelemetry::trace::Span;
 using search::common::CreateAndFreezeTimes;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
@@ -48,6 +51,7 @@ private:
     uint64_t                                    _syncToken;
     std::string                                 _flushFile;
     std::unique_ptr<AttributeDirectory::Writer> _writer;
+    std::shared_ptr<Span>                       _span;
 
     bool saveAttribute(); // not updating snap info.
 public:
@@ -65,13 +69,28 @@ public:
 
 FlushableAttribute::Flusher::Flusher(FlushableAttribute& fattr, SerialNum syncToken,
                                      std::unique_ptr<AttributeDirectory::Writer> writer)
-    : _fattr(fattr), _saveTarget(), _saver(), _syncToken(syncToken), _flushFile(""), _writer(std::move(writer)) {
-    fattr._attr->commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
+    : _fattr(fattr),
+      _saveTarget(),
+      _saver(),
+      _syncToken(syncToken),
+      _flushFile(""),
+      _writer(std::move(writer)),
+      _span() {
     AttributeVector& attr = *_fattr._attr;
+    auto             tracer = get_tracer();
+    _span = tracer->StartSpan(
+        "Flush attribute",
+        {{vespa_opentelemetry::span_attribute_names::document_type,
+          fattr._doc_type_and_subdb_name->doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, fattr._doc_type_and_subdb_name->subdb_name()},
+         {vespa_opentelemetry::span_attribute_names::attribute, attr.getName()},
+         {vespa_opentelemetry::span_attribute_names::serial, std::to_string(syncToken)}});
+    attr.commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     // Called by attribute field writer executor
     _flushFile = _writer->getSnapshotDir(_syncToken) + "/" + attr.getName();
     _saver = attr.initSave(_flushFile);
     CHECK(_saver);
+    _span->AddEvent("Done init flush");
 }
 
 FlushableAttribute::Flusher::~Flusher() = default;
@@ -134,9 +153,13 @@ bool FlushableAttribute::Flusher::cleanUp() {
 }
 
 void FlushableAttribute::Flusher::run() {
+    _span->AddEvent("Starting background flush");
+    auto tracer = get_tracer();
+    auto scope = tracer->WithActiveSpan(_span);
     if (_syncToken <= _fattr.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
+        _span->End();
         return;
     }
     if (!flush()) {
@@ -146,13 +169,15 @@ void FlushableAttribute::Flusher::run() {
     if (!cleanUp()) {
         // TODO (geirst): throw exception ?
     }
+    _span->End();
 }
 
 FlushableAttribute::FlushableAttribute(AttributeVectorSP attr, const std::shared_ptr<AttributeDirectory>& attrDir,
-                                       const TuneFileAttributes&         tuneFileAttributes,
-                                       const FileHeaderContext&          fileHeaderContext,
-                                       vespalib::ISequencedTaskExecutor& attributeFieldWriter,
-                                       const vespalib::HwInfo&           hwInfo)
+                                       std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
+                                       const TuneFileAttributes&                  tuneFileAttributes,
+                                       const FileHeaderContext&                   fileHeaderContext,
+                                       vespalib::ISequencedTaskExecutor&          attributeFieldWriter,
+                                       const vespalib::HwInfo&                    hwInfo)
     : LeafFlushTarget(make_string("attribute.flush.%s", attr->getName().c_str()), Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),
       _cleanUpAfterFlush(true),
@@ -162,6 +187,7 @@ FlushableAttribute::FlushableAttribute(AttributeVectorSP attr, const std::shared
       _attributeFieldWriter(attributeFieldWriter),
       _hwInfo(hwInfo),
       _attrDir(attrDir),
+      _doc_type_and_subdb_name(std::move(doc_type_and_subdb_name_in)),
       _replay_operation_cost(0.0),
       _paged(_attr->getConfig().paged()) {
     _lastStats.setPathElementsToLog(8);
@@ -197,8 +223,11 @@ IFlushTarget::Time FlushableAttribute::getLastFlushTime() const {
     return _attrDir->getLastFlushTime();
 }
 
-void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise) {
+void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise,
+                                             std::shared_ptr<Span> parent_span) {
     // Called by attribute field writer thread
+    auto tracer = get_tracer();
+    auto scope = tracer->WithActiveSpan(parent_span);
     _attr->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _attr->getStatus().getLastSyncToken());
     auto      writer = _attrDir->tryGetWriter();
@@ -219,10 +248,13 @@ void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromis
 void FlushableAttribute::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                     TaskPromise task_promise) {
     // Called by document db main executor
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
-                                  [this, currentSerial, task_promise(std::move(task_promise))]() mutable {
-                                      internal_init_flush(currentSerial, std::move(task_promise));
-                                  });
+    auto tracer = get_tracer();
+    auto parent_span = tracer->GetCurrentSpan();
+    _attributeFieldWriter.execute(
+        _attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
+        [this, currentSerial, task_promise(std::move(task_promise)), parent_span(std::move(parent_span))]() mutable {
+            internal_init_flush(currentSerial, std::move(task_promise), std::move(parent_span));
+        });
 }
 
 bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {

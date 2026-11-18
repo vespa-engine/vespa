@@ -15,6 +15,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 
@@ -33,6 +34,9 @@ using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
 using vespalib::CpuUsage;
 using namespace std::chrono_literals;
+
+using opentelemetry::trace::SpanKind;
+using opentelemetry::trace::StartSpanOptions;
 
 namespace proton {
 
@@ -122,7 +126,10 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _normal_flush_token(std::make_shared<search::FlushToken>()),
       _gc_flush_token(std::make_shared<search::FlushToken>()),
       _flush_history(std::make_shared<FlushHistory>(_strategy->name(), _strategy_id, _maxConcurrentNormal)),
-      _max_summary_file_size(max_summary_file_size) {
+      _max_summary_file_size(max_summary_file_size),
+      _each_max_memory(0),
+      _global_max_memory(0),
+      _trace_span() {
     _flushing_strategies[_strategy_id] = 1u; // Account for initial flush strategy
     _strategy->set_id(_strategy_id);
 }
@@ -153,6 +160,10 @@ FlushEngine& FlushEngine::close() {
         _thread.join(); // Wait for active flushes to complete or abort and flush engine scheduler thread to exit.
     }
     _executor.shutdown().sync();
+    if (_trace_span) {
+        _trace_span->AddEvent("Closed");
+        _trace_span->End();
+    }
     return *this;
 }
 
@@ -222,6 +233,12 @@ std::string FlushEngine::checkAndFlush(std::string prev) {
 
 void FlushEngine::run() {
     _has_thread = true;
+    auto             tracer = get_tracer();
+    StartSpanOptions options;
+    options.kind = SpanKind::kInternal;
+    options.parent = opentelemetry::context::Context{};
+    _trace_span = tracer->StartSpan("Flush engine");
+    auto        scope = tracer->WithActiveSpan(_trace_span);
     std::string prevFlushName;
     while (!is_closed()) {
         LOG(debug, "Making another check for something to flush, last was '%s'", prevFlushName.c_str());
@@ -235,8 +252,10 @@ void FlushEngine::run() {
             }
         }
     }
+    _trace_span->AddEvent("Main thread stopping");
     _executor.sync(); // Wait for active flushes to complete or abort
     prune();
+    _trace_span->AddEvent("Main thread stopped");
     _has_thread = false;
 }
 

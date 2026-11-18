@@ -346,8 +346,8 @@ TEST(AttributeFlushTest, require_that_cleanup_is_performed_after_flush) {
     EXPECT_TRUE(info.save());
     auto diskLayout = AttributeDiskLayout::create("flush");
 
-    FlushableAttribute fa(av, diskLayout->getAttributeDir("a6"), TuneFileAttributes(), f._fileHeaderContext,
-                          f._attributeFieldWriter, f._hwInfo);
+    FlushableAttribute fa(av, diskLayout->getAttributeDir("a6"), f._m.doc_type_and_subdb_name(), TuneFileAttributes(),
+                          f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo);
     fa.initFlush(30, std::make_shared<search::FlushToken>())->run();
 
     EXPECT_TRUE(info.load());

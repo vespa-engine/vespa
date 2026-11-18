@@ -204,6 +204,9 @@ public:
 
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
     static uint64_t get_size_on_disk_overhead() noexcept;
+    [[nodiscard]] const std::shared_ptr<const DocTypeAndSubDbName>& doc_type_and_subdb_name() const noexcept {
+        return _doc_type_and_subdb_name;
+    }
     [[nodiscard]] const DocTypeName& doc_type_name() const noexcept {
         return _doc_type_and_subdb_name->doc_type_name();
     }

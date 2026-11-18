@@ -5,8 +5,10 @@
 #include "documentmetastore.h"
 
 #include <vespa/check_require.h>
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
@@ -26,6 +28,7 @@ LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 
 using namespace search;
 using namespace vespalib;
+using opentelemetry::trace::Span;
 using search::common::CreateAndFreezeTimes;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
@@ -45,6 +48,7 @@ private:
     uint64_t                                    _syncToken;
     std::string                                 _flushDir;
     std::unique_ptr<AttributeDirectory::Writer> _writer;
+    std::shared_ptr<Span>                       _span;
 
     bool saveDocumentMetaStore(); // not updating snap info.
 public:
@@ -61,14 +65,23 @@ public:
 
 DocumentMetaStoreFlushTarget::Flusher::Flusher(DocumentMetaStoreFlushTarget& dmsft, SerialNum syncToken,
                                                std::unique_ptr<AttributeDirectory::Writer> writer)
-    : _dmsft(dmsft), _saver(), _syncToken(syncToken), _flushDir(""), _writer(std::move(writer)) {
+    : _dmsft(dmsft), _saver(), _syncToken(syncToken), _flushDir(""), _writer(std::move(writer)), _span() {
     // Called by document db main executor
     DocumentMetaStore& dms = *_dmsft._dms;
+    auto               tracer = get_tracer();
+    _span = tracer->StartSpan(
+        "Flush documentmetastore",
+        {{vespa_opentelemetry::span_attribute_names::document_type,
+          _dmsft._doc_type_and_subdb_name->doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, _dmsft._doc_type_and_subdb_name->subdb_name()},
+         {vespa_opentelemetry::span_attribute_names::serial, std::to_string(syncToken)}});
+
     dms.commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     _flushDir = _writer->getSnapshotDir(syncToken);
     std::string newBaseFileName(_flushDir + "/" + dms.getName());
     _saver = dms.initSave(newBaseFileName);
     CHECK(_saver);
+    _span->AddEvent("Done init flush");
 }
 
 DocumentMetaStoreFlushTarget::Flusher::~Flusher() = default;
@@ -141,9 +154,13 @@ bool DocumentMetaStoreFlushTarget::Flusher::cleanUp() {
 }
 
 void DocumentMetaStoreFlushTarget::Flusher::run() {
+    _span->AddEvent("Starting background flush");
+    auto tracer = get_tracer();
+    auto scope = tracer->WithActiveSpan(_span);
     if (_syncToken <= _dmsft.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
+        _span->End();
         return;
     }
     if (!flush()) {
@@ -153,13 +170,14 @@ void DocumentMetaStoreFlushTarget::Flusher::run() {
     if (!cleanUp()) {
         // TODO (geirst): throw exception ?
     }
+    _span->End();
 }
 
-DocumentMetaStoreFlushTarget::DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer& tlsSyncer,
-                                                           const std::string&        baseDir,
-                                                           const TuneFileAttributes& tuneFileAttributes,
-                                                           const FileHeaderContext&  fileHeaderContext,
-                                                           const vespalib::HwInfo&   hwInfo)
+DocumentMetaStoreFlushTarget::DocumentMetaStoreFlushTarget(
+    const DocumentMetaStore::SP dms, ITlsSyncer& tlsSyncer, const std::string& baseDir,
+    std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
+    const TuneFileAttributes& tuneFileAttributes, const FileHeaderContext& fileHeaderContext,
+    const vespalib::HwInfo& hwInfo)
     : LeafFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),
@@ -170,9 +188,8 @@ DocumentMetaStoreFlushTarget::DocumentMetaStoreFlushTarget(const DocumentMetaSto
       _fileHeaderContext(fileHeaderContext),
       _hwInfo(hwInfo),
       _diskLayout(AttributeDiskLayout::createSimple(baseDir)),
-      _dmsDir(_diskLayout->createAttributeDir(""))
-
-{
+      _dmsDir(_diskLayout->createAttributeDir("")),
+      _doc_type_and_subdb_name(std::move(doc_type_and_subdb_name_in)) {
     _lastStats.setPathElementsToLog(8);
 }
 
