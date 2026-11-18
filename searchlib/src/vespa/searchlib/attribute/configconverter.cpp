@@ -156,6 +156,7 @@ Config ConfigConverter::convert(const AttributesConfig::Attribute& cfg) {
     retval.setFastAccess(cfg.fastaccess);
     retval.setMutable(cfg.ismutable);
     retval.setPaged(cfg.paged);
+    retval.set_tensor_label_postings(cfg.labelpostings);
     retval.setMaxUnCommittedMemory(cfg.maxuncommittedmemory);
     predicateParams.setArity(cfg.arity);
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);

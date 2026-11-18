@@ -242,6 +242,12 @@ TEST(AttributeManagerTest, require_that_config_can_be_converted) {
         a.paged = true;
         EXPECT_TRUE(CC::convert(a).paged());
     }
+    {
+        CACA a;
+        EXPECT_TRUE(!CC::convert(a).tensor_label_postings());
+        a.labelpostings = true;
+        EXPECT_TRUE(CC::convert(a).tensor_label_postings());
+    }
     { // tensor
         CACA a;
         a.datatype = CACAD::TENSOR;

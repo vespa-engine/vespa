@@ -84,6 +84,29 @@ public class PagedAttributeValidatorTestCase {
     }
 
     @Test
+    void label_postings_tensor_attribute_does_not_support_paged_setting() throws ParseException {
+        var sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type tensor(x{}) {",
+                "      indexing: attribute",
+                "      attribute {",
+                "        fast-rank",
+                "        label-postings",
+                "        paged",
+                "      }",
+                "    }",
+                "  }",
+                "}");
+        try {
+            createFromString(sd);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test', field 'foo': The 'paged' attribute setting is not supported together with 'label-postings'",
+                    e.getMessage());
+        }
+    }
+
+    @Test
     void predicate_attribute_does_not_support_paged_setting() throws ParseException {
         assertPagedSettingNotSupported("predicate");
     }

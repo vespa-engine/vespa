@@ -11,6 +11,8 @@ attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
 attribute[].fastsearch          bool default=false
 attribute[].paged               bool default=false
+# Keep a dictionary of tensor labels with a posting list per label.
+attribute[].labelpostings       bool default=false
 # An attribute marked mutable can be updated by a query.
 attribute[].ismutable           bool default=false
 attribute[].sortascending       bool default=true
@@ -32,7 +34,7 @@ attribute[].tensortype         string default=""
 # Whether this is an imported attribute (from parent document db) or not.
 attribute[].imported           bool default=false
 
-# Max amount of uncommitted memory during feed. (Default just shy of 128k) 
+# Max amount of uncommitted memory during feed. (Default just shy of 128k)
 attribute[].maxuncommittedmemory long default=130000
 
 # The distance metric to use for nearest neighbor search.

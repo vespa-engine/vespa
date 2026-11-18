@@ -163,6 +163,42 @@ public class TensorFieldTestCase {
     }
 
     @Test
+    void tensors_with_at_least_one_mapped_dimension_can_have_label_postings() throws ParseException {
+        var attr = getAttributeFromSd(
+                "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank \n attribute: label-postings }", "t1");
+        assertTrue(attr.isLabelPostings());
+        assertTrue(getAttributeFromSd(
+                "field t1 type tensor(x{},y[4]) { indexing: attribute \n attribute { fast-rank \n label-postings } }", "t1").isLabelPostings());
+        assertFalse(getAttributeFromSd(
+                "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }", "t1").isLabelPostings());
+        // 'fast-search' gives the same backend storage and is also accepted
+        assertTrue(getAttributeFromSd(
+                "field t1 type tensor(x{}) { indexing: attribute \n attribute { fast-search \n label-postings } }", "t1").isLabelPostings());
+    }
+
+    @Test
+    void indexed_tensor_attribute_cannot_have_label_postings() throws ParseException {
+        try {
+            createFromString(getSd("field f1 type tensor(x[3]) { indexing: attribute \n attribute: label-postings }"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("attribute 'f1' (tensor(x[3])) does not support 'label-postings'. Only supported for tensor types with at least one mapped dimension", e.getMessage());
+        }
+    }
+
+    @Test
+    void label_postings_requires_fast_rank() throws ParseException {
+        try {
+            createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: label-postings }"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("attribute 'f1' (tensor(x{})) has 'label-postings' which requires 'fast-rank'", e.getMessage());
+        }
+    }
+
+    @Test
     void fast_search_on_tensor_attribute_is_deprecated() throws ParseException {
         var logger = new TestableDeployLogger();
         var attr = createFromString(getSd("field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }"), logger)

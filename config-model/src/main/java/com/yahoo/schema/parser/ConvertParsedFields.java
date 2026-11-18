@@ -110,6 +110,14 @@ public class ConvertParsedFields {
         if (parsed.getFastRank()) {
             attribute.setFastRank(parsed.getFastRank());
         }
+        if (parsed.getLabelPostings()) {
+            attribute.setLabelPostings(true);
+            // 'fast-rank' is the intended setting for tensors; 'fast-search' gives the same
+            // direct tensor storage in the backend and is also accepted.
+            if (!attribute.isFastSearch() && !attribute.isFastRank()) {
+                throw new IllegalArgumentException(attribute + " has 'label-postings' which requires 'fast-rank'");
+            }
+        }
         attribute.setFastAccess(parsed.getFastAccess());
         attribute.setMutable(parsed.getMutable());
         attribute.setEnableOnlyBitVector(parsed.getEnableOnlyBitVector());
@@ -150,7 +158,7 @@ public class ConvertParsedFields {
         }
 
         // Reject settings that are nonsensical or unsupported for position fields
-        if (parsed.getFastRank() || parsed.getMutable() || parsed.getEnableOnlyBitVector()
+        if (parsed.getFastRank() || parsed.getLabelPostings() || parsed.getMutable() || parsed.getEnableOnlyBitVector()
                 || parsed.getDistanceMetric().isPresent() || parsed.getSorting().isPresent()
                 || !parsed.getAliases().isEmpty()) {
             throw new IllegalArgumentException("For schema '" + schema.getName() +

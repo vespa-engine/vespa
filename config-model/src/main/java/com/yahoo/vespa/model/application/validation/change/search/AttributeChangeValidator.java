@@ -113,6 +113,7 @@ public class AttributeChangeValidator {
                 validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
                 validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
                 validateAttributePredicate(id, current, next, Attribute::isPaged, "paged", result);
+                validateAttributePredicate(id, current, next, Attribute::isLabelPostings, "label-postings", result);
                 validatePagedAttributeRemoval(current, next);
                 validateAttributeProperty(id, current, next, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributePredicate(id, current, next, Attribute::isEnabledOnlyBitVector, "rank: filter", result);

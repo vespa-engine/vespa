@@ -43,6 +43,9 @@ public class PagedAttributeValidator extends Processor {
     }
 
     private void validatePagedSetting(Field field, Attribute attribute) {
+        if (attribute.isLabelPostings()) {
+            fail(schema, field, "The 'paged' attribute setting is not supported together with 'label-postings'");
+        }
         if (!isSupportedType(attribute)) {
             fail(schema, field, "The 'paged' attribute setting is not supported for fast-rank tensor and predicate types");
         }

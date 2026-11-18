@@ -59,6 +59,7 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean fastAccess = false;
     private boolean mutable = false;
     private boolean paged = false;
+    private boolean labelPostings = false;
     private int arity = BooleanIndexDefinition.DEFAULT_ARITY;
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
@@ -199,6 +200,7 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isFastRank()            {  return fastRank; }
     public boolean isFastAccess()           { return fastAccess; }
     public boolean isPaged()                { return paged; }
+    public boolean isLabelPostings()        { return labelPostings; }
     public boolean isPosition()             { return isPosition; }
     public boolean isMutable()              { return mutable; }
     public boolean isQuantized()            { return quantizationParams.isPresent(); }
@@ -238,6 +240,19 @@ public final class Attribute implements Cloneable, Serializable {
         for (var dim : tt.dimensions()) {
             if (dim.isMapped()) {
                 this.fastRank = value;
+                return;
+            }
+        }
+        throw badGen.get();
+    }
+    public void setLabelPostings(boolean value) {
+        Supplier<IllegalArgumentException> badGen = () ->
+                new IllegalArgumentException(this + " does not support 'label-postings'. " +
+                                             "Only supported for tensor types with at least one mapped dimension");
+        var tt = tensorType.orElseThrow(badGen);
+        for (var dim : tt.dimensions()) {
+            if (dim.isMapped()) {
+                this.labelPostings = value;
                 return;
             }
         }
@@ -392,7 +407,7 @@ public final class Attribute implements Cloneable, Serializable {
     public int hashCode() {
         return Objects.hash(
                 name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
-                createIfNonExistent, isPosition, mutable, paged, enableOnlyBitVector,
+                createIfNonExistent, isPosition, mutable, paged, labelPostings, enableOnlyBitVector,
                 tensorType, referenceDocumentType, distanceMetric, hnswIndexParams, quantizationParams);
     }
 
@@ -415,6 +430,7 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.fastSearch != other.fastSearch) return false;
         if (this.mutable != other.mutable) return false;
         if (this.paged != other.paged) return false;
+        if (this.labelPostings != other.labelPostings) return false;
         if (! this.sorting.equals(other.sorting)) return false;
         if (! Objects.equals(dictionary, other.dictionary)) return false;
         if (! Objects.equals(tensorType, other.tensorType)) return false;

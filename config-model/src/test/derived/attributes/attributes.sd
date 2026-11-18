@@ -107,6 +107,14 @@ schema attributes {
       attribute: fast-rank
     }
 
+    field a14 type tensor(x{}) {
+      indexing: attribute
+      attribute {
+        fast-rank
+        label-postings
+      }
+    }
+
   }
 
   field a7_arr type array<string> {

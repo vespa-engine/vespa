@@ -20,6 +20,7 @@ public class ParsedAttribute extends ParsedBlock {
     private boolean enableFastSearch = false;
     private boolean enableMutable = false;
     private boolean enablePaged = false;
+    private boolean enableLabelPostings = false;
     private final Map<String, String> aliases = new LinkedHashMap<>();
     private ParsedSorting sortSettings = null;
     private String distanceMetric = null;
@@ -38,6 +39,7 @@ public class ParsedAttribute extends ParsedBlock {
     boolean getFastSearch() { return this.enableFastSearch; }
     boolean getMutable() { return this.enableMutable; }
     boolean getPaged() { return this.enablePaged; }
+    boolean getLabelPostings() { return this.enableLabelPostings; }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
 
     public void addAlias(String from, String to) {
@@ -61,6 +63,7 @@ public class ParsedAttribute extends ParsedBlock {
     public void setFastSearch(boolean value) { this.enableFastSearch = value; }
     public void setMutable(boolean value) { this.enableMutable = value; }
     public void setPaged(boolean value) { this.enablePaged = value; }
+    public void setLabelPostings(boolean value) { this.enableLabelPostings = value; }
 
     public void setQuantization(ParsedQuantization quantization) {
         verifyThat(this.quantization == null, "already has quantization");

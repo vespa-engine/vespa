@@ -218,6 +218,9 @@ public class AttributeFields extends Derived {
         if (attribute.isPaged()) {
             aaB.paged(true);
         }
+        if (attribute.isLabelPostings()) {
+            aaB.labelpostings(true);
+        }
         if (attribute.getSorting().isDescending()) {
             aaB.sortascending(false);
         }
