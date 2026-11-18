@@ -10,10 +10,16 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
 
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <latch>
 #include <map>
+#include <mutex>
 
 using namespace search;
 using CompressionConfig = vespalib::compression::CompressionConfig;
+using namespace std::chrono_literals;
 
 document::DocumentTypeRepo repo;
 
@@ -105,9 +111,80 @@ std::unique_ptr<document::DocumentTypeRepo> make_test_repo() {
     return std::make_unique<document::DocumentTypeRepo>(builder.config());
 }
 
-std::unique_ptr<document::Document> make_test_doc(const document::DocumentTypeRepo& test_repo) {
+std::unique_ptr<document::Document> make_test_doc(const document::DocumentTypeRepo& test_repo,
+                                                  const char*                       id = "id:ns:test::1") {
     return std::make_unique<document::Document>(test_repo, *test_repo.getDocumentType("test"),
-                                                document::DocumentId("id:ns:test::1"));
+                                                document::DocumentId(id));
+}
+
+/*
+ * Memory data store that can block a read after it has fetched its data, so that the
+ * document can be rewritten while the read is about to populate the cache.
+ */
+struct BlockingDataStore : NullDataStore {
+    mutable std::mutex                    _mutex;
+    std::map<uint32_t, std::vector<char>> _docs;
+    mutable std::atomic<bool>             _block_next_read{false};
+    mutable std::latch                    _read_fetched{1};
+    mutable std::latch                    _release_read{1};
+    ~BlockingDataStore() override;
+    ssize_t read(uint32_t lid, vespalib::DataBuffer& buffer) const override {
+        ssize_t len = 0;
+        {
+            std::lock_guard guard(_mutex);
+            auto            itr = _docs.find(lid);
+            if (itr != _docs.end()) {
+                buffer.writeBytes(itr->second.data(), itr->second.size());
+                len = itr->second.size();
+            }
+        }
+        if (_block_next_read.exchange(false)) {
+            _read_fetched.count_down();
+            _release_read.wait();
+        }
+        return len;
+    }
+    void write(uint64_t, uint32_t lid, const void* buffer, size_t sz) override {
+        auto*           data = static_cast<const char*>(buffer);
+        std::lock_guard guard(_mutex);
+        _docs[lid].assign(data, data + sz);
+    }
+};
+
+BlockingDataStore::~BlockingDataStore() = default;
+
+/*
+ * A read (e.g. docsum) fetches the old document from the backing store, and the document
+ * is rewritten before that read has populated the cache. The rewrite must not leave
+ * the old document in the cache, since later reads for updates and moves trust it.
+ */
+void verify_rewrite_racing_with_read_does_not_leave_stale_cache_entry(
+    DocumentStore::Config::UpdateStrategy strategy) {
+    auto                  test_repo = make_test_repo();
+    DocumentStore::Config config(CompressionConfig::NONE, 100000);
+    config.updateStrategy(strategy);
+    BlockingDataStore backing_store;
+    DocumentStore     store(config, backing_store);
+    store.write(1, 1, *make_test_doc(*test_repo, "id:ns:test::old"));
+    EXPECT_EQ(0u, store.getCacheStats().elements);
+
+    backing_store._block_next_read = true;
+    auto reader = std::async(std::launch::async, [&] { return store.read(1, *test_repo); });
+    backing_store._read_fetched.wait();
+    auto writer =
+        std::async(std::launch::async, [&] { store.write(2, 1, *make_test_doc(*test_repo, "id:ns:test::new")); });
+    // The write must not complete its cache maintenance before the read has populated
+    // the cache. Give it the chance to (wrongly) complete first, which is the race being tested.
+    (void)writer.wait_for(50ms);
+    backing_store._release_read.count_down();
+    auto old_doc = reader.get();
+    ASSERT_TRUE(old_doc);
+    EXPECT_EQ("id:ns:test::old", old_doc->getId().toString());
+    writer.get();
+
+    auto doc = store.read(1, *test_repo);
+    ASSERT_TRUE(doc);
+    EXPECT_EQ("id:ns:test::new", doc->getId().toString());
 }
 
 } // namespace
@@ -165,6 +242,14 @@ TEST(DocumentStoreTest, require_that_move_works_when_cache_is_disabled) {
     store.remove(3, 2);
     EXPECT_TRUE(store.read(1, *test_repo));
     EXPECT_EQ(2u, backing_store._reads);
+}
+
+TEST(DocumentStoreTest, require_that_invalidating_rewrite_racing_with_read_does_not_leave_stale_cache_entry) {
+    verify_rewrite_racing_with_read_does_not_leave_stale_cache_entry(DocumentStore::Config::INVALIDATE);
+}
+
+TEST(DocumentStoreTest, require_that_updating_rewrite_racing_with_read_does_not_leave_stale_cache_entry) {
+    verify_rewrite_racing_with_read_does_not_leave_stale_cache_entry(DocumentStore::Config::UPDATE);
 }
 
 TEST(DocumentStoreTest, require_that_DocumentStore_Config_equality_operator_detects_inequality) {

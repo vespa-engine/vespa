@@ -199,9 +199,8 @@ void DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::n
             _cache->invalidate(lid);
             break;
         case Config::UpdateStrategy::UPDATE:
-            if (_cache->hasKey(lid)) {
-                _cache->updated(lid);
-            }
+            // This will check hasKey() and update the cache if appropriate:
+            _cache->updated(lid);
             break;
         }
         _visitCache->invalidate(lid); // The cost and complexity of this updating this is not worth it.

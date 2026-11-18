@@ -200,7 +200,11 @@ template <typename P> void cache<P>::trim_segments() {
 }
 
 template <typename P> void cache<P>::invalidate(const K& key) {
-    UniqueLock guard(_hashLock);
+    // Take the store lock to serialize with a read() that has fetched a value from the
+    // backing store but not yet inserted it. Otherwise this could run in between and
+    // leave a stale value in the cache.
+    std::lock_guard storeGuard(getLock(key));
+    UniqueLock      guard(_hashLock);
     invalidate(guard, key);
 }
 
@@ -414,6 +418,14 @@ template <typename P> void cache<P>::write(const K& key, V value) {
 template <typename P> void cache<P>::updated(const K& key) {
     V               value;
     std::lock_guard storeGuard(getLock(key));
+    {
+        // Checked under the store lock, so a concurrent read() has either inserted its
+        // value already, or will read the updated value from the backing store.
+        UniqueLock guard(_hashLock);
+        if (!hasKey(guard, key)) {
+            return;
+        }
+    }
     if (_store.read(key, value)) {
         std::lock_guard guard(_hashLock);
         if (_probationary_segment.try_update(key, value)) {
@@ -422,13 +434,17 @@ template <typename P> void cache<P>::updated(const K& key) {
             increment_stat(_update, guard);
         }
     } else {
-        invalidate(key);
+        UniqueLock guard(_hashLock);
+        invalidate(guard, key);
     }
 }
 
 template <typename P> void cache<P>::erase(const K& key) {
     std::lock_guard storeGuard(getLock(key));
-    invalidate(key);
+    {
+        UniqueLock guard(_hashLock);
+        invalidate(guard, key);
+    }
     _store.erase(key);
 }
 

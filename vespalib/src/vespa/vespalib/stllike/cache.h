@@ -292,6 +292,9 @@ public:
     void erase(const K& key);
     /**
      * This simply erases the object from the cache.
+     * Takes the per-key store lock, so it is ordered with respect to a concurrent read()
+     * that is filling the cache from the backing store. Call it after updating the
+     * backing store to guarantee that no stale value remains cached.
      */
     void invalidate(const K& key);
 
@@ -329,6 +332,9 @@ public:
 
     /**
      * Notify the cache that value was updated in the backing store.
+     * If the key is cached, its value is refreshed from the backing store; otherwise
+     * this is a no-op and the backing store is not read. Like invalidate(), this takes
+     * the per-key store lock, so a concurrent read() cannot leave a stale value cached.
      */
     void updated(const K& key);
 

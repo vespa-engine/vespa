@@ -4,11 +4,17 @@
 
 #include <vespa/vespalib/stllike/cache.hpp>
 
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <latch>
 #include <map>
+#include <mutex>
 #include <string>
 
 using namespace vespalib;
 using namespace ::testing;
+using namespace std::chrono_literals;
 
 template <typename K, typename V> class Map : public std::map<K, V> {
     using M = std::map<K, V>;
@@ -317,6 +323,100 @@ TEST_F(CacheTest, fetching_element_moves_it_to_head_of_lru_list) {
     EXPECT_TRUE(cache.hasKey(5));
     EXPECT_TRUE(cache.hasKey(3));
     EXPECT_TRUE(cache.hasKey(4));
+}
+
+/*
+ * Backing store that can block a read after it has fetched its value, so that the
+ * backing store can be updated while the read is about to populate the cache.
+ */
+struct BlockingStore {
+    mutable std::mutex                mutex;
+    std::map<uint32_t, padded_string> map;
+    mutable std::atomic<bool>         block_next_read{false};
+    mutable std::latch                read_fetched{1};
+    mutable std::latch                release_read{1};
+    mutable std::atomic<size_t>       reads{0};
+
+    bool read(const uint32_t& k, padded_string& v) const {
+        ++reads;
+        bool found;
+        {
+            std::lock_guard guard(mutex);
+            auto            itr = map.find(k);
+            found = (itr != map.end());
+            if (found) {
+                v = itr->second;
+            }
+        }
+        if (block_next_read.exchange(false)) {
+            read_fetched.count_down();
+            release_read.wait();
+        }
+        return found;
+    }
+    void write(const uint32_t& k, const padded_string& v) {
+        std::lock_guard guard(mutex);
+        map[k] = v;
+    }
+    void erase(const uint32_t& k) {
+        std::lock_guard guard(mutex);
+        map.erase(k);
+    }
+};
+
+struct ConcurrentBackingStoreUpdateTest : Test {
+    BlockingStore                       store;
+    cache<CacheParam<P, BlockingStore>> _cache;
+    ConcurrentBackingStoreUpdateTest() : store(), _cache(store, -1) {}
+    ~ConcurrentBackingStoreUpdateTest() override;
+
+    /*
+     * Let a read() fetch "old" from the backing store, then update the backing store to
+     * "new" and notify the cache (as DocumentStore does) before the read has inserted
+     * "old" into the cache.
+     */
+    template <typename Notify> void race_read_with_backing_store_update(Notify notify) {
+        store.write(1, "old");
+        store.block_next_read = true;
+        auto reader = std::async(std::launch::async, [this] { return _cache.read(1); });
+        store.read_fetched.wait();
+        store.write(1, "new");
+        auto notifier = std::async(std::launch::async, notify);
+        // The notification must not complete before the read has populated the cache.
+        // Give it the chance to (wrongly) complete first, which is the race being tested.
+        (void)notifier.wait_for(50ms);
+        store.release_read.count_down();
+        EXPECT_EQ(reader.get(), "old");
+        notifier.get();
+    }
+};
+
+ConcurrentBackingStoreUpdateTest::~ConcurrentBackingStoreUpdateTest() = default;
+
+TEST_F(ConcurrentBackingStoreUpdateTest, invalidate_does_not_leave_stale_value_from_concurrent_read) {
+    race_read_with_backing_store_update([this] { _cache.invalidate(1); });
+    EXPECT_FALSE(_cache.hasKey(1));
+    EXPECT_EQ(_cache.read(1), "new");
+}
+
+TEST_F(ConcurrentBackingStoreUpdateTest, updated_does_not_leave_stale_value_from_concurrent_read) {
+    race_read_with_backing_store_update([this] { _cache.updated(1); });
+    EXPECT_TRUE(_cache.hasKey(1));
+    EXPECT_EQ(_cache.read(1), "new");
+}
+
+TEST_F(ConcurrentBackingStoreUpdateTest, updated_does_not_read_backing_store_for_uncached_key) {
+    store.write(1, "a");
+    _cache.updated(1);
+    EXPECT_EQ(store.reads, 0u);
+    EXPECT_FALSE(_cache.hasKey(1));
+    EXPECT_EQ(_cache.read(1), "a");
+    EXPECT_EQ(store.reads, 1u);
+    store.write(1, "b");
+    _cache.updated(1);
+    EXPECT_EQ(store.reads, 2u);
+    EXPECT_EQ(_cache.read(1), "b");
+    EXPECT_EQ(store.reads, 2u);
 }
 
 struct SlruCacheTest : CacheTest {
