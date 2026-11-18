@@ -10,6 +10,9 @@ import java.util.List;
  */
 public interface Provisioner {
 
+    /** Prepares allocation of a list of clusters in anticipation of subsequent prepares with the same arguments. */
+    default void earlyPrepare(ApplicationId applicationId, List<ClusterSpec> clusters, ProvisionContext context) {}
+
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
      *

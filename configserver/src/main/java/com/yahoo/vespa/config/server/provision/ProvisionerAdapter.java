@@ -38,6 +38,11 @@ public class ProvisionerAdapter implements HostProvisioner {
     }
 
     @Override
+    public void earlyPrepare(List<ClusterSpec> clusters, ProvisionContext context) {
+        provisioner.earlyPrepare(applicationId, clusters, context);
+    }
+
+    @Override
     public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
         return provisioner.prepare(applicationId, cluster, context);
     }

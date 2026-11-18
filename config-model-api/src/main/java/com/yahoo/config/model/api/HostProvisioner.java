@@ -24,6 +24,12 @@ public interface HostProvisioner {
     }
 
     /**
+     * Prepares allocation of a list of clusters in anticipation of subsequent prepares.
+     * This can be used to e.g. spawn provisioning in parallel to save overall time.
+     */
+    default void earlyPrepare(List<ClusterSpec> clusters, ProvisionContext context) {}
+
+    /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
      *
      * @param  cluster the cluster to allocate nodes to

@@ -10,6 +10,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
@@ -167,15 +168,18 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Iterable<ConfigMod
                                      Function<Element, ConfigModelContext> serviceContextFactory, DeployState deployState) {
         if (!deployState.getProperties().earlyProvisioning()) return;
 
+        var allocationRequests = new ArrayList<ClusterSpec>();
         for (ModelNode node : modelNodesInOrder) {
             List<Element> elements = model2Element.get(node.builder);
             for (Element servicesElement : elements) {
                 ConfigModelContext context = serviceContextFactory.apply(servicesElement);
                 // TODO: Override collectAllocationRequests() in ConfigModelBuilder subclasses that
-                //  implement method for various builders, and use the return value to provision hosts
-                List<ConfigModelBuilder.AllocationRequest> requests = node.builder.collectAllocationRequests(context, servicesElement);
+                //  implement method for various builders
+                allocationRequests.addAll(node.builder.collectAllocationRequests(servicesElement, context));
             }
         }
+
+        deployState.getProvisioner().earlyPrepare(allocationRequests, deployState.provisionContext());
     }
 
     private void doBuildModels(List<ModelNode> modelNodesInOrder, Map<ConfigModelBuilder, List<Element>> model2Element,

@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.HostResource;
@@ -85,21 +84,17 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
      * Collect the allocation requests that would have been done in {@link #doBuildAdmin(DeployState, Admin, Element) doBuildAdmin()}.
      * WARNING: Keep them in sync.
      */
-    public List<ConfigModelBuilder.AllocationRequest> collectAllocationRequests(Element adminElement) {
-        var allocationRequests = new ArrayList<ConfigModelBuilder.AllocationRequest>();
-        ModelElement adminModelElement = new ModelElement(adminElement);
+    public List<ClusterSpec> collectAllocationRequests(Element adminElement) {
+        var adminModelElement = new ModelElement(adminElement);
+        var allocationRequests = new ArrayList<ClusterSpec>();
 
         NodesSpecification slobroks = slobroksNodeSpecification(adminModelElement.child("slobroks"));
-        if (slobroks.isDedicated()) {
-            ClusterSpec clusterSpec = setClusterSpecOn(slobroks, SLOBROKS_CLUSTER_ID).cluster();
-            allocationRequests.add(new ConfigModelBuilder.AllocationRequest(clusterSpec, context.getDeployState().provisionContext()));
-        }
+        if (slobroks.isDedicated())
+            allocationRequests.add(setClusterSpecOn(slobroks, SLOBROKS_CLUSTER_ID).cluster());
 
         NodesSpecification logservers = logserverNodeSpecification(adminModelElement.child("logservers"));
-        if (logservers.isDedicated()) {
-            ClusterSpec clusterSpec = setClusterSpecOn(logservers, LOGSERVER_CLUSTER_ID).cluster();
-            allocationRequests.add(new ConfigModelBuilder.AllocationRequest(clusterSpec, context.getDeployState().provisionContext()));
-        }
+        if (logservers.isDedicated())
+            allocationRequests.add(setClusterSpecOn(logservers, LOGSERVER_CLUSTER_ID).cluster());
 
         return allocationRequests;
     }
