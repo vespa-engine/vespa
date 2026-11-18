@@ -24,15 +24,22 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static ai.vespa.triton.TritonOnnxRuntime.intraOpThreadsForSeparateSessions;
 import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
@@ -48,6 +55,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -701,6 +710,55 @@ class TritonOnnxRuntimeDefaultsTest {
         // A missing output is left to the caller, which reports it
         assertDoesNotThrow(() -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true,
                                                          Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "no_such_output", "attention_mask"))));
+    }
+
+    @Test
+    void retry_after_a_model_reload_gets_only_the_time_left() {
+        var client = mock(TritonOnnxClient.class);
+        var metadata = new TritonOnnxClient.ModelMetadata(Map.of(), Map.of());
+        when(client.getModelMetadata(any())).thenReturn(metadata);
+        when(client.evaluate(eq("model_1"), any(), any(), any(Duration.class)))
+                .thenThrow(new TritonOnnxClient.TritonException("Model is not ready"))
+                .thenReturn(Map.of());
+        doAnswer(invocation -> { Thread.sleep(100); return null; }).when(client).loadUntilModelReady("model_1");
+        var evaluator = new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true, Optional.empty());
+
+        evaluator.evaluate(Map.of(), Duration.ofSeconds(10));
+
+        var timeouts = ArgumentCaptor.forClass(Duration.class);
+        verify(client, times(2)).evaluate(eq("model_1"), any(), any(), timeouts.capture());
+        assertEquals(Duration.ofSeconds(10), timeouts.getAllValues().get(0));
+        var retryTimeout = timeouts.getAllValues().get(1);
+        assertTrue(retryTimeout.compareTo(Duration.ofSeconds(10).minusMillis(100)) <= 0,
+                   "The reload used part of the timeout, leaving " + retryTimeout);
+    }
+
+    @Test
+    void evaluation_without_a_timeout_logs_one_warning_per_model() {
+        var client = mock(TritonOnnxClient.class);
+        when(client.getModelMetadata(any())).thenReturn(new TritonOnnxClient.ModelMetadata(Map.of(), Map.of()));
+        TritonOnnxEvaluator.modelsWarnedAboutMissingTimeout.clear();
+        var warnings = new ArrayList<String>();
+        var handler = new Handler() {
+            @Override public void publish(LogRecord record) {
+                if (record.getLevel() == Level.WARNING) warnings.add(record.getMessage());
+            }
+            @Override public void flush() { }
+            @Override public void close() { }
+        };
+        var logger = Logger.getLogger(TritonOnnxEvaluator.class.getName());
+        logger.addHandler(handler);
+        try {
+            new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of());
+            new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of());
+            new TritonOnnxEvaluator("model_2", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of());
+            new TritonOnnxEvaluator("model_3", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of(), (Duration) null);
+        } finally {
+            logger.removeHandler(handler);
+        }
+        assertEquals(List.of("ONNX model model_1 is evaluated without a timeout",
+                             "ONNX model model_2 is evaluated without a timeout"),
+                     warnings);
     }
 
     @Test

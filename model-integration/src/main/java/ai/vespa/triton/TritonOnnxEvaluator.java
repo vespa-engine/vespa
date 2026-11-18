@@ -8,9 +8,12 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +25,9 @@ import java.util.logging.Logger;
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
+
+    // Shared by all evaluators, so that a model gets one warning however many evaluators it has
+    static final Set<String> modelsWarnedAboutMissingTimeout = ConcurrentHashMap.newKeySet();
 
     private final String modelName;
     private final ResourceReference modelReference;
@@ -57,12 +63,25 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     }
 
     @Override
+    public Tensor evaluate(Map<String, Tensor> inputs, String output) {
+        warnOnceAboutMissingTimeout();
+        return evaluate(inputs, output, null);
+    }
+
+    @Override
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+        warnOnceAboutMissingTimeout();
+        return evaluate(inputs, (Duration) null);
+    }
+
+    @Override
     public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
         return evaluate(inputs, timeout).get(output);
     }
 
     @Override
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
+        Instant deadline = timeout == null ? null : Instant.now().plus(timeout);
         try {
             return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
         } catch (TritonOnnxClient.TritonException e) {
@@ -76,7 +95,17 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     e);
             tritonClient.loadUntilModelReady(modelName);
             modelMetadata = tritonClient.getModelMetadata(modelName);
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeLeft(deadline));
+        }
+    }
+
+    private static Duration timeLeft(Instant deadline) {
+        return deadline == null ? null : Duration.between(Instant.now(), deadline);
+    }
+
+    private void warnOnceAboutMissingTimeout() {
+        if (modelsWarnedAboutMissingTimeout.add(modelName)) {
+            log.warning("ONNX model " + modelName + " is evaluated without a timeout");
         }
     }
 

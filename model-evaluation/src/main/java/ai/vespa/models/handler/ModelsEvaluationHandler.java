@@ -22,6 +22,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
 
@@ -87,8 +90,14 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         }
     }
 
+    private Instant deadlineOf(HttpRequest request) {
+        Long timeLeft = request.getJDiscRequest().timeRemaining(TimeUnit.MILLISECONDS);
+        return Instant.now().plus(timeLeft != null ? Duration.ofMillis(timeLeft) : getTimeout());
+    }
+
     private HttpResponse evaluateModel(HttpRequest request, Model model, String[] function)  {
         FunctionEvaluator evaluator = model.evaluatorOf(function);
+        evaluator.setDeadline(deadlineOf(request));
 
         property(request, missingValueKey).ifPresent(missingValue -> evaluator.setMissingValue(Tensor.from(missingValue)));
 

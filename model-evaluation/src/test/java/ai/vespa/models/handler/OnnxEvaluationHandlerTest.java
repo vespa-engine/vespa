@@ -3,6 +3,7 @@ package ai.vespa.models.handler;
 
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import ai.vespa.models.evaluation.TimeoutRecordingRuntime;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
@@ -18,6 +19,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 public class OnnxEvaluationHandlerTest {
@@ -121,8 +124,28 @@ public class OnnxEvaluationHandlerTest {
         handler.assertResponse(url, properties, 200, expected);
     }
 
-    @SuppressWarnings("deprecation")
+    @Test
+    public void testEvaluationGetsTheTimeLeftOfTheRequest() {
+        var runtime = new TimeoutRecordingRuntime(OnnxRuntime.testInstance());
+        var handler = new HandlerTester(createModels(runtime));
+        Map<String, String> properties = new HashMap<>();
+        properties.put("input1", "tensor<float>(d0[1]):[2]");
+        properties.put("input2", "tensor<float>(d0[1]):[3]");
+        String url = "http://localhost/model-evaluation/v1/add_mul/output1/eval";
+        handler.assertResponse(url, properties, 200, Tensor.from("tensor<float>(d0[1]):[6]"));
+        assertEquals(1, runtime.timeouts.size());
+        var timeout = runtime.timeouts.get(0);
+        assertTrue("A request without a timeout gets the timeout of the handler: " + timeout,
+                   timeout.compareTo(handler.handlerTimeout()) <= 0 &&
+                   timeout.compareTo(handler.handlerTimeout().minusSeconds(10)) > 0);
+    }
+
     static private ModelsEvaluator createModels() {
+        return createModels(OnnxRuntime.testInstance());
+    }
+
+    @SuppressWarnings("deprecation")
+    static private ModelsEvaluator createModels(OnnxRuntime runtime) {
         RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
         RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));
         RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId("ranking-expressions.cfg"));
@@ -134,7 +157,7 @@ public class OnnxEvaluationHandlerTest {
         }
         FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
 
-        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer);
+        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, runtime);
     }
 
     private static String fileConfigId(String filename) {

@@ -9,23 +9,16 @@ import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
-import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import static com.yahoo.searchlib.rankingexpression.Reference.RANKING_EXPRESSION_WRAPPER;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An array context supporting functions invocations implemented as lazy values.
@@ -36,6 +29,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     private final ExpressionFunction function;
     private final IndexedBindings indexedBindings;
+    private Instant deadline = null;
 
     private LazyArrayContext(ExpressionFunction function, IndexedBindings indexedBindings) {
         this.function = function;
@@ -145,6 +139,14 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     /** Returns the value which should be used when no value is set */
     public Value defaultValue() {
         return indexedBindings.missingValue;
+    }
+
+    /** Sets the time by which ONNX models in this context must be evaluated, or null for no deadline. */
+    void setDeadline(Instant deadline) { this.deadline = deadline; }
+
+    /** Returns the time left until the deadline of this, which is negative after it, or null if this has no deadline. */
+    Duration timeLeft() {
+        return deadline == null ? null : Duration.between(Instant.now(), deadline);
     }
 
     /**

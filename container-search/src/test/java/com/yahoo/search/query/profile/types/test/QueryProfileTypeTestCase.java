@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext.Deadline;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -483,6 +485,128 @@ public class QueryProfileTypeTestCase {
         assertEquals(0, query.errors().size());
         assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
         assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+    }
+
+    @Test
+    void testEmbedderOfTypedFieldGetsTheDeadlineOfTheQuery() {
+        var embedder = new DeadlineRecordingEmbedder();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
+                                "?" + urlEncode("ranking.features.query(myTensor4)") + "=" + urlEncode("embed(text)") +
+                                "&timeout=1234ms",
+                                com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setQueryProfile(cRegistry.getComponent("test"))
+                .setEmbedders(Map.of("emb1", embedder))
+                .build();
+        assertEquals(0, query.errors().size());
+        assertEquals(Instant.ofEpochMilli(query.getStartTime() + 1234), embedder.deadline);
+    }
+
+    @Test
+    void testEmbedderOfTypedFieldGetsTheDeadlineOfATimeoutInAnyCase() {
+        var embedder = new DeadlineRecordingEmbedder();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
+                                "?" + urlEncode("ranking.features.query(myTensor4)") + "=" + urlEncode("embed(text)") +
+                                "&Timeout=1234ms",
+                                com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setQueryProfile(cRegistry.getComponent("test"))
+                .setEmbedders(Map.of("emb1", embedder))
+                .build();
+        assertEquals(0, query.errors().size());
+        assertEquals(1234, query.getTimeout());
+        assertEquals(Instant.ofEpochMilli(query.getStartTime() + 1234), embedder.deadline);
+    }
+
+    @Test
+    void testEmbedderOfTypedFieldGetsTheDeadlineOfAnUnoverridableTimeout() {
+        var embedder = new DeadlineRecordingEmbedder();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        profile.set("timeout", "2345ms", registry);
+        profile.setOverridable("timeout", false, (Map<String, String>) null);
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
+                                "?" + urlEncode("ranking.features.query(myTensor4)") + "=" + urlEncode("embed(text)") +
+                                "&timeout=1234ms",
+                                com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setQueryProfile(cRegistry.getComponent("test"))
+                .setEmbedders(Map.of("emb1", embedder))
+                .build();
+        assertEquals(2345, query.getTimeout());
+        assertEquals(Instant.ofEpochMilli(query.getStartTime() + 2345), embedder.deadline);
+    }
+
+    @Test
+    void testEmbedderOfRankFeatureInTheFeaturesTypeGetsTheDeadlineOfTheQuery() {
+        var typeRegistry = registry.getTypeRegistry();
+        var features = new QueryProfileType(new ComponentId("features"));
+        features.addField(new FieldDescription("query(myTensor)", FieldType.fromString("tensor<float>(x[5])", typeRegistry)), typeRegistry);
+        typeRegistry.register(features);
+        QueryProfile profile = new QueryProfile("test");
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        var embedder = new DeadlineRecordingEmbedder();
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest("?timeout=1234ms",
+                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setQueryProfile(cRegistry.getComponent("test"))
+                .setEmbedders(Map.of("emb1", embedder))
+                .build();
+
+        query.properties().set("ranking.features.query(myTensor)", "embed(text)");
+        assertEquals(Instant.ofEpochMilli(query.getStartTime() + 1234), embedder.deadline);
+    }
+
+    @Test
+    void testEmbedderOfTypedFieldGetsTheCurrentDeadlineOfTheQuery() {
+        var typeRegistry = registry.getTypeRegistry();
+        var type = new QueryProfileType(new ComponentId("tensorFieldType"));
+        type.addField(new FieldDescription("myTensor", FieldType.fromString("tensor<float>(x[5])", typeRegistry)), typeRegistry);
+        typeRegistry.register(type);
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(type);
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        var embedder = new DeadlineRecordingEmbedder();
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest("?timeout=1234ms",
+                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setQueryProfile(cRegistry.getComponent("test"))
+                .setEmbedders(Map.of("emb1", embedder))
+                .build();
+
+        query.setTimeout(5000);
+        query.properties().set("myTensor", "embed(text)");
+        assertEquals(Instant.ofEpochMilli(query.getStartTime() + 5000), embedder.deadline);
+
+        Query clone = query.clone();
+        clone.setTimeout(7000);
+        clone.properties().set("myTensor", "embed(text)");
+        assertEquals(Instant.ofEpochMilli(clone.getStartTime() + 7000), embedder.deadline);
+    }
+
+    /** Records the deadline of the last embedding, and returns a zero tensor of the requested type. */
+    private static class DeadlineRecordingEmbedder implements Embedder {
+
+        Instant deadline = null;
+
+        @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+        @Override
+        public Tensor embed(String text, Context context, TensorType tensorType) {
+            deadline = context.getDeadline().map(Deadline::asInstant).orElse(null);
+            return Tensor.Builder.of(tensorType).build();
+        }
+
     }
 
     @Test

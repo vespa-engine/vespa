@@ -3,10 +3,13 @@ package com.yahoo.search.ranking;
 
 import com.yahoo.tensor.Tensor;
 
-import java.util.List;
+import java.time.Instant;
 
 interface Evaluator {
     Evaluator bind(String name, Tensor value);
+
+    /** Sets the time by which the ONNX models of this evaluator must be evaluated. */
+    Evaluator setDeadline(Instant deadline);
 
     double evaluateScore();
 }

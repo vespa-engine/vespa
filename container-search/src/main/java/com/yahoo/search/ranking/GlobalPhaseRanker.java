@@ -13,6 +13,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.data.access.helpers.MatchFeatureFilter;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -99,11 +100,13 @@ public class GlobalPhaseRanker {
 
     static Supplier<Evaluator> withQueryPrep(Supplier<Evaluator> evalSource, List<String> queryFeatures, Map<String, Tensor> defaultValues, Query query) {
         var prepared = PreparedInput.findFromQuery(query, queryFeatures, defaultValues);
+        var deadline = Instant.ofEpochMilli(query.getStartTime() + query.getTimeout());
         Supplier<Evaluator> supplier = () -> {
             var evaluator = evalSource.get();
             for (var entry : prepared) {
                 evaluator.bind(entry.name(), entry.value());
             }
+            evaluator.setDeadline(deadline);
             return evaluator;
         };
         return supplier;

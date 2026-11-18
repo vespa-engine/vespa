@@ -2,14 +2,9 @@
 package com.yahoo.search.ranking;
 
 import ai.vespa.models.evaluation.FunctionEvaluator;
-import com.yahoo.search.result.FeatureData;
-import com.yahoo.search.result.Hit;
 import com.yahoo.tensor.Tensor;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.Instant;
 import java.util.function.Supplier;
 
 class SimpleEvaluator implements Evaluator {
@@ -27,6 +22,12 @@ class SimpleEvaluator implements Evaluator {
     @Override
     public Evaluator bind(String name, Tensor value) {
         evaluator.bind(name, value);
+        return this;
+    }
+
+    @Override
+    public Evaluator setDeadline(Instant deadline) {
+        evaluator.setDeadline(deadline);
         return this;
     }
 

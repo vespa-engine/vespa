@@ -7,8 +7,10 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -101,6 +103,21 @@ public class FunctionEvaluator {
         return setMissingValue(Tensor.Builder.of(TensorType.empty).cell(value).build());
     }
 
+    /**
+     * Sets the time by which the ONNX models of this function must be evaluated.
+     * The evaluation of an ONNX model may fail with {@code com.yahoo.language.process.TimeoutException}
+     * when the deadline has passed.
+     *
+     * @param deadline the deadline, not null
+     * @return this for chaining
+     */
+    public FunctionEvaluator setDeadline(Instant deadline) {
+        if (evaluated)
+            throw new IllegalStateException("Cannot change the deadline of a used evaluator");
+        context.setDeadline(Objects.requireNonNull(deadline, "deadline"));
+        return this;
+    }
+
     public Tensor evaluate() {
         function.argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
                 .forEach(argument -> checkArgument(argument.getKey(), argument.getValue()));
@@ -134,7 +151,7 @@ public class FunctionEvaluator {
                 for (Map.Entry<String, TensorType> input: onnxModel.inputs().entrySet()) {
                     inputs.put(input.getKey(), context.get(input.getKey()).asTensor());
                 }
-                Tensor result = onnxModel.evaluate(inputs, outputName);
+                Tensor result = onnxModel.evaluate(inputs, outputName, context.timeLeft());
                 context.put(onnxFeature, new TensorValue(result));
             }
         }

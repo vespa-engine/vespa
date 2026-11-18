@@ -188,14 +188,15 @@ public final class OnnxPadder implements OnnxEvaluator {
         var paddingInfo = new PaddingInfo(length, largestBucket());
         Map<String, Tensor> unpaddedOutputs, paddedOutputs;
         try {
-            unpaddedOutputs = evaluator.evaluate(sample);
+            // The sample is not part of a request, so it has no deadline
+            unpaddedOutputs = evaluator.evaluate(sample, (Duration) null);
             // Do not unpad an output whose unbound second dimension is not the sequence length
             outputNamesToUnpad = unpaddedOutputs.entrySet().stream()
                                              .filter(output -> outputNamesToUnpad.contains(output.getKey()))
                                              .filter(output -> ((IndexedTensor) output.getValue()).shape()[1] == length)
                                              .map(Map.Entry::getKey)
                                              .collect(Collectors.toUnmodifiableSet());
-            paddedOutputs = unpad(evaluator.evaluate(pad(sample, paddingInfo)), paddingInfo);
+            paddedOutputs = unpad(evaluator.evaluate(pad(sample, paddingInfo), (Duration) null), paddingInfo);
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Not padding inputs of " + modelName + " to " + this + ": could not evaluate " +
                                    "a sample to verify that padding does not change its output", e);

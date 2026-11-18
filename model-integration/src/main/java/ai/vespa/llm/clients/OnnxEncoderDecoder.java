@@ -143,7 +143,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
                 encoderInputIdsName, input,
                 encoderAttentionMaskName, mask
         );
-        return encoder.evaluate(encoderInputs, encoderOutputName);
+        return encoder.evaluate(encoderInputs, encoderOutputName, null);
     }
 
     private IndexedTensor evaluateDecoder(Tensor input, Tensor encoderMask, Tensor encoderOutput) {
@@ -152,7 +152,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
                 decoderAttentionMaskName, encoderMask,  // yes, encoder's attention mask
                 decoderEncoderHiddenStateName, encoderOutput
         );
-        var output = decoder.evaluate(inputs, decoderOutputName);
+        var output = decoder.evaluate(inputs, decoderOutputName, null);
         if (!(output instanceof IndexedTensor indexedTensor)) {
             throw new IllegalArgumentException("Output of decoder model is not an 'IndexedTensor'");
         }
