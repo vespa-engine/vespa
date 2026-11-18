@@ -47,6 +47,7 @@ func (a *StandaloneContainer) configureOptions() {
 		logsDir := defaults.UnderVespaHome("logs/vespa")
 		zkLogFile := fmt.Sprintf("%s/zookeeper.%s", logsDir, svcName)
 		opts.AddOption("-Dzookeeper_log_file_prefix=" + zkLogFile)
+		opts.AddOption("-XX:-UseBASE64Intrinsics")
 	}
 }
 
