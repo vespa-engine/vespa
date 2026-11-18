@@ -41,6 +41,7 @@ func (cpc *ConfigProxyJvm) ConfigureOptions(configsources []string, userargs str
 	opts.AddOption("-XX:MaxJavaStackTraceDepth=1000")
 	opts.AddOption("-XX:-OmitStackTraceInFastThrow")
 	opts.AddOption("-XX:ActiveProcessorCount=2")
+	opts.AddOption("-XX:-UseBASE64Intrinsics")
 	opts.AddOption("-Dproxyconfigsources=" + strings.Join(configsources, ","))
 	opts.AddOption("-Djava.io.tmpdir=" + defaults.UnderVespaHome("var/tmp"))
 	if userargs != "" {
