@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "cache_read_context.h"
 #include "lrucache_map.h"
 
 #include <vespa/vespalib/util/memoryusage.h>
@@ -34,12 +35,6 @@ struct CacheParam : P {
     using BackingStore = B;
     using SizeK = sizeK;
     using SizeV = sizeV;
-};
-
-struct CacheReadContext {
-    bool use_no_populate = false;
-    bool found_in_cache = false;
-    bool was_protected = false;
 };
 
 enum class CacheSegment { Probationary, Protected };
@@ -206,7 +201,6 @@ protected:
 
 public:
     using key_type = K;
-    static constexpr CacheReadContext normal_cache_read() { return {}; }
 
     cache(BackingStore& backing_store, size_t max_probationary_bytes, size_t max_protected_bytes);
 
