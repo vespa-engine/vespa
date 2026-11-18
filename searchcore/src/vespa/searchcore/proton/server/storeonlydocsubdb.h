@@ -6,7 +6,7 @@
 #include "summaryadapter.h"
 #include "tlssyncer.h"
 
-#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -17,6 +17,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/util/varholder.h>
 
+#include <memory>
 #include <mutex>
 
 namespace proton {
@@ -116,12 +117,11 @@ public:
     };
 
 protected:
-    const DocTypeName                      _docTypeName;
-    const std::string                      _subName;
-    const std::string                      _baseDir;
-    BucketDBOwnerSP                        _bucketDB;
-    bucketdb::IBucketDBHandlerInitializer& _bucketDBHandlerInitializer;
-    IDocumentMetaStoreContext::SP          _metaStoreCtx;
+    const std::shared_ptr<const DocTypeAndSubDbName> _doc_type_and_subdb_name;
+    const std::string                                _baseDir;
+    BucketDBOwnerSP                                  _bucketDB;
+    bucketdb::IBucketDBHandlerInitializer&           _bucketDBHandlerInitializer;
+    IDocumentMetaStoreContext::SP                    _metaStoreCtx;
     // The following two serial numbers reflect state at program startup
     // and are used by replay logic.
     SerialNum             _flushedDocumentMetaStoreSerialNum;
@@ -185,8 +185,7 @@ public:
     ~StoreOnlyDocSubDB() override;
 
     uint32_t getSubDbId() const override { return _subDbId; }
-    std::string getName() const override { return _subName; }
-    [[nodiscard]] const DocTypeName& doc_type_name() const noexcept override;
+    [[nodiscard]] const std::shared_ptr<const DocTypeAndSubDbName>& doc_type_and_subdb_name() const noexcept override;
 
     std::unique_ptr<DocumentSubDbInitializer> createInitializer(const DocumentDBConfig& configSnapshot,
                                                                 SerialNum               configSerialNum,

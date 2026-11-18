@@ -22,11 +22,10 @@ using vespalib::make_string;
 
 namespace proton::documentmetastore {
 
-DocumentMetaStoreInitializer::DocumentMetaStoreInitializer(const std::string                  baseDir,
-                                                           const DocTypeName&                 doc_type_name_in,
-                                                           const std::string&                 subdb_name_in,
-                                                           std::shared_ptr<DocumentMetaStore> dms)
-    : _baseDir(baseDir), _doc_type_name(doc_type_name_in), _subdb_name(subdb_name_in), _dms(std::move(dms)) {
+DocumentMetaStoreInitializer::DocumentMetaStoreInitializer(
+    const std::string baseDir, std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
+    std::shared_ptr<DocumentMetaStore> dms)
+    : _baseDir(baseDir), _doc_type_and_subdb_name(std::move(doc_type_and_subdb_name_in)), _dms(std::move(dms)) {
 }
 
 namespace {
@@ -37,10 +36,11 @@ std::string failedMsg(const char* msg) {
 
 void DocumentMetaStoreInitializer::run() {
     auto tracer = get_tracer();
-    auto span =
-        tracer->StartSpan("Load documentmetastore",
-                          {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},
-                           {vespa_opentelemetry::span_attribute_names::subdb, _subdb_name}});
+    auto span = tracer->StartSpan(
+        "Load documentmetastore",
+        {{vespa_opentelemetry::span_attribute_names::document_type,
+          _doc_type_and_subdb_name->doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, _doc_type_and_subdb_name->subdb_name()}});
     auto          scope = tracer->WithActiveSpan(span);
     std::string   name = DocumentMetaStore::getFixedName();
     IndexMetaInfo info(_baseDir);
@@ -51,12 +51,12 @@ void DocumentMetaStoreInitializer::run() {
             _dms->setBaseFileName(attrFileName);
             CHECK(_dms->hasLoadData());
             vespalib::Timer stopWatch;
-            std::string document_type_and_subdb_name = std::format("{}.{}", _doc_type_name.getName(), _subdb_name);
+            std::string     document_type_and_subdb_name = _doc_type_and_subdb_name->combined_name();
 
             EventLogger::loadDocumentMetaStoreStart(document_type_and_subdb_name);
             MemoryUsageLogger::log("start load documentmetastore", document_type_and_subdb_name);
             if (!_dms->load()) {
-                throw IllegalStateException(failedMsg(_doc_type_name.getName().c_str()));
+                throw IllegalStateException(failedMsg(_doc_type_and_subdb_name->doc_type_name().getName().c_str()));
             } else {
                 _dms->commit(search::CommitParam(snap.syncToken, search::CommitParam::UpdateStats::SKIP));
             }

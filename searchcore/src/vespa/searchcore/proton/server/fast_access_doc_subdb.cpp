@@ -62,7 +62,7 @@ InitializerTask::SP FastAccessDocSubDB::createAttributeManagerInitializer(
     AllocStrategy         alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     IAttributeFactory::SP attrFactory = std::make_shared<AttributeFactory>();
     AttributeManager::SP  baseAttrMgr = std::make_shared<AttributeManager>(
-        _baseDir + "/attribute", _docTypeName, _subName, configSnapshot.getTuneFileDocumentDBSP()->_attr,
+        _baseDir + "/attribute", _doc_type_and_subdb_name, configSnapshot.getTuneFileDocumentDBSP()->_attr,
         _fileHeaderContext, _attribute_interlock, _writeService.field_writer(), _writeService.shared(), attrFactory,
         _hwInfo);
     return std::make_shared<AttributeManagerInitializer>(

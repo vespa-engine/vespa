@@ -201,7 +201,8 @@ CachedSelect::SP MyDocumentRetriever::parseSelect(const std::string&) const {
 MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store,
                  const std::shared_ptr<const DocumentTypeRepo>& repo, const DocTypeName& doc_type_name)
     : sub_db(std::make_unique<DummyDocumentSubDb>(std::move(bucket_db), SUBDB_ID)),
-      maintenance_sub_db(sub_db->getName(), sub_db->getSubDbId(), sub_db->getDocumentMetaStoreContext().getSP(),
+      maintenance_sub_db(sub_db->doc_type_and_subdb_name()->subdb_name(), sub_db->getSubDbId(),
+                         sub_db->getDocumentMetaStoreContext().getSP(),
                          std::make_shared<MyDocumentRetriever>(repo, store, doc_type_name),
                          std::make_shared<MyFeedView>(repo), &_pendingLidsForCommit) {
 }
