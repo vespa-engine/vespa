@@ -169,7 +169,7 @@ public final class Capacity {
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return from(min, max, groupSize, 1.0, false, true, Optional.empty(), CloudResourceTags.empty(), ClusterInfo.empty());
+        return from(min, max, groupSize, 1.0, false, true, CloudAccount.unspecified(), CloudResourceTags.empty(), ClusterInfo.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
@@ -180,30 +180,9 @@ public final class Capacity {
         return from(resources, required, canFail, NodeType.tenant, hostTTL);
     }
 
-    @Deprecated // TODO: Remove after September 2026
-    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
-                                Optional<CloudAccount> cloudAccount, ClusterInfo clusterInfo) {
-        return from(min, max, groupSize, 1.0, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
-    }
-
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 CloudAccount cloudAccount, ClusterInfo clusterInfo) {
         return from(min, max, groupSize, 1.0, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
-    }
-
-    @Deprecated // TODO: Remove after September 2026
-    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
-                                Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
-                                ClusterInfo clusterInfo) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, 1.0, cloudAccount.orElse(CloudAccount.unspecified()), cloudResourceTags, clusterInfo);
-    }
-
-    @Deprecated // TODO: Remove after September 2026
-    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, double maxCostFactor,
-                                boolean required, boolean canFail,
-                                Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
-                                ClusterInfo clusterInfo) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, maxCostFactor, cloudAccount.orElse(CloudAccount.unspecified()), cloudResourceTags, clusterInfo);
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, double maxCostFactor,
