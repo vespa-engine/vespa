@@ -17,16 +17,17 @@ void write(const std::string& path, uint32_t num_threads) {
     std::ofstream file;
     file.open(path);
     file << num_threads;
-    file.close();
 }
 
-uint32_t read(const std::string& path) {
+uint32_t read(const std::string& path, uint32_t fallback_value) {
     std::ifstream file;
     file.open(path);
     uint32_t result;
-    file >> result;
-    file.close();
-    return result;
+    if (file >> result) {
+        return result;
+    } else {
+        return fallback_value;
+    }
 }
 
 VESPA_THREAD_STACK_TAG(proton_initialize_executor)
@@ -43,7 +44,10 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo:
       _num_threads(std::min(cpu_info.cores(), configured_num_threads)),
       _threads() {
     if (std::filesystem::exists(_path)) {
-        _num_threads = read(_path.c_str());
+        // Handle possibly corrupted file:
+        // Use _num_threads as fallback if read fails, clamp successful read to _num_threads
+        uint32_t num_threads_from_file = read(_path.c_str(), _num_threads);
+        _num_threads = std::min(num_threads_from_file, _num_threads);
         _num_threads = std::max(1u, (_num_threads / 2));
         std::filesystem::remove(_path);
     }
