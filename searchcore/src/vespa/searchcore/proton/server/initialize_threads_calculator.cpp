@@ -43,14 +43,22 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo:
     : _path(base_dir + "/" + file_name),
       _num_threads(std::min(cpu_info.cores(), configured_num_threads)),
       _threads() {
+    // You are now playing "Vespa: The Rogue-Like".
+    // A new run begins.
+    // What is this? Our own headstone?
     if (std::filesystem::exists(_path)) {
-        // Handle possibly corrupted file:
-        // Use _num_threads as fallback if read fails, clamp successful read to _num_threads
-        uint32_t num_threads_from_file = read(_path.c_str(), _num_threads);
-        _num_threads = std::min(num_threads_from_file, _num_threads);
+        // The engraving on the headstone is hard to decipher.
+        uint32_t num_threads_from_file = read(_path.c_str(), _num_threads); // _num_threads as fallback
+        _num_threads = std::min(num_threads_from_file, _num_threads);       // Clamp in case of corrupted file
+
+        // We did our best to make out the cause of death:
+        // Using _num_threads threads was foolish and brought doom upon us.
+        // Let us try our luck with half that number in this run.
         _num_threads = std::max(1u, (_num_threads / 2));
         std::filesystem::remove(_path);
     }
+    // We preemptively place our headstone.
+    // May it serve as a warning should we not make it through this run.
     write(_path.c_str(), _num_threads);
     if (_num_threads > 0) {
         _threads = std::make_shared<ThreadStackExecutor>(
@@ -61,6 +69,8 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo:
 InitializeThreadsCalculator::~InitializeThreadsCalculator() = default;
 
 void InitializeThreadsCalculator::init_done() {
+    // We are still alive. We made it.
+    // Tear down the headstone to celebrate our victory.
     std::filesystem::remove(_path);
     _threads = InitializeThreads();
 }
