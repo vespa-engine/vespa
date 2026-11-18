@@ -205,7 +205,7 @@ TEST(LruCacheMapTest, cache_erase_by_iterator) {
     cache.verifyInternals();
 }
 
-TEST(LruCacheMapTest, find_no_ref_returns_iterator_if_present_and_does_not_update_lru) {
+TEST(LruCacheMapTest, find_no_ref_returns_ptr_if_present_and_does_not_update_lru) {
     using Cache = lrucache_map<LruParam<int, std::string>>;
     Cache cache(3);
     cache.insert(1, "ichi");
@@ -213,18 +213,25 @@ TEST(LruCacheMapTest, find_no_ref_returns_iterator_if_present_and_does_not_updat
     cache.insert(3, "san");
     EXPECT_EQ(lru_key_order(cache), "3 2 1");
 
-    auto iter = cache.find_no_ref(1);
-    ASSERT_TRUE(iter != cache.end());
-    EXPECT_EQ(*iter, "ichi");
+    std::string* ptr = cache.find_no_ref(1);
+    ASSERT_TRUE(ptr != nullptr);
+    EXPECT_EQ(*ptr, "ichi");
     EXPECT_EQ(lru_key_order(cache), "3 2 1");
 
-    iter = cache.find_no_ref(2);
-    ASSERT_TRUE(iter != cache.end());
-    EXPECT_EQ(*iter, "ni");
+    *ptr = "one";
+    const Cache&       const_cache = cache;
+    const std::string* cptr = const_cache.find_no_ref(1);
+    ASSERT_TRUE(cptr != nullptr);
+    EXPECT_EQ(*cptr, "one");
     EXPECT_EQ(lru_key_order(cache), "3 2 1");
 
-    iter = cache.find_no_ref(4);
-    ASSERT_TRUE(iter == cache.end());
+    cptr = const_cache.find_no_ref(2);
+    ASSERT_TRUE(cptr != nullptr);
+    EXPECT_EQ(*cptr, "ni");
+    EXPECT_EQ(lru_key_order(cache), "3 2 1");
+
+    EXPECT_EQ(cache.find_no_ref(4), nullptr);
+    EXPECT_EQ(const_cache.find_no_ref(4), nullptr);
     EXPECT_EQ(lru_key_order(cache), "3 2 1");
 }
 
