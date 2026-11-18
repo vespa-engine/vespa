@@ -164,7 +164,8 @@ UpdateScope::UpdateScope(const vespalib::hash_set<int32_t>& indexedFields, const
     : _indexedFields(indexedFields),
       _nonAttributeFields(!upd.getFieldPathUpdates().empty()),
       _hasIndexedFields(false) {
-    // Field path updates are not seen by onUpdateField(), so check if any of them touch an indexed field.
+    // Field path updates are only reported to onUpdateField() when an attribute writer handles the update,
+    // so check here if any of them touch an indexed field, independent of the feed view in use.
     // Otherwise the updated document is only written to the document store and the index is left stale.
     for (const auto& fieldPathUpdate : upd.getFieldPathUpdates()) {
         const std::string& path = fieldPathUpdate->getOriginalFieldPath();
