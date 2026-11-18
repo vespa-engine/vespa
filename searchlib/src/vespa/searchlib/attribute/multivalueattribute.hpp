@@ -67,6 +67,9 @@ template <typename B, typename M> void MultiValueAttribute<B, M>::applyAttribute
     }
 }
 
+template <typename N>
+using Tombstones = vespalib::hash_map<N, size_t, typename HashFn<N>::type>;
+
 template <typename B, typename M>
 void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docValues) {
     // compute new values for each document with changes
@@ -84,9 +87,9 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
         if (last_clear_doc != end) {
             current = last_clear_doc;
         }
-        MultiValueArrayRef old_values(_mvMapping.get(doc));
-        ValueVector        new_values(old_values.begin(), old_values.end());
-        vespalib::hash_map<NonAtomicValueType, size_t, typename HashFn<NonAtomicValueType>::type> tombstones;
+        MultiValueArrayRef             old_values(_mvMapping.get(doc));
+        ValueVector                    new_values(old_values.begin(), old_values.end());
+        Tombstones<NonAtomicValueType> tombstones;
 
         // iterate through all changes for this document
         for (; (current != end) && (current->_doc == doc); ++current) {
@@ -108,6 +111,7 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                         multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
                 }
             } else if (current->_type == ChangeBase::ASSIGN_ELEMENT) {
+                cull_tombstones(tombstones, new_values);
                 uint32_t index = current->element_index();
                 if (index < new_values.size()) {
                     if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
@@ -122,29 +126,36 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                 tombstones[data] = new_values.size();
             }
         }
-        // Optimize for the case where nothing was explicitly removed.
-        if (!tombstones.empty()) {
-            ValueVector culled;
-            culled.reserve(new_values.size());
-            if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-                for (size_t i = 0; i < new_values.size(); ++i) {
-                    auto iter = tombstones.find(multivalue::get_value(new_values[i]));
-                    if (iter == tombstones.end() || (iter->second <= i)) {
-                        culled.emplace_back(new_values[i]);
-                    }
-                }
-            } else {
-                for (size_t i = 0; i < new_values.size(); ++i) {
-                    auto iter = tombstones.find(multivalue::get_value_ref(new_values[i]).load_relaxed());
-                    if (iter == tombstones.end() || (iter->second <= i)) {
-                        culled.emplace_back(new_values[i]);
-                    }
-                }
-            }
-            culled.swap(new_values);
-        }
+        cull_tombstones(tombstones, new_values);
         this->checkSetMaxValueCount(new_values.size());
         docValues.emplace_back(doc, std::move(new_values));
+    }
+}
+
+template <typename B, typename M>
+template <typename T>
+void MultiValueAttribute<B, M>::cull_tombstones(T& tombstones, ValueVector& new_values) {
+    // Optimize for the case where nothing was explicitly removed.
+    if (!tombstones.empty()) {
+        ValueVector culled;
+        culled.reserve(new_values.size());
+        if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+            for (size_t i = 0; i < new_values.size(); ++i) {
+                auto iter = tombstones.find(multivalue::get_value(new_values[i]));
+                if (iter == tombstones.end() || (iter->second <= i)) {
+                    culled.emplace_back(new_values[i]);
+                }
+            }
+        } else {
+            for (size_t i = 0; i < new_values.size(); ++i) {
+                auto iter = tombstones.find(multivalue::get_value_ref(new_values[i]).load_relaxed());
+                if (iter == tombstones.end() || (iter->second <= i)) {
+                    culled.emplace_back(new_values[i]);
+                }
+            }
+        }
+        culled.swap(new_values);
+        tombstones.clear();
     }
 }
 
