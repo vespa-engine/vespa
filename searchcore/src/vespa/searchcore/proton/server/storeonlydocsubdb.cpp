@@ -259,8 +259,8 @@ void StoreOnlyDocSubDB::setupDocumentMetaStore(const DocumentMetaStoreInitialize
     LOG(debug, "Added document meta store '%s' with flushed serial num %" PRIu64, name.c_str(),
         _flushedDocumentMetaStoreSerialNum);
     _dms = dms;
-    _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(dms, _tlsSyncer, baseDir, dmsResult.tuneFile(),
-                                                                     _fileHeaderContext, _hwInfo);
+    _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(
+        dms, _tlsSyncer, baseDir, _doc_type_and_subdb_name, dmsResult.tuneFile(), _fileHeaderContext, _hwInfo);
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
     _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>(

@@ -135,8 +135,8 @@ void AttributeManager::addAttribute(AttributeWrap attributeWrap, const ShrinkerS
         // Flushing of extra attributes is handled elsewhere
         AttributeVector* attributeP = attribute.get();
         auto             flusher = std::make_shared<FlushableAttribute>(
-            std::move(attribute), _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext,
-            _attributeFieldWriter, _hwInfo);
+            std::move(attribute), _diskLayout->createAttributeDir(name), _doc_type_and_subdb_name,
+            _tuneFileAttributes, _fileHeaderContext, _attributeFieldWriter, _hwInfo);
         _flushables[name] = FlushableWrap(flusher, shrinker);
         _writableAttributes.push_back(attributeP);
     }

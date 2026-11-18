@@ -12,6 +12,8 @@
 
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 
+#include <opentelemetry/trace/span.h>
+
 #include <condition_variable>
 #include <deque>
 #include <mutex>
@@ -106,6 +108,7 @@ private:
     std::atomic<uint64_t>                                 _max_summary_file_size;
     std::atomic<size_t>                                   _each_max_memory;
     std::atomic<size_t>                                   _global_max_memory;
+    std::shared_ptr<opentelemetry::trace::Span>           _trace_span;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     flushengine::FlushStrategyResult getSortedTargetList();

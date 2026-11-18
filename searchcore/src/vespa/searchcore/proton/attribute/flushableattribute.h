@@ -2,9 +2,12 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/hw_info.h>
+
+#include <opentelemetry/trace/span.h>
 
 namespace search {
 class AttributeVector;
@@ -36,18 +39,20 @@ private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     using FlushStats = searchcorespi::FlushStats;
 
-    AttributeVectorSP                        _attr;
-    bool                                     _cleanUpAfterFlush;
-    FlushStats                               _lastStats;
-    const search::TuneFileAttributes         _tuneFileAttributes;
-    const search::common::FileHeaderContext& _fileHeaderContext;
-    vespalib::ISequencedTaskExecutor&        _attributeFieldWriter;
-    vespalib::HwInfo                         _hwInfo;
-    std::shared_ptr<AttributeDirectory>      _attrDir;
-    double                                   _replay_operation_cost;
-    bool                                     _paged;
+    AttributeVectorSP                                _attr;
+    bool                                             _cleanUpAfterFlush;
+    FlushStats                                       _lastStats;
+    const search::TuneFileAttributes                 _tuneFileAttributes;
+    const search::common::FileHeaderContext&         _fileHeaderContext;
+    vespalib::ISequencedTaskExecutor&                _attributeFieldWriter;
+    vespalib::HwInfo                                 _hwInfo;
+    std::shared_ptr<AttributeDirectory>              _attrDir;
+    const std::shared_ptr<const DocTypeAndSubDbName> _doc_type_and_subdb_name;
+    double                                           _replay_operation_cost;
+    bool                                             _paged;
 
-    void internal_init_flush(SerialNum currentSerial, TaskPromise task_promise);
+    void internal_init_flush(SerialNum currentSerial, TaskPromise task_promise,
+                             std::shared_ptr<opentelemetry::trace::Span> parent_span);
 
 public:
     using SP = std::shared_ptr<FlushableAttribute>;
@@ -59,8 +64,9 @@ public:
      * fileHeaderContext must be kept alive by caller.
      **/
     FlushableAttribute(AttributeVectorSP attr, const std::shared_ptr<AttributeDirectory>& attrDir,
-                       const search::TuneFileAttributes&        tuneFileAttributes,
-                       const search::common::FileHeaderContext& fileHeaderContext,
+                       std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_sub_db_name_in,
+                       const search::TuneFileAttributes&          tuneFileAttributes,
+                       const search::common::FileHeaderContext&   fileHeaderContext,
                        vespalib::ISequencedTaskExecutor& attributeFieldWriter, const vespalib::HwInfo& hwInfo);
 
     ~FlushableAttribute() override;

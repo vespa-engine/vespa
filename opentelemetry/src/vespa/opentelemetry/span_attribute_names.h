@@ -9,6 +9,7 @@ namespace vespa_opentelemetry::span_attribute_names {
 extern const std::string attribute;
 extern const std::string ddb_prev_state;
 extern const std::string document_type;
+extern const std::string serial;
 extern const std::string subdb;
 
 } // namespace vespa_opentelemetry::span_attribute_names
