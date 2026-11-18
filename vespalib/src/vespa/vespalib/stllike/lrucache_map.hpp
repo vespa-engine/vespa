@@ -280,4 +280,9 @@ template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::find_n
     return end();
 }
 
+template <typename P> const typename P::Value* lrucache_map<P>::find_ptr_no_ref(const K& key) const {
+    auto iter = HashTable::find(key);
+    return (iter != HashTable::end()) ? &iter->second._value : nullptr;
+}
+
 } // namespace vespalib

@@ -109,8 +109,6 @@ template <typename P> class cache {
         [[nodiscard]] bool has_key(const KeyT& key) const noexcept;
         // Precondition: key does not already exist in the mapping
         void insert_and_update_size(const KeyT& key, ValueT value);
-        // Fetches an existing key from the cache _without_ updating the LRU ordering.
-        [[nodiscard]] const typename P::Value& get_existing(const KeyT& key) const;
 
         const KeyT* last_key_or_nullptr() const noexcept;
 
@@ -138,6 +136,10 @@ template <typename P> class cache {
         // This also updates the underlying LRU order.
         // Otherwise, `val_out` is not modified and false is returned.
         [[nodiscard]] bool try_get_and_ref(const KeyT& key, ValueT& val_out);
+        // Iff element exists in cache, assigns `val_out` the stored value and returns true.
+        // This does _not_ update the underlying LRU order.
+        // Otherwise, `val_out` is not modified and false is returned.
+        [[nodiscard]] bool try_get_no_ref(const KeyT& key, ValueT& val_out) const;
 
         // Trims the cache segment so that after the call the following holds:
         //   size_bytes() <= capacity() && size() <= maxElements()
@@ -306,6 +308,18 @@ public:
      */
     template <typename... BackingStoreArgs>
     [[nodiscard]] V read(const K& key, BackingStoreArgs&&... backing_store_args);
+
+    /**
+     * Return the cached value for key if present, without updating LRU order, SLRU
+     * segment placement or the LFU frequency sketch. Otherwise read it from the
+     * backing store without inserting it into the cache.
+     *
+     * Hit/miss stats are not updated; keys not found in the backing store are still
+     * counted as non-existing. On a cache hit the per-key store lock is not taken
+     * (as for read()); on a miss it is held while reading from the backing store.
+     */
+    template <typename... BackingStoreArgs>
+    [[nodiscard]] V read_no_populate(const K& key, BackingStoreArgs&&... backing_store_args);
 
     /**
      * Update the cache and write through to backing store.

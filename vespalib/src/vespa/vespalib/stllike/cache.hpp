@@ -90,8 +90,13 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_erase_and_update_si
     return false;
 }
 
-template <typename P> const typename P::Value& cache<P>::SizeConstrainedLru::get_existing(const KeyT& key) const {
-    return Lru::get(key);
+template <typename P> bool cache<P>::SizeConstrainedLru::try_get_no_ref(const KeyT& key, ValueT& val_out) const {
+    const auto* maybe_val = Lru::find_ptr_no_ref(key);
+    if (maybe_val) {
+        val_out = *maybe_val;
+        return true;
+    }
+    return false;
 }
 
 template <typename P> const typename P::Key* cache<P>::SizeConstrainedLru::last_key_or_nullptr() const noexcept {
@@ -297,6 +302,29 @@ template <typename P> std::unique_lock<std::mutex> cache<P>::getGuard() const {
 
 template <typename P>
 template <typename... BackingStoreArgs>
+typename P::Value cache<P>::read_no_populate(const K& key, BackingStoreArgs&&... backing_store_args) {
+    V value;
+    {
+        std::lock_guard guard(_hashLock);
+        if (_probationary_segment.try_get_no_ref(key, value)) {
+            return value;
+        }
+        if (multi_segment() && _protected_segment.try_get_no_ref(key, value)) {
+            return value;
+        }
+    }
+    std::lock_guard store_guard(getLock(key));
+    if (!_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
+        // Reading a key that exists in neither the cache nor the backing store is not
+        // expected to happen. Unlike hit/miss stats, we specifically track this statistic
+        // so that bugs or misconfiguration in callers are detectable.
+        _non_existing.fetch_add(1, std::memory_order_relaxed); // Atomic since we're outside _hashLock
+    }
+    return value;
+}
+
+template <typename P>
+template <typename... BackingStoreArgs>
 typename P::Value cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args) {
     V value;
     {
@@ -308,7 +336,6 @@ typename P::Value cache<P>::read(const K& key, BackingStoreArgs&&... backing_sto
             increment_stat(_miss, guard);
         }
     }
-
     std::lock_guard store_guard(getLock(key));
     {
         std::lock_guard guard(_hashLock);
@@ -385,7 +412,7 @@ template <typename P> void cache<P>::write(const K& key, V value) {
 }
 
 template <typename P> void cache<P>::updated(const K& key) {
-    V value;
+    V               value;
     std::lock_guard storeGuard(getLock(key));
     if (_store.read(key, value)) {
         std::lock_guard guard(_hashLock);

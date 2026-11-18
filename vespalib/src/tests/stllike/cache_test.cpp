@@ -244,6 +244,55 @@ TEST_F(CacheTest, can_forward_arguments_to_backing_store_on_cache_miss) {
     EXPECT_EQ(m._forwarded_arg, "");
 }
 
+TEST_F(CacheTest, read_no_populate_forwards_arguments_to_backing_store_on_cache_miss) {
+    cache<CacheParam<P, B>> cache(m, -1);
+    m[123] = "foo";
+    EXPECT_EQ(cache.read_no_populate(123, "hello cache world"), "foo");
+    EXPECT_EQ(m._forwarded_arg, "hello cache world");
+
+    // Cached; no forwarding.
+    cache.write(456, "bar");
+    m._forwarded_arg.clear();
+    EXPECT_EQ(cache.read_no_populate(456, "goodbye cache moon"), "bar");
+    EXPECT_EQ(m._forwarded_arg, "");
+}
+
+TEST_F(CacheTest, read_no_populate_only_updates_non_existing_stat) {
+    cache<CacheParam<P, B>> cache(m, -1);
+    cache.write(1, "foo");
+    m[2] = "bar";
+    EXPECT_EQ(cache.read_no_populate(1), "foo"); // hit
+    EXPECT_EQ(cache.read_no_populate(2), "bar"); // miss
+    EXPECT_EQ(cache.getHit(), 0);
+    EXPECT_EQ(cache.getMiss(), 0);
+    EXPECT_EQ(cache.getNonExisting(), 0);
+    EXPECT_EQ(cache.read_no_populate(3), ""); // non-existing
+    EXPECT_EQ(cache.getHit(), 0);
+    EXPECT_EQ(cache.getMiss(), 0);
+    EXPECT_EQ(cache.getNonExisting(), 1);
+}
+
+TEST_F(CacheTest, read_no_populate_does_not_insert_or_reorder) {
+    cache<CacheParam<P, B>> cache(m, -1);
+    cache.maxElements(2);
+    cache.write(1, "foo");
+    cache.write(2, "bar");
+    // Backing store must not be consulted on cache hits.
+    m[1] = "backing store should not be consulted for cached entry";
+    m[3] = "baz";
+    // Cache miss is served from backing store, but not inserted.
+    EXPECT_EQ(cache.read_no_populate(3), "baz");
+    EXPECT_FALSE(cache.hasKey(3));
+    // Non-existing key yields empty value.
+    EXPECT_EQ(cache.read_no_populate(4), "");
+    // Cache hit does not move element to head of LRU list; 1 is still evicted first.
+    EXPECT_EQ(cache.read_no_populate(1), "foo");
+    cache.write(5, "zoid");
+    EXPECT_FALSE(cache.hasKey(1));
+    EXPECT_TRUE(cache.hasKey(2));
+    EXPECT_TRUE(cache.hasKey(5));
+}
+
 TEST_F(CacheTest, fetching_element_moves_it_to_head_of_lru_list) {
     cache<CacheParam<P, B>> cache(m, -1);
     cache.maxElements(3);
@@ -428,6 +477,31 @@ TEST_F(SlruCacheTest, update_of_existing_element_does_not_update_lru_order) {
     EXPECT_EQ(cache.read(3), "cc"); // --> protected (head)
     EXPECT_EQ(cache.read(1), "aa"); // protected head
     ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 4}, {1, 3, 2}));
+}
+
+TEST_F(SlruCacheTest, read_no_populate_does_not_promote_or_reorder_segments) {
+    cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, -1, -1);
+
+    cache.write(1, "a");
+    cache.write(2, "b");
+    cache.write(3, "c");
+    EXPECT_EQ(cache.read(1), "a"); // --> protected
+    EXPECT_EQ(cache.read(2), "b"); // --> protected
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Backing store must not be consulted on cache hits.
+    m[1] = "backing store should not be consulted for cached entry";
+    m[3] = "backing store should not be consulted for cached entry";
+    m[4] = "d";
+
+    // Hit in protected segment; stays at protected LRU tail.
+    EXPECT_EQ(cache.read_no_populate(1), "a");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Hit in probationary segment; not promoted to protected.
+    EXPECT_EQ(cache.read_no_populate(3), "c");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Miss; served from backing store without being inserted.
+    EXPECT_EQ(cache.read_no_populate(4), "d");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
 }
 
 TEST_F(SlruCacheTest, growing_element_via_update_trims_probationary_segment) {
@@ -654,6 +728,32 @@ TEST_F(LfuCacheTest, lfu_gates_protected_segment_displacing) {
     ASSERT_EQ(cache.read(4), "d");
     ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {1, 3, 5}, {4, 2}));
     EXPECT_EQ(cache.lfu_not_promoted(), 2);
+}
+
+TEST_F(LfuCacheTest, read_no_populate_does_not_update_frequency_sketch) {
+    // Disable protected segment; LRU mode only
+    cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, -1, 0);
+    cache.maxElements(3, 0);
+    cache.set_frequency_sketch_size(3);
+    ASSERT_EQ(cache.read(1), "a"); // ==> freq 1
+    ASSERT_EQ(cache.read(2), "b"); // ==> freq 1
+    ASSERT_EQ(cache.read(3), "c"); // ==> freq 1
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3, 2, 1}, {}));
+    // Neither misses (4) nor hits (1) bump the sketch.
+    for (int i = 0; i < 5; ++i) {
+        ASSERT_EQ(cache.read_no_populate(4), "d");
+        ASSERT_EQ(cache.read_no_populate(1), "a");
+    }
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3, 2, 1}, {}));
+    EXPECT_EQ(cache.lfu_dropped(), 0);
+    // First real read of 4 gives it freq 1, which is not more popular than 1 (freq 1).
+    ASSERT_EQ(cache.read(4), "d");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3, 2, 1}, {}));
+    EXPECT_EQ(cache.lfu_dropped(), 1);
+    // Second real read gives 4 freq 2, displacing 1 (still freq 1).
+    ASSERT_EQ(cache.read(4), "d");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {4, 3, 2}, {}));
+    EXPECT_EQ(cache.lfu_dropped(), 1);
 }
 
 TEST_F(LfuCacheTest, lfu_gates_probationary_inserts_on_write_through) {

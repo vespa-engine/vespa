@@ -173,6 +173,12 @@ public:
     [[nodiscard]] iterator find_no_ref(const K& key);
 
     /**
+     * Returns a pointer to the object with the given key iff it exists, without
+     * updating the LRU. Otherwise returns nullptr.
+     */
+    [[nodiscard]] const V* find_ptr_no_ref(const K& key) const;
+
+    /**
      * Return the object with the given key. If it does not exist an empty one will be created.
      * This can be used as an insert.
      * Object is then put at head of LRU list.
