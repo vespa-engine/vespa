@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
@@ -386,7 +387,7 @@ func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 func quoteArgForUrl(arg string) string {
 	var buf strings.Builder
 	buf.Grow(len(arg))
-	for _, r := range arg {
+	for i, r := range arg {
 		switch {
 		case 'a' <= r && r <= 'z':
 			buf.WriteRune(r)
@@ -394,6 +395,11 @@ func quoteArgForUrl(arg string) string {
 			buf.WriteRune(r)
 		case '0' <= r && r <= '9':
 			buf.WriteRune(r)
+		case r > '~' && validRuneAt(arg, i):
+			// Percent-encode each UTF-8 byte of valid non-ASCII characters
+			for _, b := range []byte(arg[i : i+utf8.RuneLen(r)]) {
+				fmt.Fprintf(&buf, "%%%02X", b)
+			}
 		case r <= ' ' || r > '~':
 			buf.WriteRune('+')
 		default:
@@ -402,6 +408,11 @@ func quoteArgForUrl(arg string) string {
 		}
 	}
 	return buf.String()
+}
+
+func validRuneAt(s string, i int) bool {
+	r, size := utf8.DecodeRuneInString(s[i:])
+	return r != utf8.RuneError || size > 1
 }
 
 func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, OperationResult) {
