@@ -532,6 +532,7 @@ TOKEN :
 | < FAST_ACCESS: "fast-access" >
 | < MUTABLE: "mutable" >
 | < PAGED: "paged" >
+| < LABEL_POSTINGS: "label-postings" >
 | < FAST_RANK: "fast-rank" >
 | < FAST_SEARCH: "fast-search" >
 | < FAST_SEARCH_MAP_FIELD: "fast-search-map-field" >
@@ -1587,6 +1588,7 @@ void attributeSetting(ParsedAttribute attribute) :
       | <FAST_ACCESS>           { attribute.setFastAccess(true); }
       | <MUTABLE>               { attribute.setMutable(true); }
       | <PAGED>                 { attribute.setPaged(true); }
+      | <LABEL_POSTINGS>        { attribute.setLabelPostings(true); }
       | <ENABLE_BIT_VECTORS>      //{ deployLogger.logApplicationPackage(Level.WARNING, "'enable-bit-vectors' is deprecated and void -> remove it. Will be removed in vespa-9"); }
       | <ENABLE_ONLY_BIT_VECTOR>  { attribute.setEnableOnlyBitVector(true); }
       | attributeSorting(attribute)
@@ -3733,6 +3735,7 @@ String identifierWithDashStr :
     | <INTEROP_THREADS>
     | <INTRAOP_THREADS>
     | <KEEP_RANK_COUNT>
+    | <LABEL_POSTINGS>
     | <LOWER_BOUND>
     | <MATCHED_ELEMENTS_ONLY>
     | <MATCH_PHASE>

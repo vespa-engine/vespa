@@ -199,6 +199,7 @@ public class FixedKeywordBodies {
         CompletionUtils.constructBasic("fast-access"),
         CompletionUtils.constructBasic("fast-rank"),
         CompletionUtils.constructBasic("paged"),
+        CompletionUtils.constructBasic("label-postings"),
         SORTING.getColonSnippet(),
         SORTING.getBodySnippet(),
         DISTANCE_METRIC.getColonSnippet(),

@@ -146,6 +146,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.FAST_SEARCH_MAP_FIELD);
         add(TokenType.FAST_RANK);
         add(TokenType.PAGED);
+        add(TokenType.LABEL_POSTINGS);
         add(TokenType.MUTABLE);
         add(TokenType.LOCALE);
         add(TokenType.STRENGTH);

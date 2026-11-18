@@ -113,6 +113,10 @@ schema spotcheck {
 
         field sparse_features type tensor<double>(category{}) {
             indexing: attribute
+            attribute {
+                fast-rank
+                label-postings
+            }
         }
 
         field matrix type tensor<bfloat16>(d0[10], d1[20]) {
