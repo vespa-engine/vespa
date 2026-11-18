@@ -5,6 +5,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+#include <fstream>
+
 using namespace proton;
 using vespalib::HwInfo;
 using vespalib::ThreadStackExecutor;
@@ -68,6 +70,33 @@ TEST_F(InitializeThreadsCalculatorTest, lower_of_wanted_and_cores) {
     expect_lower(7, 7);
     expect_lower(7, 6);
     expect_lower(7, 1);
+}
+
+namespace {
+void create_file(const std::string& path, const std::string& content) {
+    std::ofstream file;
+    file.open(std::string("tmp/") + path);
+    file << content;
+}
+
+void expect_malformed_file_is_handled(const std::string& content) {
+    create_file("initialize-threads.txt", content);
+
+    // There was something wrong with the file, halved thread count
+    expect_successful_init(4);
+    // Back to full thread count
+    expect_successful_init(9);
+}
+} // namespace
+
+TEST_F(InitializeThreadsCalculatorTest, verify_malformed_file_is_handled) {
+    expect_malformed_file_is_handled("");
+    expect_malformed_file_is_handled("A");
+    expect_malformed_file_is_handled("A complete sentence.");
+    expect_malformed_file_is_handled("\n");
+    expect_malformed_file_is_handled("-42");
+    expect_malformed_file_is_handled("9001");
+    expect_malformed_file_is_handled("10000000000000000000000000000000000");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
