@@ -122,6 +122,9 @@ class MemoryFileSystem extends FileSystem {
 
         private final AtomicInteger version = new AtomicInteger(0);
 
+        /** The zxid of the change which created this node, and of the last change to its content */
+        private long czxid = 0, mzxid = 0;
+
         private Map<String, Node> children = Collections.synchronizedMap(new LinkedHashMap<>());
 
         private Node(Node parent, String name) {
@@ -137,16 +140,22 @@ class MemoryFileSystem extends FileSystem {
         /** Returns a copy of the content of this node */
         public byte[] getContent() { return Arrays.copyOf(content, content.length); }
 
-        /** Replaces the content of this file */
-        public void setContent(byte[] content) {
+        /** Replaces the content of this file, as part of the change with the given zxid */
+        public void setContent(byte[] content, long zxid) {
             this.content = Arrays.copyOf(content, content.length);
             this.version.incrementAndGet();
+            if (czxid == 0) czxid = zxid;
+            this.mzxid = zxid;
         }
 
         /** Set optional TTL */
         public void setTtl(long ttl) { this.ttl = ttl; }
 
         public int version() { return version.get(); }
+
+        public long czxid() { return czxid; }
+
+        public long mzxid() { return mzxid; }
 
         /**
          * Returns the node given by the path.

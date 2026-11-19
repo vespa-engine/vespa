@@ -133,6 +133,8 @@ public class MockCuratorFramework implements CuratorFramework  {
 
     private CuratorFrameworkState curatorState = CuratorFrameworkState.LATENT;
     private int monotonicallyIncreasingNumber = 0;
+    /** The last ZooKeeper transaction id used, never reused, like a real ZooKeeper cluster */
+    private final AtomicLong zxid = new AtomicLong(0);
 
     public MockCuratorFramework(boolean stableOrdering, boolean shouldTimeoutOnEnter) {
         this(stableOrdering, shouldTimeoutOnEnter, Clock.systemUTC());
@@ -393,13 +395,13 @@ public class MockCuratorFramework implements CuratorFramework  {
             throw new KeeperException.NodeExistsException(path.toString());
 
         MemoryFileSystem.Node node = parent.add(name);
-        node.setContent(content);
+        node.setContent(content, zxid.incrementAndGet());
         if (List.of(CreateMode.PERSISTENT_WITH_TTL, CreateMode.PERSISTENT_SEQUENTIAL_WITH_TTL).contains(createMode)
                 && ttl != null)
             node.setTtl(ttl);
         String nodePath = "/" + path.getParentPath().toString() + "/" + name;
         listeners.notify(Path.fromString(nodePath), content, PathChildrenCacheEvent.Type.CHILD_ADDED);
-        if (stat != null) stat.setVersion(node.version());
+        fillStat(stat, node);
         return nodePath;
     }
 
@@ -433,8 +435,8 @@ public class MockCuratorFramework implements CuratorFramework  {
         Node node = getNode(pathString, stat, root);
         if (version != -1 && version != node.version())
             throw new KeeperException.BadVersionException("expected version " + version + ", but was " + node.version());
-        node.setContent(content);
-        if (stat != null) stat.setVersion(node.version());
+        node.setContent(content, zxid.incrementAndGet());
+        fillStat(stat, node);
         listeners.notify(Path.fromString(pathString), content, PathChildrenCacheEvent.Type.CHILD_UPDATED);
     }
 
@@ -456,8 +458,15 @@ public class MockCuratorFramework implements CuratorFramework  {
         if (parent == null) throw new KeeperException.NoNodeException(path.toString());
         MemoryFileSystem.Node node = parent.children().get(path.getName());
         if (node == null) throw new KeeperException.NoNodeException(path.toString());
-        if (stat != null) stat.setVersion(node.version());
+        fillStat(stat, node);
         return node;
+    }
+
+    private static void fillStat(Stat stat, MemoryFileSystem.Node node) {
+        if (stat == null) return;
+        stat.setVersion(node.version());
+        stat.setCzxid(node.czxid());
+        stat.setMzxid(node.mzxid());
     }
 
     private String nodeName(String baseName, CreateMode createMode) {
