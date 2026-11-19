@@ -3,6 +3,7 @@ vespa_add_library(searchcorespi STATIC
     INSTALL lib64
     OUTPUT_NAME vespa_searchcorespi
     SOURCES
+    $<TARGET_OBJECTS:searchcorespi_common>
     $<TARGET_OBJECTS:searchcorespi_flush>
     $<TARGET_OBJECTS:searchcorespi_index>
     DEPENDS

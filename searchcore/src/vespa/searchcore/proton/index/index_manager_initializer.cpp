@@ -4,13 +4,15 @@
 
 #include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 #include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.index.indexmanagerinitializer");
+
+using searchcorespi::common::get_tracer;
 
 namespace proton {
 

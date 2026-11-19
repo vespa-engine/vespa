@@ -34,7 +34,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_notifier.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_and_load_info_listener.h>
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
@@ -47,6 +46,7 @@
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/diskindex/posting_list_cache.h>
@@ -86,6 +86,7 @@ using search::diskindex::IPostingListCache;
 using search::diskindex::PostingListCache;
 using search::engine::MonitorReply;
 using search::transactionlog::DomainStats;
+using searchcorespi::common::get_tracer;
 using searchcorespi::common::IResourceUsageProvider;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;

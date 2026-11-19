@@ -12,7 +12,7 @@
 #include <vespa/check_require.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -24,6 +24,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_configurer");
 
+using searchcorespi::common::get_tracer;
 using vespa::config::search::core::ProtonConfig;
 using vespalib::makeLambdaTask;
 

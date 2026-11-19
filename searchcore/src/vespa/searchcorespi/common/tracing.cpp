@@ -6,11 +6,11 @@
 
 using opentelemetry::trace::Provider;
 
-namespace proton {
+namespace searchcorespi::common {
 
 [[nodiscard]] std::shared_ptr<opentelemetry::trace::Tracer> get_tracer() {
     auto provider = Provider::GetTracerProvider();
     return provider->GetTracer("proton");
 }
 
-} // namespace proton
+} // namespace searchcorespi::common

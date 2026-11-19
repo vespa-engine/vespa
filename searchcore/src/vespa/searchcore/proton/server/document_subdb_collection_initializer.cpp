@@ -3,7 +3,9 @@
 #include "document_subdb_collection_initializer.h"
 
 #include <vespa/opentelemetry/span_attribute_names.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
+
+using searchcorespi::common::get_tracer;
 
 namespace proton {
 

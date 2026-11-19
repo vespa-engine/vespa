@@ -4,7 +4,7 @@
 
 #include <opentelemetry/trace/tracer.h>
 
-namespace proton {
+namespace searchcorespi::common {
 
 [[nodiscard]] std::shared_ptr<opentelemetry::trace::Tracer> get_tracer();
 

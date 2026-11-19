@@ -15,7 +15,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 
@@ -32,6 +32,7 @@ using proton::flushengine::FlushStrategyResult;
 using proton::flushengine::SetStrategyResult;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::get_tracer;
 using vespalib::CpuUsage;
 using namespace std::chrono_literals;
 

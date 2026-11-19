@@ -8,9 +8,9 @@
 #include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
@@ -34,6 +34,7 @@ using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::get_tracer;
 using searchcorespi::common::ResourceUsage;
 
 namespace proton {
