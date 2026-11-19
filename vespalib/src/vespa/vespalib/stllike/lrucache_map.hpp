@@ -272,15 +272,12 @@ template <typename P> typename P::Value* lrucache_map<P>::find_and_lazy_ref(cons
     return nullptr;
 }
 
-template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::find_no_ref(const K& key) {
-    internal_iterator iter = HashTable::find(key);
-    if (iter != HashTable::end()) {
-        return iterator(this, iter.getInternalIndex());
-    }
-    return end();
+template <typename P> typename P::Value* lrucache_map<P>::find_no_ref(const K& key) {
+    auto iter = HashTable::find(key);
+    return (iter != HashTable::end()) ? &iter->second._value : nullptr;
 }
 
-template <typename P> const typename P::Value* lrucache_map<P>::find_ptr_no_ref(const K& key) const {
+template <typename P> const typename P::Value* lrucache_map<P>::find_no_ref(const K& key) const {
     auto iter = HashTable::find(key);
     return (iter != HashTable::end()) ? &iter->second._value : nullptr;
 }

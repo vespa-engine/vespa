@@ -62,13 +62,13 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_replace_and_update_
 template <typename P> bool cache<P>::SizeConstrainedLru::try_update(const KeyT& key, ValueT& value) {
     // Updates are not considered evidence of future reads, so replacing an existing
     // entry deliberately does _not_ bump it to the LRU head.
-    auto iter = Lru::find_no_ref(key);
-    if (iter != Lru::end()) {
+    auto* maybe_val = Lru::find_no_ref(key);
+    if (maybe_val) {
         const auto new_kv_size = _owner.calcSize(key, value);
-        const auto old_kv_size = _owner.calcSize(key, *iter);
+        const auto old_kv_size = _owner.calcSize(key, *maybe_val);
         sub_size_bytes(old_kv_size);
         add_size_bytes(new_kv_size);
-        *iter = std::move(value);
+        *maybe_val = std::move(value);
         if (new_kv_size > old_kv_size) {
             // Growing an entry may push the segment beyond its byte capacity. Evict from
             // the LRU tail (which may be the replaced entry itself) until we're within limits.
@@ -81,17 +81,17 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_update(const KeyT& 
 }
 
 template <typename P> bool cache<P>::SizeConstrainedLru::try_erase_and_update_size(const KeyT& key) {
-    auto iter = Lru::find_no_ref(key);
-    if (iter != Lru::end()) {
-        sub_size_bytes(_owner.calcSize(key, *iter)); // Must be prior to erase()!
-        Lru::erase(iter);
+    const auto* maybe_val = Lru::find_no_ref(key);
+    if (maybe_val) {
+        sub_size_bytes(_owner.calcSize(key, *maybe_val)); // Must be prior to erase()!
+        Lru::erase(key);
         return true;
     }
     return false;
 }
 
 template <typename P> bool cache<P>::SizeConstrainedLru::try_get_no_ref(const KeyT& key, ValueT& val_out) const {
-    const auto* maybe_val = Lru::find_ptr_no_ref(key);
+    const auto* maybe_val = Lru::find_no_ref(key);
     if (maybe_val) {
         val_out = *maybe_val;
         return true;

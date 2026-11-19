@@ -167,16 +167,13 @@ public:
     [[nodiscard]] V* find_and_lazy_ref(const K& key);
 
     /**
-     * Returns an iterator to the element with the given key iff it exists, without
-     * updating the LRU. Otherwise returns end().
-     */
-    [[nodiscard]] iterator find_no_ref(const K& key);
-
-    /**
      * Returns a pointer to the object with the given key iff it exists, without
      * updating the LRU. Otherwise returns nullptr.
+     * The pointer is invalidated by any subsequent structural modification of the
+     * map (insert, erase, trim etc.); writing through a non-const pointer is fine.
      */
-    [[nodiscard]] const V* find_ptr_no_ref(const K& key) const;
+    [[nodiscard]] const V* find_no_ref(const K& key) const;
+    [[nodiscard]] V* find_no_ref(const K& key);
 
     /**
      * Return the object with the given key. If it does not exist an empty one will be created.
