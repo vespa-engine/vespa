@@ -2,10 +2,14 @@
 
 #include "initialize_threads_calculator.h"
 
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <fstream>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.initialize_threads_calculator");
 
 using vespalib::CpuUsage;
 using vespalib::ThreadStackExecutor;
@@ -13,10 +17,35 @@ using CpuCategory = vespalib::CpuUsage::Category;
 
 namespace {
 
-void write(const std::string& path, uint32_t num_threads) {
+bool write(const std::string& path, uint32_t num_threads) {
     std::ofstream file;
     file.open(path);
-    file << num_threads;
+    if (!(file << num_threads)) {
+        return false;
+    }
+    file.close();
+    return !file.fail();
+}
+
+void atomic_write(const std::filesystem::path& path, uint32_t num_threads) {
+    // Write and fsync to temp path
+    auto temp_path = std::filesystem::path(path).concat(".tmp");
+    bool success = false;
+    if (write(temp_path.c_str(), num_threads)) {
+        vespalib::File::sync(temp_path.c_str());
+
+        // Rename to actual path and fsync parent dir
+        std::error_code ec;
+        std::filesystem::rename(temp_path, path, ec);
+        if (!ec) {
+            auto parent_dir = path.parent_path();
+            vespalib::File::sync(parent_dir.c_str());
+            success = true;
+        }
+    }
+    if (!success) {
+        LOG(warning, "Failed to write headstone file. Thread count will not be reduced should initialization fail.");
+    }
 }
 
 uint32_t read(const std::string& path, uint32_t fallback_value) {
@@ -55,11 +84,10 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo:
         // Using _num_threads threads was foolish and brought doom upon us.
         // Let us try our luck with half that number in this run.
         _num_threads = std::max(1u, (_num_threads / 2));
-        std::filesystem::remove(_path);
     }
     // We preemptively place our headstone.
     // May it serve as a warning should we not make it through this run.
-    write(_path.c_str(), _num_threads);
+    atomic_write(_path, _num_threads); // atomically overwrite previous file
     if (_num_threads > 0) {
         _threads = std::make_shared<ThreadStackExecutor>(
             _num_threads, CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
@@ -71,7 +99,11 @@ InitializeThreadsCalculator::~InitializeThreadsCalculator() = default;
 void InitializeThreadsCalculator::init_done() {
     // We are still alive. We made it.
     // Tear down the headstone to celebrate our victory.
-    std::filesystem::remove(_path);
+    std::error_code ec;
+    std::filesystem::remove(_path, ec);
+    if (ec) {
+        LOG(warning, "Failed to remove headstone file. Thread count will be reduced in next initialization.");
+    }
     _threads = InitializeThreads();
 }
 
