@@ -2,6 +2,7 @@
 
 #include "initialize_threads_calculator.h"
 
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -17,6 +18,19 @@ void write(const std::string& path, uint32_t num_threads) {
     std::ofstream file;
     file.open(path);
     file << num_threads;
+}
+
+void atomic_write(const std::filesystem::path& path, uint32_t num_threads) {
+    // Write and fsync to temp path
+    auto temp_path = path;
+    temp_path += ".tmp";
+    write(temp_path.c_str(), num_threads);
+    vespalib::File::sync(temp_path.c_str());
+
+    // Rename to actual path and fsync parent dir
+    std::filesystem::rename(temp_path, path);
+    auto parent_dir = path.parent_path();
+    vespalib::File::sync(parent_dir.c_str());
 }
 
 uint32_t read(const std::string& path, uint32_t fallback_value) {
@@ -58,7 +72,7 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo:
     }
     // We preemptively place our headstone.
     // May it serve as a warning should we not make it through this run.
-    write(_path.c_str(), _num_threads);
+    atomic_write(_path, _num_threads); // atomically overwrite previous file
     if (_num_threads > 0) {
         _threads = std::make_shared<ThreadStackExecutor>(
             _num_threads, CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
