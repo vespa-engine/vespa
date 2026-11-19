@@ -8,29 +8,44 @@
 
 #include <fstream>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.initialize_threads_calculator");
+
 using vespalib::CpuUsage;
 using vespalib::ThreadStackExecutor;
 using CpuCategory = vespalib::CpuUsage::Category;
 
 namespace {
 
-void write(const std::string& path, uint32_t num_threads) {
+bool write(const std::string& path, uint32_t num_threads) {
     std::ofstream file;
     file.open(path);
-    file << num_threads;
+    if (!(file << num_threads)) {
+        return false;
+    }
+    file.close();
+    return !file.fail();
 }
 
 void atomic_write(const std::filesystem::path& path, uint32_t num_threads) {
     // Write and fsync to temp path
-    auto temp_path = path;
-    temp_path += ".tmp";
-    write(temp_path.c_str(), num_threads);
-    vespalib::File::sync(temp_path.c_str());
+    auto temp_path = std::filesystem::path(path).concat(".tmp");
+    bool success = false;
+    if (write(temp_path.c_str(), num_threads)) {
+        vespalib::File::sync(temp_path.c_str());
 
-    // Rename to actual path and fsync parent dir
-    std::filesystem::rename(temp_path, path);
-    auto parent_dir = path.parent_path();
-    vespalib::File::sync(parent_dir.c_str());
+        // Rename to actual path and fsync parent dir
+        std::error_code ec;
+        std::filesystem::rename(temp_path, path, ec);
+        if (!ec) {
+            auto parent_dir = path.parent_path();
+            vespalib::File::sync(parent_dir.c_str());
+            success = true;
+        }
+    }
+    if (!success) {
+        LOG(warning, "Failed to write headstone file. Thread count will not be reduced should initialization fail.");
+    }
 }
 
 uint32_t read(const std::string& path, uint32_t fallback_value) {
