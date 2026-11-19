@@ -21,7 +21,7 @@ public class ProvisionContext {
     }
 
     /**
-     * Returns true if an exception should be thrown if we're ina context where provisioning can fail or not.
+     * Returns true if it's acceptable to throw an exception (we're in a context where provisioning can fail).
      * Provisioning cannot fail on config server bootstrap.
      */
     public boolean canFail() { return canFail; }
