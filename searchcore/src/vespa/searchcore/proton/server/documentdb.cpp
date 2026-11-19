@@ -28,7 +28,6 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -41,6 +40,7 @@
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -71,6 +71,7 @@ using proton::initializer::TaskRunner;
 using search::TuneFileDocumentDB;
 using search::common::FileHeaderContext;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::get_tracer;
 using searchcorespi::common::IResourceUsageProvider;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;

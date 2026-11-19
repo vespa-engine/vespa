@@ -6,10 +6,11 @@
 
 #include <vespa/check_require.h>
 #include <vespa/opentelemetry/span_attribute_names.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
+using searchcorespi::common::get_tracer;
 using vespalib::makeLambdaTask;
 
 namespace proton {

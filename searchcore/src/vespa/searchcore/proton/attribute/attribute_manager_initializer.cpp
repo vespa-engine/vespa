@@ -7,14 +7,15 @@
 #include "attributes_initializer_base.h"
 
 #include <vespa/opentelemetry/span_attribute_names.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
 #include <future>
 
 using opentelemetry::trace::Span;
 using search::SerialNum;
+using searchcorespi::common::get_tracer;
 using vespa::config::search::AttributesConfig;
 using vespalib::datastore::CompactionStrategy;
 

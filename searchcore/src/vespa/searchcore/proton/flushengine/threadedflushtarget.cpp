@@ -3,8 +3,8 @@
 #include "threadedflushtarget.h"
 
 #include <vespa/check_require.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/server/igetserialnum.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 #include <future>
@@ -12,6 +12,7 @@
 using opentelemetry::trace::Span;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::get_tracer;
 using vespalib::makeLambdaTask;
 
 namespace proton {

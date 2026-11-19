@@ -5,13 +5,14 @@
 #include "load_order_compare.h"
 
 #include <vespa/check_require.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <future>
 
 using opentelemetry::trace::Span;
+using searchcorespi::common::get_tracer;
 using vespalib::makeLambdaTask;
 
 namespace proton::initializer {

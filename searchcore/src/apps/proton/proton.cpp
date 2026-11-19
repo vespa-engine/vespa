@@ -7,8 +7,8 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/opentelemetry/opentelemetry_tracer_providers.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/server/proton.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -32,7 +32,7 @@
 LOG_SETUP("proton");
 
 using SIG = vespalib::SignalHandler;
-using proton::get_tracer;
+using searchcorespi::common::get_tracer;
 using vespa::config::search::core::ProtonConfig;
 using vespa_opentelemetry::OpenTelemetryTracerProviders;
 

@@ -4,7 +4,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/opentelemetry/span_attribute_names.h>
-#include <vespa/searchcore/proton/common/tracing.h>
+#include <vespa/searchcorespi/common/tracing.h>
 
 #include <vespa/log/logf.h>
 
@@ -12,6 +12,7 @@ LOG_SETUP(".proton.server.ddbstate");
 
 using opentelemetry::trace::SpanKind;
 using opentelemetry::trace::StartSpanOptions;
+using searchcorespi::common::get_tracer;
 
 namespace proton {
 

@@ -7,12 +7,13 @@
 #include "initialized_attributes_result.h"
 
 #include <vespa/opentelemetry/span_attribute_names.h>
-#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchcore/proton/initializer/initializer_task_visitor.h>
 #include <vespa/searchcore/proton/initializer/load_memory_usage.h>
+#include <vespa/searchcorespi/common/tracing.h>
 
 using proton::initializer::LoadMemoryUsage;
+using searchcorespi::common::get_tracer;
 
 namespace proton {
 
