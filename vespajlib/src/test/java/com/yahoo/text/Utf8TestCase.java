@@ -662,4 +662,11 @@ public class Utf8TestCase {
         }
     }
 
+    @Test
+    public void testToStringOfByteRange() {
+        // "ab", then a 2-, a 3- and a 4-byte character (9 bytes), then "cd".
+        byte[] bytes = Utf8.toBytes("abø変😀cd");
+        assertEquals("ø変😀", Utf8.toString(bytes, 2, 9));
+    }
+
 }
