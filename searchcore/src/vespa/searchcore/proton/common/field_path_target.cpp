@@ -14,7 +14,6 @@ using document::FieldNotFoundException;
 using document::FieldPath;
 using document::FieldPathEntry;
 using document::FieldPathUpdate;
-using vespalib::IllegalArgumentException;
 
 namespace proton {
 
@@ -54,6 +53,10 @@ FieldPathTarget FieldPathTarget::parse(const FieldPathUpdate& update, const Docu
     }
 
     Field field = top_level_field(field_path);
+
+    if (!update.getOriginalWhereClause().empty()) {
+        return unsupported(field);
+    }
 
     if (is_simple_array_lookup(field_path)) {
         switch (update.type()) {

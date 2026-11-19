@@ -78,4 +78,11 @@ TEST(FieldPathTargetTest, parse_unsupported) {
     }
 }
 
+TEST(FieldPathTargetTest, parse_where_is_unsupported) {
+    const auto&           doc_type = *repo->getDocumentType("testdoc");
+    AssignFieldPathUpdate update("a_int[32]", "some_where_clause", "some_string");
+    auto                  target = FieldPathTarget::parse(update, doc_type);
+    EXPECT_TRUE(target.is_unsupported()) << update.getOriginalFieldPath();
+}
+
 } // namespace proton
