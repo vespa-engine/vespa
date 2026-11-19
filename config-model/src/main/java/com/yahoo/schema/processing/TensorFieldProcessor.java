@@ -67,7 +67,7 @@ public class TensorFieldProcessor extends Processor {
     private boolean isTensorTypeThatSupportsDirectStore(ImmutableSDField field) {
         var type = ((TensorDataType)field.getDataType()).getTensorType();
         // Tensors with at least one mapped/sparse dimensions can be "direct"
-        // (currenty triggered by fast-search flag)
+        // (triggered by 'fast-rank', the intended setting for tensors, or by 'fast-search')
         for (var dim : type.dimensions()) {
             if (dim.isMapped()) {
                 return true;
@@ -87,6 +87,7 @@ public class TensorFieldProcessor extends Processor {
                 if (! isTensorTypeThatSupportsDirectStore(field)) {
                     fail(schema, field, "An attribute of type 'tensor' cannot be 'fast-search'.");
                 }
+                warn(schema, field, "Using 'fast-search' on a tensor attribute is deprecated, use 'fast-rank' instead");
             }
         }
     }

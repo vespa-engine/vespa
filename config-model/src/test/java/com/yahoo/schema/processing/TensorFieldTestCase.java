@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
+import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 
 import static com.yahoo.schema.ApplicationBuilder.createFromString;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -158,6 +160,23 @@ public class TensorFieldTestCase {
                 "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }", "t1").isFastRank());
         assertTrue(getAttributeFromSd(
                 "field t1 type tensor(x{},y{},z[4]) { indexing: attribute \n attribute: fast-rank }", "t1").isFastRank());
+    }
+
+    @Test
+    void fast_search_on_tensor_attribute_is_deprecated() throws ParseException {
+        var logger = new TestableDeployLogger();
+        var attr = createFromString(getSd("field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }"), logger)
+                .getSchema().getAttribute("t1");
+        assertTrue(attr.isFastSearch());
+        assertEquals(List.of("For schema 'test', field 't1': Using 'fast-search' on a tensor attribute is deprecated, use 'fast-rank' instead"),
+                     logger.warnings);
+    }
+
+    @Test
+    void fast_rank_on_tensor_attribute_gives_no_warning() throws ParseException {
+        var logger = new TestableDeployLogger();
+        createFromString(getSd("field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }"), logger);
+        assertEquals(List.of(), logger.warnings);
     }
 
     private static String getSd(String field) {

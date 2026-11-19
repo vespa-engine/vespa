@@ -30,7 +30,7 @@ class SparseTensorWandBlueprint : public ComplexLeafBlueprint {
 private:
     const tensor::ITensorAttribute&                      _attr_tensor;
     const vespalib::eval::Value&                         _query_tensor;
-    std::unique_ptr<vespalib::eval::InterpretedFunction> _interpreted_dot_product; // fast-search attributes
+    std::unique_ptr<vespalib::eval::InterpretedFunction> _interpreted_dot_product; // fast-rank attributes
     std::unique_ptr<SparseTensorDotProduct>              _dot_product;             // other attributes
     uint32_t                                             _target_hits;
     double                                               _score_threshold;
