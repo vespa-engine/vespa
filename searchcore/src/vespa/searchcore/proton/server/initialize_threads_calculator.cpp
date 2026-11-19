@@ -99,7 +99,11 @@ InitializeThreadsCalculator::~InitializeThreadsCalculator() = default;
 void InitializeThreadsCalculator::init_done() {
     // We are still alive. We made it.
     // Tear down the headstone to celebrate our victory.
-    std::filesystem::remove(_path);
+    std::error_code ec;
+    std::filesystem::remove(_path, ec);
+    if (ec) {
+        LOG(warning, "Failed to remove headstone file. Thread count will be reduced in next initialization.");
+    }
     _threads = InitializeThreads();
 }
 
