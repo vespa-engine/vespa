@@ -69,6 +69,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -1243,6 +1244,43 @@ public class DocumentV1ApiTest {
         assertEquals(1, contentType.size());
         assertEquals("application/json; charset=UTF-8", contentType.get(0));
         driver.close();
+    }
+
+    @Test
+    void streamed_visit_returns_every_document_whole_and_in_order() {
+        // Small documents, two that do not fit together in one 64 KiB write (200, 201), and two larger than 64 KiB (0, 150).
+        int count = 300;
+        var driver = new RequestHandlerTestDriver(handler);
+        var tokens = new ArrayList<AckToken>();
+        for (int i = 0; i < count; i++) tokens.add(new AckToken(null));
+        access.expect(tokens);
+        access.expect(parameters -> {
+            for (int i = 0; i < count; i++) {
+                Document document = new Document(manager.getDocumentType("music"), "id:space:music::doc-" + i);
+                document.setFieldValue("artist", streamedArtist(i));
+                parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(document)), tokens.get(i));
+            }
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "Done");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true", HttpRequest.Method.GET);
+        request.headers().add("Accept", "application/json");
+        var response = driver.sendRequest(request, "");
+        Inspector documents = SlimeUtils.jsonToSlime(response.readAll()).get().field("documents");
+        assertEquals(count, documents.entries());
+        for (int i = 0; i < count; i++) {
+            assertEquals("id:space:music::doc-" + i, documents.entry(i).field("id").asString());
+            assertEquals(streamedArtist(i), documents.entry(i).field("fields").field("artist").asString());
+        }
+        assertEquals(200, response.getStatus());
+        driver.close();
+    }
+
+    private static String streamedArtist(int i) {
+        return switch (i) {
+            case 0, 150 -> "x".repeat(100_000);
+            case 200, 201 -> "y".repeat(40_000);
+            default -> "artist " + i;
+        };
     }
 
     @Test
