@@ -220,16 +220,14 @@ TEST(MemoryFlushTest, can_order_by_disk_gain_with_small_values) {
 
 TEST(MemoryFlushTest, prefer_targets_with_high_relative_disk_bloat) {
     ContextBuilder cb;
-    cb.add(createTargetD("t2", DiskGain(100, 70)))                      // gain 30
-        .add(createTargetD("t1", DiskGain(100, 75)))                    // gain 25
-        .add(createTargetD("t4", DiskGain(100 + 200_Mi, 45 + 200_Mi)))  // gain 55
-        .add(createTargetD("t3", DiskGain(100 + 200_Mi, 50 + 200_Mi))); // gain 50
-    // total disk bloat value calculation uses min 100M disk size
-    // target bloat value calculation uses min 100M disk size
-    { // target t2 has diskGain > bloatValue
-        // t2 gain: 30 / 100M = 0.0000030 -> bloat factor 0.0000029 to trigger
+    cb.add(createTargetD("t2", DiskGain(100_Mi, 100_Mi - 30_Mi)))    // gain 30 Mi
+        .add(createTargetD("t1", DiskGain(100_Mi, 100_Mi - 25_Mi)))  // gain 25 Mi
+        .add(createTargetD("t4", DiskGain(200_Mi, 200_Mi - 55_Mi)))  // gain 55 Mi
+        .add(createTargetD("t3", DiskGain(200_Mi, 200_Mi - 50_Mi))); // gain 50 Mi
+    {                                                                // target t2 has diskGain > bloatValue
+        // t2 gain: 30 Mi / 100 Mi = 0.30 -> bloat factor 0.29 to trigger
         // t2 is the only target with a high relative disk bloat.
-        MemoryFlush flush({1000, 20_Gi, 10.0, 1000, 0.00000029, minutes(1)});
+        MemoryFlush flush({1000, 20_Gi, 10.0, 1000, 0.29, minutes(1)});
         assertOrder({"t2", "t4", "t3", "t1"}, cb.flush_targets(flush));
     }
 }
