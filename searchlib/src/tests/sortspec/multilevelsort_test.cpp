@@ -4,10 +4,12 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_to_number.h>
 #include <vespa/searchlib/common/sortresults.h>
@@ -16,6 +18,9 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <cinttypes>
+#include <map>
+#include <mutex>
+#include <thread>
 #include <type_traits>
 
 #include <vespa/log/log.h>
@@ -646,6 +651,283 @@ TEST(SortTest, binding_a_null_provider_is_ok_without_sort_features) {
 
     EXPECT_TRUE(sorter.bind_numeric_provider(nullptr));
     EXPECT_FALSE(sorter.feature_values_failed());
+}
+
+namespace {
+
+constexpr uint32_t map_num_docs = 5; // lids 1..4
+
+AttributePtr make_map_test_attribute(const std::string& name, BasicType basic_type, CollectionType collection_type) {
+    Config cfg(basic_type, collection_type);
+    auto   attr = AttributeFactory::createAttribute(name, cfg);
+    attr->addReservedDoc();
+    while (attr->getNumDocs() < map_num_docs) {
+        uint32_t docid = 0;
+        attr->addDoc(docid);
+    }
+    attr->commit();
+    return attr;
+}
+
+void append_map_keys(AttributeVector& attr, uint32_t docid, const std::vector<std::string>& keys) {
+    auto& string_attr = dynamic_cast<StringAttribute&>(attr);
+    for (const auto& key : keys) {
+        string_attr.append(docid, key, 1);
+    }
+}
+
+void append_map_values(AttributeVector& attr, uint32_t docid, const std::vector<int64_t>& values) {
+    auto& int_attr = dynamic_cast<IntegerAttribute&>(attr);
+    for (auto value : values) {
+        int_attr.append(docid, value, 1);
+    }
+}
+
+/*
+ * Two aligned array attributes forming map "m", plus an ordinary single value
+ * attribute used as another sort level.
+ *
+ * lid 1: {k0:10, k1:30}          other=5
+ * lid 2: {k1:20, k2:99}          other=5
+ * lid 3: {k0:40}                 other=1   (selected key missing)
+ * lid 4: {k2:1, k0:2, k1:50}     other=5
+ */
+struct MapSortFixture {
+    AttributePtr             keys;
+    AttributePtr             values;
+    AttributePtr             other;
+    search::AttributeManager mgr;
+
+    explicit MapSortFixture(BasicType key_type = BasicType::STRING,
+                            CollectionType key_collection = CollectionType::ARRAY, bool register_keys = true)
+        : keys(make_map_test_attribute("m.key", key_type, key_collection)),
+          values(make_map_test_attribute("m.value", BasicType::INT64, CollectionType::ARRAY)),
+          other(make_map_test_attribute("other", BasicType::INT64, CollectionType::SINGLE)),
+          mgr() {
+        if (key_type == BasicType::STRING && key_collection == CollectionType::ARRAY) {
+            append_map_keys(*keys, 1, {"k0", "k1"});
+            append_map_keys(*keys, 2, {"k1", "k2"});
+            append_map_keys(*keys, 3, {"k0"});
+            append_map_keys(*keys, 4, {"k2", "k0", "k1"});
+        }
+        keys->commit();
+        append_map_values(*values, 1, {10, 30});
+        append_map_values(*values, 2, {20, 99});
+        append_map_values(*values, 3, {40});
+        append_map_values(*values, 4, {1, 2, 50});
+        values->commit();
+        auto& other_attr = dynamic_cast<IntegerAttribute&>(*other);
+        other_attr.update(1, 5);
+        other_attr.update(2, 5);
+        other_attr.update(3, 1);
+        other_attr.update(4, 5);
+        other->commit();
+        if (register_keys) {
+            mgr.add(keys);
+        }
+        mgr.add(values);
+        mgr.add(other);
+    }
+};
+
+std::vector<uint32_t> sorted_docids(FastS_SortSpec& sorter) {
+    RankedHit hits[4] = {RankedHit(3, 0.0), RankedHit(1, 0.0), RankedHit(4, 0.0), RankedHit(2, 0.0)};
+    sorter.sortResults(hits, 4, 4);
+    std::vector<uint32_t> result;
+    for (const auto& hit : hits) {
+        result.emplace_back(hit.getDocId());
+    }
+    return result;
+}
+
+} // namespace
+
+TEST(SortTest, map_value_sorts_by_the_value_at_the_selected_key) {
+    search::uca::UcaConverterFactory ucaFactory;
+    MapSortFixture                   f;
+    search::AttributeContext         ac(f.mgr);
+    {
+        FastS_SortSpec asc("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        ASSERT_TRUE(asc.Init("+m{\"k1\"}", ac));
+        // Missing first ascending, then 20, 30, 50.
+        EXPECT_EQ((std::vector<uint32_t>{3, 2, 1, 4}), sorted_docids(asc));
+    }
+    {
+        FastS_SortSpec desc("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        ASSERT_TRUE(desc.Init("-m{\"k1\"}", ac));
+        // 50, 30, 20, then missing last descending.
+        EXPECT_EQ((std::vector<uint32_t>{4, 1, 2, 3}), sorted_docids(desc));
+    }
+    {
+        // A key that is in no document at all makes every document missing, so the
+        // deterministic secondary clause decides the whole order.
+        FastS_SortSpec unknown("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        ASSERT_TRUE(unknown.Init("+m{\"nope\"} +[docid]", ac));
+        EXPECT_EQ((std::vector<uint32_t>{1, 2, 3, 4}), sorted_docids(unknown));
+    }
+}
+
+TEST(SortTest, map_value_can_be_combined_with_an_ordinary_attribute) {
+    search::uca::UcaConverterFactory ucaFactory;
+    MapSortFixture                   f;
+    search::AttributeContext         ac(f.mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("-other +m{\"k1\"}", ac));
+    // other descending puts the three documents with other=5 first; the map value breaks that tie.
+    EXPECT_EQ((std::vector<uint32_t>{2, 1, 4, 3}), sorted_docids(sorter));
+}
+
+TEST(SortTest, map_value_with_explicit_missing_policy) {
+    search::uca::UcaConverterFactory ucaFactory;
+    MapSortFixture                   f;
+    search::AttributeContext         ac(f.mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+missing(m{\"k1\"},last)", ac));
+    EXPECT_EQ((std::vector<uint32_t>{2, 1, 4, 3}), sorted_docids(sorter));
+}
+
+TEST(SortTest, map_value_init_fails_for_unusable_attributes) {
+    search::uca::UcaConverterFactory ucaFactory;
+    {
+        // Key attribute not registered.
+        MapSortFixture           f(BasicType::STRING, CollectionType::ARRAY, false);
+        search::AttributeContext ac(f.mgr);
+        FastS_SortSpec           sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        EXPECT_FALSE(sorter.Init("+m{\"k1\"}", ac));
+    }
+    {
+        // Value attribute not registered: the names are derived, so "nosuchmap" has no ".value".
+        MapSortFixture           f;
+        search::AttributeContext ac(f.mgr);
+        FastS_SortSpec           sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        EXPECT_FALSE(sorter.Init("+nosuchmap{\"k1\"}", ac));
+    }
+    {
+        // Integer key attribute.
+        MapSortFixture           f(BasicType::INT64, CollectionType::ARRAY);
+        search::AttributeContext ac(f.mgr);
+        FastS_SortSpec           sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        EXPECT_FALSE(sorter.Init("+m{\"k1\"}", ac));
+    }
+    {
+        // Single value key attribute.
+        MapSortFixture           f(BasicType::STRING, CollectionType::SINGLE);
+        search::AttributeContext ac(f.mgr);
+        FastS_SortSpec           sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        EXPECT_FALSE(sorter.Init("+m{\"k1\"}", ac));
+    }
+    {
+        // Illegal missing value for the numeric value type.
+        MapSortFixture           f;
+        search::AttributeContext ac(f.mgr);
+        FastS_SortSpec           sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        EXPECT_FALSE(sorter.Init("+missing(m{\"k1\"},as,illegal)", ac));
+    }
+}
+
+namespace {
+
+struct GuardEvent {
+    std::string     name;
+    std::thread::id acquired;
+    std::thread::id released;
+    bool            stable_enum = false;
+};
+
+class RecordingReadGuard : public search::attribute::AttributeReadGuard {
+    std::shared_ptr<GuardEvent> _event;
+
+public:
+    RecordingReadGuard(const search::attribute::IAttributeVector* attr, std::shared_ptr<GuardEvent> event)
+        : search::attribute::AttributeReadGuard(attr), _event(std::move(event)) {
+        _event->acquired = std::this_thread::get_id();
+    }
+    ~RecordingReadGuard() override { _event->released = std::this_thread::get_id(); }
+};
+
+class RecordingAttributeManager : public IAttributeManager {
+    std::map<std::string, AttributeVector::SP>  _attributes;
+    mutable std::mutex                           _lock;
+    mutable std::vector<std::shared_ptr<GuardEvent>> _events;
+
+public:
+    void add(const AttributeVector::SP& attr) { _attributes[attr->getName()] = attr; }
+    std::vector<std::shared_ptr<GuardEvent>> events() const {
+        std::lock_guard guard(_lock);
+        return _events;
+    }
+    AttributeGuard::UP getAttribute(std::string_view) const override { return std::make_unique<AttributeGuard>(); }
+    void asyncForAttribute(std::string_view, std::unique_ptr<search::attribute::IAttributeFunctor>) const override {}
+    std::unique_ptr<search::attribute::AttributeReadGuard>
+    getAttributeReadGuard(std::string_view name, bool stable_enum) const override {
+        auto event = std::make_shared<GuardEvent>();
+        event->name = std::string(name);
+        event->stable_enum = stable_enum;
+        {
+            std::lock_guard guard(_lock);
+            _events.push_back(event);
+        }
+        auto found = _attributes.find(std::string(name));
+        const search::attribute::IAttributeVector* attr =
+            (found == _attributes.end()) ? nullptr : found->second.get();
+        return std::make_unique<RecordingReadGuard>(attr, std::move(event));
+    }
+    void getAttributeList(std::vector<AttributeGuard>&) const override {}
+    search::attribute::IAttributeContext::UP createContext() const override {
+        return std::make_unique<AttributeContext>(*this);
+    }
+    std::shared_ptr<search::attribute::ReadableAttributeVector>
+    readable_attribute_vector(std::string_view name) const override {
+        auto found = _attributes.find(std::string(name));
+        if (found == _attributes.end()) {
+            return {};
+        }
+        return found->second;
+    }
+};
+
+} // namespace
+
+TEST(SortTest, map_sort_enum_guards_are_taken_and_released_on_the_setup_thread) {
+    RecordingAttributeManager mgr;
+    mgr.add(AttributeFactory::createAttribute("m.key", Config(BasicType::STRING, CollectionType::ARRAY)));
+    mgr.add(AttributeFactory::createAttribute("m.value", Config(BasicType::INT64, CollectionType::ARRAY)));
+    const auto setup_thread = std::this_thread::get_id();
+    {
+        search::AttributeContext         ctx(mgr);
+        search::uca::UcaConverterFactory uca;
+        ctx.enableMultiThreadSafe();
+        FastS_SortSpec::prefetch_enum_guards(ctx, "+m{\"k\"} -other", uca);
+
+        auto lookup = [&ctx] {
+            ctx.getAttributeStableEnum("m.key");
+            ctx.getAttribute("m.value");
+        };
+        std::thread worker_a(lookup);
+        std::thread worker_b(lookup);
+        worker_a.join();
+        worker_b.join();
+    }
+
+    auto events = mgr.events();
+    ASSERT_EQ(2u, events.size());
+    bool saw_key = false;
+    bool saw_value = false;
+    for (const auto& event : events) {
+        EXPECT_EQ(setup_thread, event->acquired);
+        EXPECT_EQ(setup_thread, event->released);
+        if (event->name == "m.key") {
+            saw_key = true;
+            EXPECT_TRUE(event->stable_enum);
+        } else if (event->name == "m.value") {
+            saw_value = true;
+            EXPECT_FALSE(event->stable_enum);
+        } else {
+            ADD_FAILURE() << event->name;
+        }
+    }
+    EXPECT_TRUE(saw_key);
+    EXPECT_TRUE(saw_value);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

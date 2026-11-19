@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,8 +29,8 @@ enum class MissingPolicy : uint8_t {
 struct FieldSortSpec {
     FieldSortSpec(std::string_view field, bool ascending, std::shared_ptr<BlobConverter> converter) noexcept;
     FieldSortSpec(std::string_view field, sortspec::SortOrder, std::shared_ptr<BlobConverter> converter,
-                  sortspec::MissingPolicy missing_policy, std::string missing_value,
-                  bool is_rank_feature = false) noexcept;
+                  sortspec::MissingPolicy missing_policy, std::string missing_value, bool is_rank_feature = false,
+                  std::optional<std::string> map_key = std::nullopt) noexcept;
     ~FieldSortSpec();
     std::string                    _field;
     sortspec::SortOrder            _sort_order;
@@ -37,6 +38,8 @@ struct FieldSortSpec {
     sortspec::MissingPolicy        _missing_policy;
     std::string                    _missing_value;
     bool                           _is_rank_feature;
+    // Set for m{"k"}: _field is the map name, and the value is read from <map>.value at this key.
+    std::optional<std::string>     _map_key;
     bool is_ascending() const noexcept { return _sort_order == sortspec::SortOrder::ASCENDING; }
 };
 

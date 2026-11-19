@@ -34,7 +34,7 @@ ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom& doom, IA
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
       sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory),
       _feature_binding_failed(false) {
-    if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
+    if (!ss.empty() && sortSpec.Init(ss, ac)) {
         if (sortSpec.bind_numeric_provider(sort_value_provider)) {
             sorter = &sortSpec;
         } else {
@@ -92,6 +92,15 @@ void ResultProcessor::prepareThreadContextCreation(size_t num_threads) {
     }
     if (_groupingSession) {
         _groupingSession->prepareThreadContextCreation(num_threads);
+    }
+    // One match thread runs Init here and can take the key guard itself. More than one must
+    // take it before dispatch. Parsing only needs the map names, so the converter is unused.
+    if (num_threads > 1 && _sortSpec.find('{') != std::string::npos) {
+        struct NoOpConverterFactory : search::common::ConverterFactory {
+            search::common::BlobConverter::UP create(std::string_view, std::string_view) const override { return {}; }
+        };
+        NoOpConverterFactory factory;
+        FastS_SortSpec::prefetch_enum_guards(_attrContext, _sortSpec, factory);
     }
 }
 

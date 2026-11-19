@@ -963,6 +963,13 @@ bool notContained(const std::vector<size_t>& sortList, size_t idx) {
 void SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec& sortList) {
     if (!sortList.empty()) {
         for (const search::common::FieldSortSpec& field_sort_spec : sortList) {
+            if (field_sort_spec._map_key.has_value()) {
+                // The container rejects these. Skip the clause if one arrives anyway; the other
+                // clauses still sort.
+                Issue::report("Sorting by a map value is not supported in streaming search (field '%s{\"%s\"}')",
+                              field_sort_spec._field.c_str(), field_sort_spec._map_key->c_str());
+                continue;
+            }
             vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(field_sort_spec._field);
             if (fid != StringFieldIdTMap::npos) {
                 AttributeGuard::UP attr(_attrMan.getAttribute(field_sort_spec._field));

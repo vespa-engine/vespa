@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
+#include <vespa/searchlib/attribute/map_lookup_sort_blob_writer.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
 
@@ -21,6 +22,7 @@ LOG_SETUP(".search.attribute.sortresults");
 using search::RankedHit;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::attribute::make_map_lookup_sort_blob_writer;
 using search::attribute::make_sort_blob_writer;
 using search::common::FieldSortSpec;
 using search::common::SortSpec;
@@ -175,8 +177,28 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
 
     uint32_t                type = ASC_VECTOR;
     const IAttributeVector* vector(nullptr);
+    std::unique_ptr<search::attribute::ISortBlobWriter> sort_blob_writer;
 
-    if (field_sort_spec._is_rank_feature) {
+    if (field_sort_spec._map_key.has_value()) {
+        // The key is part of the field reference, so _field is the map name. No attribute has that
+        // name; the value and the key live in the struct-field attributes.
+        type = (field_sort_spec.is_ascending()) ? ASC_VECTOR : DESC_VECTOR;
+        auto value_name = field_sort_spec._field + ".value";
+        auto key_name = field_sort_spec._field + ".key";
+        // The value is copied into the sort blob immediately, as in ordinary string sorting.
+        // The key handle is compared for the whole query, so only m.key needs a stable enum.
+        vector = vecMan.getAttribute(value_name);
+        if (!vector) {
+            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", value_name.c_str());
+            return false;
+        }
+        const auto* key_vector = vecMan.getAttributeStableEnum(key_name);
+        if (!key_vector) {
+            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", key_name.c_str());
+            return false;
+        }
+        sort_blob_writer = make_map_lookup_sort_blob_writer(*key_vector, *vector, field_sort_spec);
+    } else if (field_sort_spec._is_rank_feature) {
         type = (field_sort_spec.is_ascending()) ? ASC_FEATURE : DESC_FEATURE;
     } else if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
         type = (field_sort_spec.is_ascending()) ? ASC_RANK : DESC_RANK;
@@ -198,8 +220,9 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
         }
     }
 
-    auto sort_blob_writer = field_sort_spec._is_rank_feature ? std::unique_ptr<search::attribute::ISortBlobWriter>()
-                                                             : make_sort_blob_writer(vector, field_sort_spec);
+    if (!field_sort_spec._map_key.has_value() && !field_sort_spec._is_rank_feature) {
+        sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
+    }
     if (vector != nullptr && !sort_blob_writer) {
         return false;
     }
@@ -394,6 +417,24 @@ bool FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider* provider) 
 
 FastS_SortSpec::~FastS_SortSpec() {
     freeSortData();
+}
+
+void FastS_SortSpec::prefetch_enum_guards(IAttributeContext& attr_ctx, std::string_view sort_spec,
+                                         const search::common::ConverterFactory& uca_factory) {
+    if (sort_spec.empty()) {
+        return;
+    }
+    try {
+        search::common::SortSpec spec(std::string(sort_spec), uca_factory);
+        for (const auto& field : spec) {
+            if (field._map_key.has_value()) {
+                attr_ctx.getAttributeStableEnum(field._field + ".key");
+                attr_ctx.getAttribute(field._field + ".value");
+            }
+        }
+    } catch (const std::runtime_error&) {
+        // Init reports a bad spec. No map attribute was resolved.
+    }
 }
 
 bool FastS_SortSpec::Init(const std::string& sortStr, IAttributeContext& vecMan) {
