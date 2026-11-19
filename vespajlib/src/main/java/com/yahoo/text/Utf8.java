@@ -52,7 +52,7 @@ public final class Utf8 {
      * @return String decoded from UTF-8
      */
     public static String toString(byte[] data, int offset, int length) {
-        return toString(ByteBuffer.wrap(data, offset, length));
+        return new String(data, offset, length, UTF_8);
     }
 
     /**
