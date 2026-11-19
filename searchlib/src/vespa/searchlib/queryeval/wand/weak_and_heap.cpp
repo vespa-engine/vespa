@@ -13,8 +13,8 @@ template <typename ScoreT>
 WeakAndPriorityQueueT<ScoreT>::~WeakAndPriorityQueueT() = default;
 
 template <typename ScoreT>
-std::unique_ptr<WeakAndPriorityQueueT<ScoreT>>
-WeakAndPriorityQueueT<ScoreT>::createHeap(uint32_t scoresToTrack, bool thread_safe) {
+std::unique_ptr<WeakAndPriorityQueueT<ScoreT>> WeakAndPriorityQueueT<ScoreT>::createHeap(uint32_t scoresToTrack,
+                                                                                         bool     thread_safe) {
     if (thread_safe) {
         return std::make_unique<SharedWeakAndPriorityQueueT<ScoreT>>(scoresToTrack);
     }
@@ -22,12 +22,12 @@ WeakAndPriorityQueueT<ScoreT>::createHeap(uint32_t scoresToTrack, bool thread_sa
 }
 
 template <typename ScoreT>
-void WeakAndPriorityQueueT<ScoreT>::adjust(std::span<score_t> newScores) {
+void WeakAndPriorityQueueT<ScoreT>::adjust(std::span<ScoreT> newScores) {
     if (this->getScoresToTrack() == 0) {
         return;
     }
 
-    for (score_t score : newScores) {
+    for (ScoreT score : newScores) {
         if (!is_full()) {
             _bestScores.push(score);
         } else if (_bestScores.front() < score) {
@@ -49,7 +49,7 @@ template <typename ScoreT>
 SharedWeakAndPriorityQueueT<ScoreT>::~SharedWeakAndPriorityQueueT() = default;
 
 template <typename ScoreT>
-void SharedWeakAndPriorityQueueT<ScoreT>::adjust(std::span<score_t> newScores) {
+void SharedWeakAndPriorityQueueT<ScoreT>::adjust(std::span<ScoreT> newScores) {
     std::lock_guard guard(_lock);
     WeakAndPriorityQueueT<ScoreT>::adjust(newScores);
 }

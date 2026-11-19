@@ -17,16 +17,14 @@
 
 #include <cmath>
 
-namespace search::queryeval::wand {
-using score_t = int64_t;
-}
 namespace search::queryeval {
 template <typename ScoreT> class WeakAndHeapT;
 }
-namespace search::queryeval::wand {
 
+namespace search::queryeval::wand {
 //-----------------------------------------------------------------------------
 
+using score_t = int64_t; // the default score-tracking type
 using docid_t = uint32_t;
 using ref_t = uint16_t;
 
@@ -73,16 +71,13 @@ template <typename ScoreT>
 struct CommonMatchParamsT {
     using WeakAndHeap = WeakAndHeapT<ScoreT>;
 
-    WeakAndHeap&     scores;
-    const uint32_t   scoresAdjustFrequency;
-    const uint32_t   docid_limit;
+    WeakAndHeap&   scores;
+    const uint32_t scoresAdjustFrequency;
+    const uint32_t docid_limit;
     CommonMatchParamsT(WeakAndHeap& scores_in) noexcept
         : CommonMatchParamsT(scores_in, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0) {}
-    CommonMatchParamsT(WeakAndHeap& scores_in, uint32_t scoresAdjustFrequency_in,
-                uint32_t docid_limit_in) noexcept
-        : scores(scores_in),
-          scoresAdjustFrequency(scoresAdjustFrequency_in),
-          docid_limit(docid_limit_in) {}
+    CommonMatchParamsT(WeakAndHeap& scores_in, uint32_t scoresAdjustFrequency_in, uint32_t docid_limit_in) noexcept
+        : scores(scores_in), scoresAdjustFrequency(scoresAdjustFrequency_in), docid_limit(docid_limit_in) {}
 };
 
 using CommonMatchParams = CommonMatchParamsT<wand::score_t>;
@@ -93,14 +88,10 @@ using CommonMatchParams = CommonMatchParamsT<wand::score_t>;
 struct MatchParams : public CommonMatchParams {
     StopWordStrategy stop_words;
     MatchParams(WeakAndHeap& scores_in) noexcept
-      : CommonMatchParams(scores_in),
-        stop_words(StopWordStrategy::none())
-    {}
+        : CommonMatchParams(scores_in), stop_words(StopWordStrategy::none()) {}
     MatchParams(WeakAndHeap& scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in,
                 uint32_t docid_limit_in) noexcept
-      : CommonMatchParams(scores_in, scoresAdjustFrequency_in, docid_limit_in),
-        stop_words(stop_word_strategy)
-    {}
+        : CommonMatchParams(scores_in, scoresAdjustFrequency_in, docid_limit_in), stop_words(stop_word_strategy) {}
 };
 
 /**
@@ -517,12 +508,15 @@ struct GreaterThanEqual {
 
 //-----------------------------------------------------------------------------
 
-class Algorithm {
+/**
+ * The WAND algorithm, generic on score type (scorers and term max scores must use the same type).
+ */
+template <typename ScoreT> class AlgorithmT {
 private:
     docid_t _candidate;
-    score_t _upperBound;
-    score_t _maxUpperBound;
-    score_t _partial_score;
+    ScoreT  _upperBound;
+    ScoreT  _maxUpperBound;
+    ScoreT  _partial_score;
 
     template <typename VectorizedTerms> bool step_term(VectorizedTerms& terms, ref_t ref) {
         terms.docId(ref) = terms.seek(ref, _candidate);
@@ -567,11 +561,11 @@ private:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_present_score(VectorizedTerms& terms, Heaps& heaps, score_t& max_score, const Scorer& scorer,
+    bool check_present_score(VectorizedTerms& terms, Heaps& heaps, ScoreT& max_score, const Scorer& scorer,
                              AboveThreshold&& aboveThreshold) {
         ref_t* end = heaps.present_end();
         for (ref_t* ref = heaps.present_begin(); ref != end; ++ref) {
-            score_t term_score = scorer.calculateScore(terms, *ref, _candidate);
+            ScoreT term_score = scorer.calculateScore(terms, *ref, _candidate);
             _partial_score += term_score;
             max_score -= (terms.maxScore(*ref) - term_score);
             if (!aboveThreshold(max_score)) {
@@ -582,12 +576,12 @@ private:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_past_score(VectorizedTerms& terms, Heaps& heaps, score_t& max_score, const Scorer& scorer,
+    bool check_past_score(VectorizedTerms& terms, Heaps& heaps, ScoreT& max_score, const Scorer& scorer,
                           AboveThreshold&& aboveThreshold) {
         while (heaps.has_past() && !aboveThreshold(_partial_score)) {
             heaps.pop_past();
             if (step_term(terms, heaps.last_present())) {
-                score_t term_score = scorer.calculateScore(terms, heaps.last_present(), _candidate);
+                ScoreT term_score = scorer.calculateScore(terms, heaps.last_present(), _candidate);
                 _partial_score += term_score;
                 max_score -= (terms.maxScore(heaps.last_present()) - term_score);
             } else {
@@ -609,7 +603,7 @@ private:
     }
 
 public:
-    Algorithm() : _candidate(SearchIterator::beginId()), _upperBound(0), _maxUpperBound(0), _partial_score(0) {}
+    AlgorithmT() : _candidate(SearchIterator::beginId()), _upperBound(0), _maxUpperBound(0), _partial_score(0) {}
 
     template <typename VectorizedTerms, typename Heaps>
     void init_range(VectorizedTerms& terms, Heaps& heaps, uint32_t begin_id, uint32_t end_id) {
@@ -622,7 +616,7 @@ public:
     }
 
     docid_t get_candidate() const { return _candidate; }
-    score_t get_upper_bound() const { return _upperBound; }
+    ScoreT get_upper_bound() const { return _upperBound; }
 
     template <typename VectorizedTerms, typename Heaps>
     void set_candidate(VectorizedTerms& terms, Heaps& heaps, docid_t candidate) {
@@ -668,7 +662,7 @@ public:
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
     bool check_score(VectorizedTerms& terms, Heaps& heaps, const Scorer& scorer, AboveThreshold&& aboveThreshold) {
         _partial_score = 0;
-        score_t max_score = _maxUpperBound;
+        ScoreT max_score = _maxUpperBound;
         if (check_present_score(terms, heaps, max_score, scorer, aboveThreshold)) {
             if (check_past_score(terms, heaps, max_score, scorer, aboveThreshold)) {
                 return aboveThreshold(_partial_score);
@@ -678,8 +672,8 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer>
-    score_t get_full_score(VectorizedTerms& terms, Heaps& heaps, const Scorer& scorer) {
-        score_t score = _partial_score;
+    ScoreT get_full_score(VectorizedTerms& terms, Heaps& heaps, const Scorer& scorer) {
+        ScoreT score = _partial_score;
         while (heaps.has_past()) {
             heaps.pop_any_past();
             if (step_term(terms, heaps.last_present())) {
@@ -703,6 +697,8 @@ public:
         }
     }
 };
+
+using Algorithm = AlgorithmT<score_t>;
 
 //-----------------------------------------------------------------------------
 
