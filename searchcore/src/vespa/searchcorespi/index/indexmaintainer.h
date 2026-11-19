@@ -73,11 +73,13 @@ class IndexMaintainer : public IIndexManager, public IWarmupDone {
     using LockGuard = std::lock_guard<std::mutex>;
 
     const std::string                _base_dir;
+    const std::string                _document_type_name;
     const WarmupConfig               _warmupConfig;
     std::shared_ptr<DiskIndexes>     _disk_indexes;
     std::shared_ptr<IndexDiskLayout> _layout;
-    Schema                           _schema;             // Protected by SL + IUL
-    std::shared_ptr<const Schema>    _activeFusionSchema; // Protected by SL + IUL
+
+    Schema                        _schema;             // Protected by SL + IUL
+    std::shared_ptr<const Schema> _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
     std::shared_ptr<const Schema> _activeFusionPrunedSchema;
     uint32_t                      _source_selector_changes; // Protected by IUL
@@ -334,6 +336,7 @@ public:
     FlushStats getFlushStats() const;
     FusionStats getFusionStats() const;
     const std::string& getBaseDir() const { return _base_dir; }
+    [[nodiscard]] const std::string& document_type_name() const noexcept { return _document_type_name; }
     uint32_t getNumFrozenMemoryIndexes() const;
     uint32_t getMaxFrozenMemoryIndexes() const { return _maxFrozen; }
 

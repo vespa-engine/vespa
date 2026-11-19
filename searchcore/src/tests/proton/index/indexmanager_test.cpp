@@ -282,7 +282,7 @@ Document::UP IndexManagerTest::addDocument(uint32_t id) {
 void IndexManagerTest::resetIndexManager(SerialNum serial_num) {
     _index_manager.reset();
     _index_manager = std::make_unique<IndexManager>(
-        index_dir, std::shared_ptr<search::diskindex::IPostingListCache>(), IndexConfig(),
+        index_dir, DocTypeName("test"), std::shared_ptr<search::diskindex::IPostingListCache>(), IndexConfig(),
         _make_schema(_interleaved_features), serial_num, _reconfigurer, _service.write(), _service.shared(),
         TuneFileIndexManager(), TuneFileAttributes(), _fileHeaderContext);
     _serial_num = std::max(serial_num, _index_manager->getFlushedSerialNum());
