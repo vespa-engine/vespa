@@ -105,7 +105,7 @@ SearchIterator::UP create_iterator_tree() {
 
 SearchIterator::UP create_weak_and() {
     struct DummyHeap : WeakAndHeap {
-        void adjust(std::span<score_t>) override {}
+        void adjust(std::span<wand::score_t>) override {}
         DummyHeap() : WeakAndHeap(100) {}
     };
     static DummyHeap     dummy_heap;
