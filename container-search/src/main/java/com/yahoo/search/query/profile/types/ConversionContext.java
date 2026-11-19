@@ -9,6 +9,8 @@ import com.yahoo.search.query.properties.PropertyMap;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author bratseth
@@ -21,7 +23,7 @@ public class ConversionContext {
     private final Map<String, String> contextValues;
     private final Properties properties;
     private final Language language;
-    private final Instant deadline;
+    private final Optional<Instant> deadline;
 
     public ConversionContext(String destination, CompiledQueryProfileRegistry registry, Embedder embedder,
                              Map<String, String> context, Properties properties) {
@@ -32,19 +34,19 @@ public class ConversionContext {
                              Map<String, Embedder> embedders,
                              Map<String, String> context,
                              Properties properties) {
-        this(destination, registry, embedders, context, properties, null);
+        this(destination, registry, embedders, context, properties, Optional.empty());
     }
 
     /**
      * Creates a context for conversions which must complete by the given deadline.
      *
-     * @param deadline the time by which a conversion must complete, or null for no deadline
+     * @param deadline the time by which a conversion must complete, or empty for no deadline
      */
     public ConversionContext(String destination, CompiledQueryProfileRegistry registry,
                              Map<String, Embedder> embedders,
                              Map<String, String> context,
                              Properties properties,
-                             Instant deadline) {
+                             Optional<Instant> deadline) {
         this.destination = destination;
         this.registry = registry;
         this.embedders = embedders;
@@ -58,7 +60,7 @@ public class ConversionContext {
 
         this.contextValues = context;
         this.properties = properties;
-        this.deadline = deadline;
+        this.deadline = Objects.requireNonNull(deadline, "deadline");
     }
 
     /** Returns the local name of the field which will receive the converted value (or null when this is empty) */
@@ -82,8 +84,8 @@ public class ConversionContext {
      */
     Properties properties() { return properties; }
 
-    /** Returns the time by which a conversion must complete, or null if it has no deadline */
-    Instant deadline() { return deadline; }
+    /** Returns the time by which a conversion must complete, or empty if it has no deadline */
+    Optional<Instant> deadline() { return deadline; }
 
     /** Returns an empty context */
     public static ConversionContext empty() {

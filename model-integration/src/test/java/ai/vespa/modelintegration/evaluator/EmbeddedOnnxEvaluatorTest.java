@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
@@ -59,6 +61,16 @@ public class EmbeddedOnnxEvaluatorTest {
 
         assertEquals(evaluator.evaluate(inputs).get("output"), Tensor.from("tensor(d0[1],d1[1]):[1.3]"));
         assertEquals(evaluator.evaluate(inputs, "output"), Tensor.from("tensor(d0[1],d1[1]):[1.3]"));
+    }
+
+    @Test
+    public void testEvaluationWithANullDeadlineFails() {
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
+        var runtime = EmbeddedOnnxRuntime.createTestInstance();
+        OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/pytorch/one_layer.onnx");
+        Map<String, Tensor> inputs = Map.of("input", Tensor.from("tensor<float>(d0[1],d1[3]):[[0.1, 0.2, 0.3]]"));
+        assertThrows(NullPointerException.class, () -> evaluator.evaluate(inputs, (Optional<Instant>) null));
+        assertThrows(NullPointerException.class, () -> evaluator.evaluate(inputs, "output", (Optional<Instant>) null));
     }
 
     @Test

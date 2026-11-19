@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Properties backed by a query profile.
@@ -378,9 +379,9 @@ public class QueryProfileProperties extends Properties {
         super.setParentQuery(query);
     }
 
-    /** Returns the time by which the query which owns this must complete, or null if this has no query */
-    private Instant queryDeadline() {
-        return query == null ? null : Instant.ofEpochMilli(query.getStartTime() + query.getTimeout());
+    /** Returns the time by which the query which owns this must complete, or empty if this has no query */
+    private Optional<Instant> queryDeadline() {
+        return query == null ? Optional.empty() : Optional.of(Instant.ofEpochMilli(query.getStartTime() + query.getTimeout()));
     }
 
     @Override

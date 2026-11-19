@@ -347,6 +347,12 @@ public class ClusterSearcher extends Searcher {
             mergedResult.mergeWith(result);
             mergedResult.hits().addAll(result.hits().asUnorderedHits());
         } catch (ExecutionException e) {
+            if (e.getCause() instanceof com.yahoo.language.process.TimeoutException timeout) {
+                mergedResult.hits().addError(ErrorMessage.createTimeout("Timed out querying '" +
+                                                                        query.getModel().getRestrict() + "': " +
+                                                                        Exceptions.toMessageString(timeout)));
+                return;
+            }
             mergedResult.hits().addError(ErrorMessage.createInternalServerError("Failed querying '" +
                                                                                 query.getModel().getRestrict() + "': " +
                                                                                 Exceptions.toMessageString(e),

@@ -151,7 +151,7 @@ public class FunctionEvaluator {
                 for (Map.Entry<String, TensorType> input: onnxModel.inputs().entrySet()) {
                     inputs.put(input.getKey(), context.get(input.getKey()).asTensor());
                 }
-                Tensor result = onnxModel.evaluate(inputs, outputName, context.timeLeft());
+                Tensor result = onnxModel.evaluate(inputs, outputName, context.deadline());
                 context.put(onnxFeature, new TensorValue(result));
             }
         }

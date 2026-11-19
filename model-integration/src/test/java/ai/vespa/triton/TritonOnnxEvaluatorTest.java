@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -121,7 +121,7 @@ class TritonOnnxEvaluatorTest {
                     "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0.0, 0.0, 0.0, 0.0, 0.0]"));
 
             assertThrows(TimeoutException.class,
-                    () -> evaluator.evaluate(inputs, "output_0", Duration.ofMillis(1)));
+                    () -> evaluator.evaluate(inputs, "output_0", Optional.of(Instant.now().plusMillis(1))));
         }
     }
 

@@ -3,6 +3,8 @@ package com.yahoo.search.searchchain;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.container.protect.Error;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -140,6 +142,20 @@ public class AsyncExecutionTestCase {
             return result;
         }
 
+    }
+
+    @Test
+    void testSearcherThatRunsOutOfTimeGivesATimeoutError() {
+        Chain<Searcher> chain = new Chain<>(new Searcher() {
+            @Override
+            public Result search(Query query, Execution execution) {
+                throw new TimeoutException("Ran out of time");
+            }
+        });
+        var future = new AsyncExecution(chain, Execution.Context.createContextStub()).search(new Query());
+        var error = future.get(10, TimeUnit.SECONDS).hits().getError();
+        assertEquals(Error.TIMEOUT.code, error.getCode());
+        assertTrue(error.getDetailedMessage().endsWith("Ran out of time"), error.getDetailedMessage());
     }
 
     @Test

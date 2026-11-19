@@ -7,22 +7,24 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Evaluates with a given runtime. Records the timeout of each evaluation, which may be null,
- * and counts the evaluations called without a timeout.
+ * Evaluates with a given runtime, or throws {@link #failure} when it is set.
+ * Records the deadline of each evaluation, and counts the evaluations called without a deadline.
  */
-public class TimeoutRecordingRuntime implements OnnxRuntime {
+public class DeadlineRecordingRuntime implements OnnxRuntime {
 
     private final OnnxRuntime runtime;
-    public final List<Duration> timeouts = new ArrayList<>();
-    public int callsWithoutTimeout = 0;
+    public final List<Optional<Instant>> deadlines = new ArrayList<>();
+    public int callsWithoutDeadline = 0;
+    public RuntimeException failure = null;
 
-    public TimeoutRecordingRuntime(OnnxRuntime runtime) { this.runtime = runtime; }
+    public DeadlineRecordingRuntime(OnnxRuntime runtime) { this.runtime = runtime; }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
@@ -30,26 +32,30 @@ public class TimeoutRecordingRuntime implements OnnxRuntime {
         return new OnnxEvaluator() {
             @Override
             public Tensor evaluate(Map<String, Tensor> inputs, String output) {
-                callsWithoutTimeout++;
+                callsWithoutDeadline++;
+                if (failure != null) throw failure;
                 return evaluator.evaluate(inputs, output);
             }
 
             @Override
             public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
-                callsWithoutTimeout++;
+                callsWithoutDeadline++;
+                if (failure != null) throw failure;
                 return evaluator.evaluate(inputs);
             }
 
             @Override
-            public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
-                timeouts.add(timeout);
-                return evaluator.evaluate(inputs, output, timeout);
+            public Tensor evaluate(Map<String, Tensor> inputs, String output, Optional<Instant> deadline) {
+                deadlines.add(deadline);
+                if (failure != null) throw failure;
+                return evaluator.evaluate(inputs, output, deadline);
             }
 
             @Override
-            public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
-                timeouts.add(timeout);
-                return evaluator.evaluate(inputs, timeout);
+            public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
+                deadlines.add(deadline);
+                if (failure != null) throw failure;
+                return evaluator.evaluate(inputs, deadline);
             }
 
             @Override public Map<String, IdAndType> getInputs() { return evaluator.getInputs(); }

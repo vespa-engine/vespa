@@ -15,6 +15,7 @@ import com.yahoo.tensor.TensorType;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Verifies and converts properties according to any input declarations in the rank profile set on the query.
@@ -48,7 +49,7 @@ public class RankProfileInputProperties extends Properties {
                                                       query.getModel().getLanguage(),
                                                       context,
                                                       query.properties(),
-                                                      Instant.now().plusMillis(query.getTimeLeft()));
+                                                      Optional.of(Instant.now().plusMillis(query.getTimeLeft())));
                 }
             }
             catch (IllegalArgumentException e) {

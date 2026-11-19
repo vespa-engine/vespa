@@ -15,10 +15,11 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * A BERT Base compatible embedder. This embedder uses a WordPiece embedder to
@@ -116,7 +117,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
         runtime.sampleSequenceLength(tokens.size(), context);
         runtime.samplePaddedSequenceLength(evaluator.paddedLength(tokens.size()), context);
-        var embedding = embedTokens(tokens, type, OnnxEmbedderTimeout.remainingOrThrow(context));
+        var embedding = embedTokens(tokens, type, OnnxEmbedderDeadline.deadlineOrThrow(context));
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return embedding;
     }
@@ -126,10 +127,10 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private List<Integer> tokenize(String text, Context ctx) { return tokenizer.embed(text, ctx); }
 
     Tensor embedTokens(List<Integer> tokens, TensorType type) {
-        return embedTokens(tokens, type, null);
+        return embedTokens(tokens, type, Optional.empty());
     }
 
-    Tensor embedTokens(List<Integer> tokens, TensorType type, Duration timeout) {
+    Tensor embedTokens(List<Integer> tokens, TensorType type, Optional<Instant> deadline) {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
         Tensor attentionMask = createAttentionMask(inputSequence).expand("d0");
         Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
@@ -143,7 +144,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
                                  attentionMaskName, attentionMask);
         }
-        Map<String, Tensor> outputs = evaluator.evaluate(inputs, timeout);
+        Map<String, Tensor> outputs = evaluator.evaluate(inputs, deadline);
 
         Tensor tokenEmbeddings = outputs.get(outputName);
 

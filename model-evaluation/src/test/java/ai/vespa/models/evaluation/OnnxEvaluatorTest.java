@@ -13,13 +13,13 @@ import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import org.junit.Test;
 
 import java.io.File;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -57,25 +57,23 @@ public class OnnxEvaluatorTest {
     @Test
     public void testDeadlineIsPassedToOnnxEvaluation() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new TimeoutRecordingRuntime(OnnxRuntime.testInstance());
+        var runtime = new DeadlineRecordingRuntime(OnnxRuntime.testInstance());
         ModelsEvaluator models = createModels(runtime);
 
         FunctionEvaluator function = models.evaluatorOf("add_mul", "output1");
         function.bind("input1", Tensor.from("tensor<float>(d0[1]):[2]"));
         function.bind("input2", Tensor.from("tensor<float>(d0[1]):[3]"));
-        function.setDeadline(Instant.now().plusSeconds(60));
+        var deadline = Instant.now().plusSeconds(60);
+        function.setDeadline(deadline);
         assertEquals(6.0, function.evaluate().sum().asDouble(), delta);
-        assertEquals(1, runtime.timeouts.size());
-        Duration timeout = runtime.timeouts.get(0);
-        assertNotNull(timeout);
-        assertTrue(timeout.compareTo(Duration.ZERO) > 0);
-        assertTrue(timeout.compareTo(Duration.ofSeconds(60)) <= 0);
+        assertEquals(List.of(Optional.of(deadline)), runtime.deadlines);
 
         function = models.evaluatorOf("one_layer");
         function.bind("input", Tensor.from("tensor<float>(d0[2],d1[3]):[[0.1, 0.2, 0.3],[0.4,0.5,0.6]]"));
         function.evaluate();
-        assertEquals(1, runtime.timeouts.size());
-        assertEquals("An evaluator without a deadline calls the evaluation without a timeout", 1, runtime.callsWithoutTimeout);
+        assertEquals("An evaluator without a deadline passes an empty deadline",
+                     List.of(Optional.of(deadline), Optional.empty()), runtime.deadlines);
+        assertEquals(0, runtime.callsWithoutDeadline);
     }
 
     private ModelsEvaluator createModels() {

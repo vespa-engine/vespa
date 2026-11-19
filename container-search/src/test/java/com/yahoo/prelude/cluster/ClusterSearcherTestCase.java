@@ -12,6 +12,8 @@ import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.container.protect.Error;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -156,6 +158,30 @@ public class ClusterSearcherTestCase {
             assertEquals(2, backendB.queries().size());
         } finally {
             cluster1.deconstruct();
+        }
+    }
+
+    @Test
+    void testThatASchemaThatRunsOutOfTimeGivesATimeoutError() {
+        var backend = new MyMockBackend(false);
+        var timingOutBackend = new MyMockBackend(false) {
+            @Override
+            public com.yahoo.search.Result search(String schema, Query query) {
+                throw new TimeoutException("Ran out of time");
+            }
+        };
+        var cluster = new ClusterSearcher(createSchemaInfo(),
+                                          Map.of("type1", backend, "type2", timingOutBackend, "type3", backend),
+                                          new InThreadExecutorService());
+        try {
+            var result = new Execution(cluster, Execution.Context.createContextStub()).search(new Query("?query=hello"));
+            var error = result.hits().getError();
+            assertEquals(Error.TIMEOUT.code, error.getCode());
+            assertTrue(error.getDetailedMessage().endsWith("Ran out of time"), error.getDetailedMessage());
+            assertEquals(6, result.hits().asList().stream().filter(hit -> ! hit.isMeta()).count(),
+                         "The hits of the other two schemas are kept");
+        } finally {
+            cluster.deconstruct();
         }
     }
 

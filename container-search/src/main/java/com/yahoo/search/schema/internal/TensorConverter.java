@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,11 +37,9 @@ public class TensorConverter {
     }
 
     public Tensor convertTo(TensorType type, Object value, String key, Language language,
-                            Map<String, String> contextValues, Properties properties, Instant deadline) {
+                            Map<String, String> contextValues, Properties properties, Optional<Instant> deadline) {
         var context = new Embedder.Context(key).setLanguage(language);
-        if (deadline != null) {
-            context.setDeadline(InvocationContext.Deadline.of(deadline));
-        }
+        deadline.ifPresent(instant -> context.setDeadline(InvocationContext.Deadline.of(instant)));
         Tensor tensor = toTensor(type, value, context, contextValues, properties);
         if (tensor == null) return null;
         if (! tensor.type().isAssignableTo(type))

@@ -229,7 +229,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             inputs = Map.of(analysis.inputIdsName(), inputSequence);
         }
         IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator
-                .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
+                .evaluate(inputs, OnnxEmbedderDeadline.deadlineOrThrow(context))
                 .get(analysis.outputName());
         long[] resultShape = tokenEmbeddings.shape();
         // The shape is [batch, sequence, embedding], or [batch, embedding] if the output is already pooled

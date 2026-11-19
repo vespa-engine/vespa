@@ -9,6 +9,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -83,6 +84,8 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
             return listModelInformation(request, model, function);
 
+        } catch (TimeoutException e) {
+            return new ErrorResponse(504, Exceptions.toMessageString(e));
         } catch (IllegalArgumentException e) {
             return new ErrorResponse(404, Exceptions.toMessageString(e));
         } catch (IllegalStateException e) { // On missing bindings

@@ -13,7 +13,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
@@ -83,8 +83,8 @@ class OnnxExpressionNode extends CompositeNode {
             Value inputValue = inputRefs.get(i).evaluate(context);
             inputs.put(modelInputs.get(i), inputValue.asTensor());
         }
-        Duration timeout = context instanceof LazyArrayContext lazyContext ? lazyContext.timeLeft() : null;
-        return new TensorValue(model.unmappedEvaluate(inputs, onnxOutputName, timeout));
+        Optional<Instant> deadline = context instanceof LazyArrayContext lazyContext ? lazyContext.deadline() : Optional.empty();
+        return new TensorValue(model.unmappedEvaluate(inputs, onnxOutputName, deadline));
     }
 
     @Override

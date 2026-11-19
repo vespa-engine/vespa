@@ -13,11 +13,11 @@ import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -29,7 +29,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     private final ExpressionFunction function;
     private final IndexedBindings indexedBindings;
-    private Instant deadline = null;
+    private Optional<Instant> deadline = Optional.empty();
 
     private LazyArrayContext(ExpressionFunction function, IndexedBindings indexedBindings) {
         this.function = function;
@@ -141,13 +141,11 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         return indexedBindings.missingValue;
     }
 
-    /** Sets the time by which ONNX models in this context must be evaluated, or null for no deadline. */
-    void setDeadline(Instant deadline) { this.deadline = deadline; }
+    /** Sets the time by which ONNX models in this context must be evaluated. */
+    void setDeadline(Instant deadline) { this.deadline = Optional.of(deadline); }
 
-    /** Returns the time left until the deadline of this, which is negative after it, or null if this has no deadline. */
-    Duration timeLeft() {
-        return deadline == null ? null : Duration.between(Instant.now(), deadline);
-    }
+    /** Returns the deadline of this, or empty if this has no deadline. */
+    Optional<Instant> deadline() { return deadline; }
 
     /**
      * Creates a copy of this context suitable for evaluating against the same ranking expression

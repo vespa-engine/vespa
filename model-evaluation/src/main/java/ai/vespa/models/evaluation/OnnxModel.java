@@ -9,11 +9,12 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.io.File;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * A named ONNX model that should be evaluated with OnnxEvaluator.
@@ -177,9 +178,9 @@ class OnnxModel implements AutoCloseable {
     /**
      * Evaluates this model and returns the given output.
      *
-     * @param timeout the time the evaluation may take, or null for the timeout of the runtime
+     * @param deadline the deadline of the evaluation, or empty to use the timeout of the runtime
      */
-    public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
+    public Tensor evaluate(Map<String, Tensor> inputs, String output, Optional<Instant> deadline) {
         var mapped = new HashMap<String, Tensor>();
         for (var spec : inputSpecs) {
             Tensor val = inputs.get(spec.source);
@@ -197,13 +198,11 @@ class OnnxModel implements AutoCloseable {
         if (onnxName == null) {
             throw new IllegalArgumentException("evaluate ONNX model " + name() + ": no output available as: " + output);
         }
-        return unmappedEvaluate(mapped, onnxName, timeout);
+        return unmappedEvaluate(mapped, onnxName, deadline);
     }
 
-    Tensor unmappedEvaluate(Map<String, Tensor> inputs, String onnxOutputName, Duration timeout) {
-        // A runtime may warn about an evaluation called without a timeout, so a missing timeout uses that overload
-        return timeout == null ? evaluator().evaluate(inputs, onnxOutputName)
-                               : evaluator().evaluate(inputs, onnxOutputName, timeout);
+    Tensor unmappedEvaluate(Map<String, Tensor> inputs, String onnxOutputName, Optional<Instant> deadline) {
+        return evaluator().evaluate(inputs, onnxOutputName, deadline);
     }
 
     private OnnxEvaluator evaluator() {

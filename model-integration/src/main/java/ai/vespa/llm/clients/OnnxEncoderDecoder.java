@@ -23,6 +23,7 @@ import com.yahoo.api.annotations.Beta;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -143,7 +144,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
                 encoderInputIdsName, input,
                 encoderAttentionMaskName, mask
         );
-        return encoder.evaluate(encoderInputs, encoderOutputName, null);
+        return encoder.evaluate(encoderInputs, encoderOutputName, Optional.empty());
     }
 
     private IndexedTensor evaluateDecoder(Tensor input, Tensor encoderMask, Tensor encoderOutput) {
@@ -152,7 +153,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
                 decoderAttentionMaskName, encoderMask,  // yes, encoder's attention mask
                 decoderEncoderHiddenStateName, encoderOutput
         );
-        var output = decoder.evaluate(inputs, decoderOutputName, null);
+        var output = decoder.evaluate(inputs, decoderOutputName, Optional.empty());
         if (!(output instanceof IndexedTensor indexedTensor)) {
             throw new IllegalArgumentException("Output of decoder model is not an 'IndexedTensor'");
         }

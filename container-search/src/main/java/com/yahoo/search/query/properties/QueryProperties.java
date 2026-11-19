@@ -35,6 +35,7 @@ import com.yahoo.tensor.Tensor;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -289,7 +290,7 @@ public class QueryProperties extends Properties {
         if (type == null) return value; // no type info -> keep as string
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
-        var deadline = Instant.ofEpochMilli(query.getStartTime() + query.getTimeout());
+        var deadline = Optional.of(Instant.ofEpochMilli(query.getStartTime() + query.getTimeout()));
         return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedders, context, this, deadline));
     }
 
