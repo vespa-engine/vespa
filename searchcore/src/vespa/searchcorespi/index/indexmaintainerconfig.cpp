@@ -7,11 +7,12 @@ using search::index::Schema;
 
 namespace searchcorespi::index {
 
-IndexMaintainerConfig::IndexMaintainerConfig(const std::string& baseDir, const WarmupConfig& warmup,
-                                             size_t maxFlushed, const Schema& schema,
+IndexMaintainerConfig::IndexMaintainerConfig(const std::string& baseDir, const std::string& document_type_name_in,
+                                             const WarmupConfig& warmup, size_t maxFlushed, const Schema& schema,
                                              const search::SerialNum   serialNum,
                                              const TuneFileAttributes& tuneFileAttributes)
     : _baseDir(baseDir),
+      _document_type_name(document_type_name_in),
       _warmup(warmup),
       _maxFlushed(maxFlushed),
       _schema(schema),

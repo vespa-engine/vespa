@@ -17,6 +17,7 @@ namespace searchcorespi::index {
 class IndexMaintainerConfig {
 private:
     const std::string                _baseDir;
+    const std::string                _document_type_name;
     const WarmupConfig               _warmup;
     const size_t                     _maxFlushed;
     const search::index::Schema      _schema;
@@ -24,9 +25,9 @@ private:
     const search::TuneFileAttributes _tuneFileAttributes;
 
 public:
-    IndexMaintainerConfig(const std::string& baseDir, const WarmupConfig& warmup, size_t maxFlushed,
-                          const search::index::Schema& schema, const search::SerialNum serialNum,
-                          const search::TuneFileAttributes& tuneFileAttributes);
+    IndexMaintainerConfig(const std::string& baseDir, const std::string& document_type_name_in,
+                          const WarmupConfig& warmup, size_t maxFlushed, const search::index::Schema& schema,
+                          const search::SerialNum serialNum, const search::TuneFileAttributes& tuneFileAttributes);
 
     ~IndexMaintainerConfig();
 
@@ -34,6 +35,8 @@ public:
      * Returns the base directory in which the maintainer will store its indexes.
      */
     const std::string& getBaseDir() const { return _baseDir; }
+
+    [[nodiscard]] const std::string& document_type_name() const noexcept { return _document_type_name; }
 
     WarmupConfig getWarmup() const { return _warmup; }
 

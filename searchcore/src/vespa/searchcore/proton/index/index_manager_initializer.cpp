@@ -55,8 +55,9 @@ void IndexManagerInitializer::run() {
     vespalib::File::sync(vespalib::dirname(_baseDir));
     MemoryUsageLogger::log("start load disk index", _baseDir);
     *_indexManager = std::make_shared<index::IndexManager>(
-        _baseDir, _posting_list_cache, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,
-        _warmupExecutor, _tuneFileIndexManager, _tuneFileAttributes, _fileHeaderContext);
+        _baseDir, _doc_type_and_subdb_name->doc_type_name(), _posting_list_cache, _indexConfig, _schema, _serialNum,
+        _reconfigurer, _threadingService, _warmupExecutor, _tuneFileIndexManager, _tuneFileAttributes,
+        _fileHeaderContext);
     MemoryUsageLogger::log("finish load disk index", _baseDir);
     span->End();
 }

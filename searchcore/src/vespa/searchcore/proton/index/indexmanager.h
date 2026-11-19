@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcorespi/index/iindexmaintaineroperations.h>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcorespi/index/indexmaintainer.h>
@@ -62,7 +63,8 @@ private:
 public:
     IndexManager(const IndexManager&) = delete;
     IndexManager& operator=(const IndexManager&) = delete;
-    IndexManager(const std::string& baseDir, std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
+    IndexManager(const std::string& baseDir, const DocTypeName& doc_type_name,
+                 std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                  const IndexConfig& indexConfig, const Schema& schema, SerialNum serialNum,
                  Reconfigurer& reconfigurer, searchcorespi::index::IThreadingService& threadingService,
                  vespalib::Executor& warmupExecutor, const search::TuneFileIndexManager& tuneFileIndexManager,

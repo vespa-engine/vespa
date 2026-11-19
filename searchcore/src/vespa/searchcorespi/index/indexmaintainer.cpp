@@ -17,7 +17,9 @@
 
 #include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
+#include <vespa/searchcorespi/common/tracing.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/i_flush_token.h>
@@ -45,6 +47,7 @@ using search::index::Schema;
 using search::index::SchemaUtil;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
+using searchcorespi::common::get_tracer;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
 using std::ostringstream;
@@ -685,6 +688,7 @@ bool IndexMaintainer::reconfigure(std::unique_ptr<Configure> configure) {
 IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig& config, const IndexMaintainerContext& ctx,
                                  IIndexMaintainerOperations& operations)
     : _base_dir(config.getBaseDir()),
+      _document_type_name(config.document_type_name()),
       _warmupConfig(config.getWarmup()),
       _disk_indexes(std::make_shared<DiskIndexes>()),
       _layout(std::make_shared<IndexDiskLayout>(config.getBaseDir())),
@@ -768,6 +772,9 @@ IndexMaintainer::~IndexMaintainer() {
 
 std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats* stats) {
     CHECK(_ctx.getThreadingService().master().isCurrentThread()); // while flush engine scheduler thread waits
+    auto tracer = get_tracer();
+    auto span = tracer->StartSpan("Flush memory index",
+                                  {{vespa_opentelemetry::span_attribute_names::document_type, _document_type_name}});
     {
         LockGuard lock(_index_update_lock);
         set_current_serial_num(std::max(current_serial_num(), serialNum));
@@ -784,6 +791,8 @@ std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searc
     bool success = _ctx.getReconfigurer().reconfigure(std::move(configure));
     CHECK(success);
     (void)success;
+    SerialNum realSerialNum = args.flush_serial_num;
+    span->SetAttribute(vespa_opentelemetry::span_attribute_names::serial, std::to_string(realSerialNum));
     if (args._skippedEmptyLast && args._extraIndexes.empty()) {
         // No memory index to flush, it was empty
         LockGuard lock(_state_lock);
@@ -793,11 +802,19 @@ std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searc
             "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
             flush_serial_num(), vespalib::to_s(getLastFlushTime().time_since_epoch()));
+        span->AddEvent("Skipping flush of empty memory index");
+        span->End();
         return {};
     }
-    SerialNum realSerialNum = args.flush_serial_num;
-    return makeLambdaFlushTask([this, myargs = std::move(args)]() mutable { doFlush(std::move(myargs)); },
-                               realSerialNum);
+    span->AddEvent("Done init flush");
+    return makeLambdaFlushTask(
+        [this, myargs = std::move(args), tracer, span(std::move(span))]() mutable {
+            span->AddEvent("Starting background flush");
+            auto scope = tracer->WithActiveSpan(span);
+            doFlush(std::move(myargs));
+            span->End();
+        },
+        realSerialNum);
 }
 
 FusionSpec IndexMaintainer::getFusionSpec() {
@@ -822,6 +839,9 @@ string IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IF
     {
         LockGuard guard(_fusion_lock);
         if (!canRunFusion(_fusion_spec)) {
+            auto tracer = get_tracer();
+            auto span = tracer->GetCurrentSpan();
+            span->AddEvent("Cannot run fusion");
             return "";
         }
         spec = _fusion_spec;

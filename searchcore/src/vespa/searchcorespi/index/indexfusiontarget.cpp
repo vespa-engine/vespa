@@ -2,15 +2,21 @@
 
 #include "indexfusiontarget.h"
 
+#include <vespa/opentelemetry/span_attribute_names.h>
+#include <vespa/searchcorespi/common/tracing.h>
+
 #include <algorithm>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.indexfusiontarget");
 
+using opentelemetry::trace::Span;
+using search::SerialNum;
+using searchcorespi::common::get_tracer;
+
 namespace searchcorespi::index {
 
-using search::SerialNum;
 namespace {
 
 class Fusioner : public FlushTask {
@@ -19,25 +25,46 @@ private:
     FlushStats&                          _stats;
     SerialNum                            _serialNum;
     std::shared_ptr<search::IFlushToken> _flush_token;
+    std::shared_ptr<Span>                _span;
 
 public:
     Fusioner(IndexMaintainer& indexMaintainer, FlushStats& stats, SerialNum serialNum,
-             std::shared_ptr<search::IFlushToken> flush_token)
-        : _indexMaintainer(indexMaintainer),
-          _stats(stats),
-          _serialNum(serialNum),
-          _flush_token(std::move(flush_token)) {}
+             std::shared_ptr<search::IFlushToken> flush_token);
+    ~Fusioner();
 
-    void run() override {
-        std::string outputFusionDir = _indexMaintainer.doFusion(_serialNum, _flush_token);
-        // the target must live until this task is done (handled by flush engine).
-        _stats.setPath(outputFusionDir);
-    }
-
-    SerialNum getFlushSerial() const override {
-        return 0u; // Zero means that no tls syncing is needed
-    }
+    void run() override;
+    SerialNum getFlushSerial() const override;
 };
+
+Fusioner::Fusioner(IndexMaintainer& indexMaintainer, FlushStats& stats, SerialNum serialNum,
+                   std::shared_ptr<search::IFlushToken> flush_token)
+    : _indexMaintainer(indexMaintainer),
+      _stats(stats),
+      _serialNum(serialNum),
+      _flush_token(std::move(flush_token)),
+      _span() {
+    auto tracer = get_tracer();
+    _span = tracer->StartSpan(
+        "Fusion of disk indexes",
+        {{vespa_opentelemetry::span_attribute_names::document_type, _indexMaintainer.document_type_name()},
+         {vespa_opentelemetry::span_attribute_names::serial, std::to_string(serialNum)}});
+}
+
+Fusioner::~Fusioner() = default;
+
+void Fusioner::run() {
+    _span->AddEvent("Starting background fusion");
+    auto        tracer = get_tracer();
+    auto        scope = tracer->WithActiveSpan(_span);
+    std::string outputFusionDir = _indexMaintainer.doFusion(_serialNum, _flush_token);
+    // the target must live until this task is done (handled by flush engine).
+    _stats.setPath(outputFusionDir);
+    _span->End();
+}
+
+SerialNum Fusioner::getFlushSerial() const {
+    return 0u; // Zero means that no tls syncing is needed
+}
 
 } // namespace
 IndexFusionTarget::IndexFusionTarget(IndexMaintainer& indexMaintainer)
@@ -89,6 +116,7 @@ IFlushTarget::SerialNum IndexFusionTarget::getFlushedSerialNum() const {
 
 void IndexFusionTarget::init_flush(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token,
                                    TaskPromise task_promise) {
+    // Called by document db main executor
     task_promise.set_value(
         std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum, std::move(flush_token)));
 }

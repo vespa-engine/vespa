@@ -67,16 +67,16 @@ bool IndexManager::MaintainerOperations::runFusion(const Schema& schema, const s
     return fusion.merge(_threadingService.shared(), std::move(flush_token));
 }
 
-IndexManager::IndexManager(const std::string& baseDir, std::shared_ptr<IPostingListCache> posting_list_cache,
-                           const IndexConfig& indexConfig, const Schema& schema, SerialNum serialNum,
-                           Reconfigurer& reconfigurer, IThreadingService& threadingService,
-                           vespalib::Executor&                 warmupExecutor,
+IndexManager::IndexManager(const std::string& baseDir, const DocTypeName& doc_type_name,
+                           std::shared_ptr<IPostingListCache> posting_list_cache, const IndexConfig& indexConfig,
+                           const Schema& schema, SerialNum serialNum, Reconfigurer& reconfigurer,
+                           IThreadingService& threadingService, vespalib::Executor& warmupExecutor,
                            const search::TuneFileIndexManager& tuneFileIndexManager,
                            const search::TuneFileAttributes&   tuneFileAttributes,
                            const FileHeaderContext&            fileHeaderContext)
     : _operations(fileHeaderContext, tuneFileIndexManager, std::move(posting_list_cache), threadingService),
-      _maintainer(IndexMaintainerConfig(baseDir, indexConfig.warmup, indexConfig.maxFlushed, schema, serialNum,
-                                        tuneFileAttributes),
+      _maintainer(IndexMaintainerConfig(baseDir, doc_type_name.getName(), indexConfig.warmup, indexConfig.maxFlushed,
+                                        schema, serialNum, tuneFileAttributes),
                   IndexMaintainerContext(threadingService, reconfigurer, fileHeaderContext, warmupExecutor),
                   _operations) {
 }
