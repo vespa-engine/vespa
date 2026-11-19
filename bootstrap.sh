@@ -38,6 +38,18 @@ fi
 # Locate the vespa source directory, often ~/git/vespa
 top=$(dirname "$0")
 
+# The build modes use relative paths from the source root, so check
+# this before touching anything (e.g. mvnw) in the current directory.
+# The 'wrapper' mode sets up mvnw in the current directory and is exempt.
+if [ "$MODE" != "wrapper" ]; then
+    here=$(/bin/pwd || pwd )
+    there=$(cd "$top" && { /bin/pwd || pwd; })
+    if [ "$here" != "$there" ]; then
+        echo "Full bootstrap.sh must be run in the top-level vespa directory $there" 1>&2
+        exit 1
+    fi
+fi
+
 # Read a required property from mvnvm.properties, which is the single
 # source of truth for the Maven version (also used by mvnvm).
 get_mvnvm_property() {
@@ -78,6 +90,9 @@ echo "Using maven target: ${MAVEN_TARGET}"
 
 wanted_mvn_version=$(get_mvnvm_property mvn_version)
 echo "Using maven version: ${wanted_mvn_version}"
+# Read the checksum up front, so a missing property fails before the
+# existing wrapper is touched.
+distribution_sha256=$(get_mvnvm_property mvn_distribution_sha256)
 
 current_mvn_version=$(/usr/bin/mvn -version 2>/dev/null | awk '$1 == "Apache" && $2 == "Maven" { print $3; exit }' || true)
 if [ "$current_mvn_version" = "$wanted_mvn_version" ]; then
@@ -96,7 +111,6 @@ else
 
     # Keep verification independent of the mirror used to fetch the wrapper.
     wrapper_properties=.mvn/wrapper/maven-wrapper.properties
-    distribution_sha256=$(get_mvnvm_property mvn_distribution_sha256)
     if grep -q '^distributionSha256Sum=' "$wrapper_properties"; then
         grep -qx "distributionSha256Sum=$distribution_sha256" "$wrapper_properties" || {
             echo "Unexpected Maven wrapper distribution checksum" >&2
@@ -140,14 +154,6 @@ mvn_install() {
 # The 'java' mode only builds the plugins.
 # The 'default' mode also builds some modules needed by C++ code.
 # The 'full' mode also builds modules needed by C++ tests.
-
-# using relative paths below here
-here=$(/bin/pwd || pwd )
-there=$(cd "$top" && /bin/pwd || pwd)
-if [ "$here" != "$there" ]; then
-    echo "Full bootstrap.sh must be run in the top-level vespa directory $there" 1>&2
-    exit 1
-fi
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
