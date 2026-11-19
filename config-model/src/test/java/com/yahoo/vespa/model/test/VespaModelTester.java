@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -71,6 +72,15 @@ public class VespaModelTester {
             return ((ProvisionerAdapter)provisioner).provisioner();
         return provisioner;
     }
+
+    /** Returns the clusters passed to earlyPrepare() during the last hosted createModel(), in order. */
+    public List<ClusterSpec> earlyPrepareRequests() { return List.copyOf(((ProvisionerAdapter) provisioner).earlyPrepareRequests); }
+
+    /** Returns the number of earlyPrepare() calls during the last hosted createModel(). */
+    public boolean earlyPrepareHasBeenCalled() { return ((ProvisionerAdapter) provisioner).earlyPrepareHasBeenCalled; }
+
+    /** Returns the clusters passed to prepare() during the last hosted createModel(), in order. */
+    public List<ClusterSpec> prepareRequests() { return List.copyOf(((ProvisionerAdapter) provisioner).prepareRequests); }
 
     /** Adds some nodes with resources 1, 3, 10 */
     public Hosts addHosts(int count) { return addHosts(InMemoryProvisioner.defaultHostResources, count); }
@@ -240,6 +250,10 @@ public class VespaModelTester {
     private static class ProvisionerAdapter implements HostProvisioner {
 
         private final InMemoryProvisioner provisioner;
+        private final List<ClusterSpec> earlyPrepareRequests = new ArrayList<>();
+        private final List<ClusterSpec> prepareRequests = new ArrayList<>();
+        private boolean earlyPrepareHasBeenCalled;
+        private ProvisionContext earlyPrepareContext;
 
         public ProvisionerAdapter(InMemoryProvisioner provisioner) {
             this.provisioner = provisioner;
@@ -254,7 +268,23 @@ public class VespaModelTester {
         }
 
         @Override
+        public void earlyPrepare(List<ClusterSpec> clusters, ProvisionContext context) {
+            if (!prepareRequests.isEmpty())
+                throw new IllegalStateException("earlyPrepare() called after prepare()");
+            if (earlyPrepareHasBeenCalled)
+                throw new IllegalStateException("earlyPrepare() called more than once");
+            earlyPrepareHasBeenCalled = true;
+            earlyPrepareContext = context;
+            earlyPrepareRequests.addAll(clusters);
+        }
+
+        @Override
         public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
+            // The ProvisionContext doesn't actually have to be identical, e.g. the logger could be different.
+            // But all of its properties should be equal.  For now, identity works and is easier.
+            if (earlyPrepareHasBeenCalled && context != earlyPrepareContext)
+                throw new IllegalStateException("prepare() called with a different ProvisionContext than earlyPrepare(): " + cluster);
+            prepareRequests.add(cluster);
             return provisioner.prepare(cluster, context);
         }
 
