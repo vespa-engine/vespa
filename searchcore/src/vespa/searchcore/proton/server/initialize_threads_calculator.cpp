@@ -55,7 +55,6 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo:
         // Using _num_threads threads was foolish and brought doom upon us.
         // Let us try our luck with half that number in this run.
         _num_threads = std::max(1u, (_num_threads / 2));
-        std::filesystem::remove(_path);
     }
     // We preemptively place our headstone.
     // May it serve as a warning should we not make it through this run.
