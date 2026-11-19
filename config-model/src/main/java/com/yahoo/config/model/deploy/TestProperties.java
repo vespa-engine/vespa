@@ -45,6 +45,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private AthenzDomain tenantParentDomain = AthenzDomain.from("vespa.tenant");
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
+    private boolean earlyProvisioning = false;
     private String jvmGCOptions = null;
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
@@ -115,7 +116,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
-    @Override public boolean earlyProvisioning() { return false; }
+    @Override public boolean earlyProvisioning() { return earlyProvisioning; }
     @Override public boolean useNonPublicEndpointForTest() { return true; }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }
@@ -240,6 +241,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+        return this;
+    }
+
+    public TestProperties setEarlyProvisioning(boolean earlyProvisioning) {
+        this.earlyProvisioning = earlyProvisioning;
         return this;
     }
 
