@@ -81,13 +81,7 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_update(const KeyT& 
 }
 
 template <typename P> bool cache<P>::SizeConstrainedLru::try_erase_and_update_size(const KeyT& key) {
-    const auto* maybe_val = Lru::find_no_ref(key);
-    if (maybe_val) {
-        sub_size_bytes(_owner.calcSize(key, *maybe_val)); // Must be prior to erase()!
-        Lru::erase(key);
-        return true;
-    }
-    return false;
+    return Lru::erase_if_present(key, [&](const ValueT& val) { sub_size_bytes(_owner.calcSize(key, val)); });
 }
 
 template <typename P> bool cache<P>::SizeConstrainedLru::try_get_no_ref(const KeyT& key, ValueT& val_out) const {

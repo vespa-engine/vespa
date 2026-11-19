@@ -336,6 +336,8 @@ protected:
     Value& getByInternalIndex(size_t index) noexcept { return _nodes[index].getValue(); }
     constexpr const Value& getByInternalIndex(size_t index) const noexcept { return _nodes[index].getValue(); }
     template <typename MoveHandler> void erase(MoveHandler& moveHandler, next_t h, const const_iterator& key);
+    /// Like find(), but with the bucket precomputed; h must be hash(key).
+    iterator find_in_bucket(const Key& key, next_t h) noexcept;
     template <typename K> constexpr next_t hash(const K& key) const noexcept { return modulator(_hasher(key)); }
 
 private:

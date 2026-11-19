@@ -65,10 +65,15 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::~hashtable() = defaul
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key& key) noexcept {
-    next_t h = hash(key);
-    if (__builtin_expect(_nodes[h].valid(), true)) {
+    return find_in_bucket(key, hash(key));
+}
+
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find_in_bucket(const Key& key, next_t h) noexcept {
+    if (_nodes[h].valid()) [[likely]] {
         do {
-            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
+            if (_equal(_keyExtractor(_nodes[h].getValue()), key)) [[likely]] {
                 return iterator(this, h);
             }
             h = _nodes[h].getNext();
