@@ -55,6 +55,9 @@ protected:
 
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
+    template <typename Tombstones>
+    void cull_tombstones(Tombstones& tombstones, ValueVector& new_values);
+
 public:
     MultiValueAttribute(const std::string& baseFileName, const AttributeVector::Config& cfg);
     ~MultiValueAttribute() override;
