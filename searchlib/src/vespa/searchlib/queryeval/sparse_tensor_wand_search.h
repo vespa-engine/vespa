@@ -49,7 +49,7 @@ public:
 /**
  * Evaluates the dot product between document tensors and a fixed query tensor,
  * using a function compiled by SparseTensorWandSearch::make_dot_product.
- * Used for fast-search attributes, where this is faster than SparseTensorDotProduct.
+ * Used for fast-rank attributes, where this is faster than SparseTensorDotProduct.
  * Keeps evaluation state, so each thread needs its own instance.
  **/
 class InterpretedSparseTensorDotProduct {
@@ -96,13 +96,13 @@ public:
     static std::unique_ptr<vespalib::eval::InterpretedFunction>
     make_dot_product(const vespalib::eval::ValueType& type);
 
-    // Calculates the dot product directly (attributes without fast-search).
+    // Calculates the dot product directly (attributes without fast-rank).
     static std::unique_ptr<SearchIterator> create(bool strict, fef::TermFieldMatchData& tfmd,
                                                   const tensor::ITensorAttribute& attr_tensor,
                                                   const SparseTensorDotProduct&   dot_product,
                                                   const MatchParams& match_params, bool readonly_scores_heap);
 
-    // Evaluates the dot product with an interpreted function (fast-search attributes).
+    // Evaluates the dot product with an interpreted function (fast-rank attributes).
     static std::unique_ptr<SearchIterator> create(bool strict, fef::TermFieldMatchData& tfmd,
                                                   const tensor::ITensorAttribute&            attr_tensor,
                                                   const vespalib::eval::InterpretedFunction& dot_product,
