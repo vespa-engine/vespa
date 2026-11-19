@@ -50,14 +50,15 @@ private:
 
     class CompareTarget {
     public:
-        CompareTarget(OrderType order, const flushengine::TlsStatsMap& tlsStatsMap)
-            : _order(order), _tlsStatsMap(tlsStatsMap) {}
+        CompareTarget(OrderType order, const flushengine::TlsStatsMap& tlsStatsMap, const Config& config)
+            : _order(order), _tlsStatsMap(tlsStatsMap), _config(config) {}
 
         bool operator()(const FlushContext::SP& lfc, const FlushContext::SP& rfc) const;
 
     private:
         OrderType                       _order;
         const flushengine::TlsStatsMap& _tlsStatsMap;
+        const Config&                   _config;
     };
 
 public:
