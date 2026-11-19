@@ -119,6 +119,10 @@ size_t computeGain(const IFlushTarget::DiskGain& gain) {
     return std::max(INT64_C(100000000), std::max(gain.getBefore(), gain.getAfter()));
 }
 
+bool high_relative_disk_bloat(const IFlushTarget::DiskGain& gain, double disk_bloat_factor) {
+    return gain.gain() > disk_bloat_factor * computeGain(gain);
+}
+
 } // namespace
 
 FlushStrategyResult MemoryFlush::getFlushTargets(const FlushContext::List&            targetList,
@@ -170,7 +174,7 @@ FlushStrategyResult MemoryFlush::getFlushTargets(const FlushContext::List&      
         }
         if ((mgain >= config.maxMemoryGain) && (order < MEMORY)) {
             order = MEMORY;
-        } else if ((dgain.gain() > config.diskBloatFactor * computeGain(dgain)) && (order < DISKBLOAT)) {
+        } else if (high_relative_disk_bloat(dgain, config.diskBloatFactor) && (order < DISKBLOAT)) {
             order = DISKBLOAT;
         } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE) && target.getType() != IFlushTarget::Type::GC)
         {
@@ -196,7 +200,7 @@ FlushStrategyResult MemoryFlush::getFlushTargets(const FlushContext::List&      
             order = DISKBLOAT;
         }
     }
-    std::sort(fv.begin(), fv.end(), CompareTarget(order, tlsStatsMap));
+    std::sort(fv.begin(), fv.end(), CompareTarget(order, tlsStatsMap, config));
     // No desired order and no urgent needs; no flush required at this moment.
     if (order == DEFAULT && !fv.empty() && !fv[0]->getTarget()->needUrgentFlush()) {
         LOG(debug, "getFlushTargets(): empty list");
@@ -241,8 +245,17 @@ bool MemoryFlush::CompareTarget::operator()(const FlushContext::SP& lfc, const F
         }
         return (lhs.getLastFlushTime() < rhs.getLastFlushTime());
     }
-    case DISKBLOAT:
-        return (lhs.getApproxDiskGain().gain() > rhs.getApproxDiskGain().gain());
+    case DISKBLOAT: {
+        // Prefer targets that have a high relative disk bloat
+        auto lhs_diskgain = lhs.getApproxDiskGain();
+        auto rhs_diskgain = rhs.getApproxDiskGain();
+        bool lhs_high_relative_disk_bloat = high_relative_disk_bloat(lhs_diskgain, _config.diskBloatFactor);
+        bool rhs_high_relative_disk_bloat = high_relative_disk_bloat(rhs_diskgain, _config.diskBloatFactor);
+        if (lhs_high_relative_disk_bloat != rhs_high_relative_disk_bloat) {
+            return lhs_high_relative_disk_bloat;
+        }
+        return (lhs_diskgain.gain() > rhs_diskgain.gain());
+    }
     case MAXAGE:
         return (lhs.getLastFlushTime() < rhs.getLastFlushTime());
     default:
