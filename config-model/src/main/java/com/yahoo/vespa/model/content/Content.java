@@ -16,11 +16,23 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.admin.clustercontroller.ReindexingContext;
+import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
+import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
+import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -39,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -269,14 +282,136 @@ public class Content extends ConfigModel {
         public List<ConfigModelId> handlesElements() {
             return configModelIds;
         }
-    
+
+        @Override
+        public List<ClusterSpec> collectAllocationRequests(Element xml, ConfigModelContext context) {
+            return List.of(); // TODO(hakon): implement
+        }
+
         @Override
         public void doBuild(Content content, Element xml, ConfigModelContext modelContext) {
             Admin admin = content.adminModel.getAdmin();
-            content.cluster = new ContentCluster.Builder(admin).build(modelContext, xml);
-            buildIndexingClusters(content, modelContext,
-                                  (ApplicationConfigProducerRoot)modelContext.getParentProducer());
+            content.cluster = new ContentCluster.Builder().build(modelContext, xml);
+            ensureClusterControllers(modelContext, admin, content.cluster, xml);
+            buildIndexingClusters(content, modelContext, (ApplicationConfigProducerRoot)modelContext.getParentProducer());
             addIndexingChainToContainersInheritingFromIt(content.containers);
+        }
+
+        /**
+         * Creates the cluster controllers (normal case), unless there is one already on admin.
+         * Updates admin, cluster controllers, and the content cluster with information about each other.
+         */
+        public static void ensureClusterControllers(ConfigModelContext context, Admin admin, ContentCluster contentCluster, Element xml) {
+            ModelElement contentElement = new ModelElement(xml);
+            DeployState deployState = context.getDeployState();
+
+            final ClusterControllerContainerCluster clusterControllers;
+            final String clusterName = "cluster-controllers";
+            if (context.properties().hostedVespa()) {
+                clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState, clusterName);
+            }
+            else if (admin.multitenant()) { // system tests: cluster controllers on logserver host
+                if (admin.getClusterControllers() == null) {
+                    Objects.requireNonNull(admin.getLogserver(), "logserver cannot be null");
+                    List<HostResource> host = List.of(admin.getLogserver().getHostResource());
+                    admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
+                                                                         host, clusterName, true, deployState),
+                                                deployState);
+                }
+                clusterControllers = admin.getClusterControllers();
+            }
+            else { // self-hosted: Put cluster controller on config servers or use explicit cluster controllers
+                if (admin.getClusterControllers() == null) {
+                    var hosts = admin.getConfigservers().stream().map(AbstractService::getHostResource).toList();
+                    if (hosts.size() > 1) {
+                        var message = "When having content clusters and more than 1 config server " +
+                                      "it is recommended to configure cluster controllers explicitly.";
+                        deployState.getDeployLogger().logApplicationPackage(Level.INFO, message);
+                    }
+                    admin.setClusterControllers(createClusterControllers(admin,
+                                                                         hosts,
+                                                                         "cluster-controllers",
+                                                                         false,
+                                                                         deployState),
+                                                deployState);
+                }
+                clusterControllers = admin.getClusterControllers();
+            }
+            contentCluster.setSingleClusterController(clusterControllers.getContainers().size() == 1);
+
+            // Update node count so we can keep track of how many content nodes there are in total
+            clusterControllers.updateNodeCount(contentCluster.getNodeCount());
+
+            addClusterControllerComponentsForThisCluster(clusterControllers, contentCluster);
+            ReindexingContext reindexingContext = clusterControllers.reindexingContext();
+            for (NewDocumentType type : contentCluster.getDocumentDefinitions().values()) {
+                reindexingContext.addDocumentType(contentCluster.getName(), type);
+            }
+        }
+
+        private static ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement,
+                                                                                       Admin admin,
+                                                                                       ConfigModelContext context,
+                                                                                       DeployState deployState,
+                                                                                       String clusterName) {
+            if (admin.getClusterControllers() == null) {
+                Collection<HostResource> hosts = NodesSpecification
+                        .requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
+                                                   NodeResources.unspecified(),
+                                                   contentElement,
+                                                   context)
+                        .setClusterSpecFrom(ClusterSpec.Type.admin,
+                                            ClusterSpec.Id.from(clusterName),
+                                            true,
+                                            context.clusterInfo().build())
+                        .provision(admin.hostSystem(), deployState)
+                        .keySet();
+                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
+                                                                     hosts,
+                                                                     clusterName,
+                                                                     true,
+                                                                     context.getDeployState()),
+                                            deployState);
+            }
+            return admin.getClusterControllers();
+        }
+
+        private static ClusterControllerContainerCluster createClusterControllers(TreeConfigProducer<?> parent,
+                                                                                  Collection<HostResource> hosts,
+                                                                                  String name,
+                                                                                  boolean runStandaloneZooKeeper,
+                                                                                  DeployState deployState) {
+            var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
+            List<ClusterControllerContainer> containers = new ArrayList<>();
+            int index = 0;
+            for (HostResource host : hosts) {
+                int ccIndex = host.spec().membership().map(ClusterMembership::index).orElse(index);
+                boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
+                var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, runStandaloneZooKeeper, deployState, retired);
+                clusterControllerContainer.setHostResource(host);
+                clusterControllerContainer.initService(deployState);
+                clusterControllerContainer.setProp("clustertype", "admin");
+                containers.add(clusterControllerContainer);
+                ++index;
+            }
+            clusterControllers.addContainers(containers);
+            return clusterControllers;
+        }
+
+        private static void addClusterControllerComponentsForThisCluster(ClusterControllerContainerCluster clusterControllers,
+                                                                         ContentCluster contentCluster) {
+            int index = 0;
+            for (var container : clusterControllers.getContainers()) {
+                if ( ! hasClusterControllerComponent(container))
+                    container.addComponent(new ClusterControllerComponent());
+                container.addComponent(new ClusterControllerConfigurer(contentCluster, index++, clusterControllers.getContainers().size()));
+            }
+        }
+
+        private static boolean hasClusterControllerComponent(Container container) {
+            for (Object o : container.getComponents().getComponents())
+                if (o instanceof ClusterControllerComponent) return true;
+            return false;
         }
 
         /** Select/creates and initializes the indexing cluster coupled to this */
