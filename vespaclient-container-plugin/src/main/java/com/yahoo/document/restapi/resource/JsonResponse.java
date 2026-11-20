@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -44,6 +45,14 @@ class JsonResponse implements StreamableJsonResponse {
 
     private static final ByteBuffer emptyBuffer = ByteBuffer.wrap(new byte[0]);
     private static final int FLUSH_SIZE = 128;
+    /** The most bytes in one write of grouped documents. A larger document is written alone. */
+    private static final int WRITE_SIZE = 64 * 1024;
+
+    /** A byte stream that hands over its array instead of copying it. */
+    private static final class WriteBuffer extends ByteArrayOutputStream {
+        WriteBuffer(int size) { super(size); }
+        ByteBuffer asByteBuffer() { return ByteBuffer.wrap(buf, 0, count); }
+    }
 
     private static final CompletionHandler logException = new CompletionHandler() {
         @Override public void completed() { }
@@ -283,6 +292,9 @@ class JsonResponse implements StreamableJsonResponse {
     }
 
     synchronized void flushDocuments() throws IOException {
+        // Each channel write has a fixed cost, so documents are written together.
+        List<ByteArrayOutputStream> pending = new ArrayList<>();
+        int pendingBytes = 0;
         for (int i = 0; i < FLUSH_SIZE; i++) {
             ByteArrayOutputStream doc = docs.poll();
             if (doc == null) {
@@ -294,11 +306,19 @@ class JsonResponse implements StreamableJsonResponse {
                     json.flush();
                     buffer.write(ByteBuffer.wrap(doc.toByteArray(), 1, doc.size() - 1), null);
                     first = false;
-                } else {
-                    buffer.write(ByteBuffer.wrap(doc.toByteArray()), null);
+                    continue;
                 }
+                // Write the group first if this document does not fit in it.
+                if (doc.size() > WRITE_SIZE - pendingBytes) {
+                    writeTogether(pending, pendingBytes);
+                    pending.clear();
+                    pendingBytes = 0;
+                }
+                pending.add(doc);
+                pendingBytes += doc.size();
             }
         }
+        writeTogether(pending, pendingBytes);
 
         // Ensure new, eligible acks are done, after flushing these documents.
         buffer.write(emptyBuffer, new CompletionHandler() {
@@ -315,6 +335,13 @@ class JsonResponse implements StreamableJsonResponse {
                 completed();
             }
         });
+    }
+
+    private void writeTogether(List<ByteArrayOutputStream> documents, int size) throws IOException {
+        if (documents.isEmpty()) return;
+        WriteBuffer together = new WriteBuffer(size);
+        for (ByteArrayOutputStream document : documents) document.writeTo(together);
+        buffer.write(together.asByteBuffer(), null);
     }
 
     @Override
