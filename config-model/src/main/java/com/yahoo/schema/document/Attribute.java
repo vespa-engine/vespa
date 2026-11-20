@@ -248,15 +248,12 @@ public final class Attribute implements Cloneable, Serializable {
     public void setLabelPostings(boolean value) {
         Supplier<IllegalArgumentException> badGen = () ->
                 new IllegalArgumentException(this + " does not support 'label-postings'. " +
-                                             "Only supported for tensor types with at least one mapped dimension");
+                                             "Only supported for tensor types with exactly one mapped dimension and no indexed dimensions");
         var tt = tensorType.orElseThrow(badGen);
-        for (var dim : tt.dimensions()) {
-            if (dim.isMapped()) {
-                this.labelPostings = value;
-                return;
-            }
+        if (tt.dimensions().size() != 1 || ! tt.dimensions().get(0).isMapped()) {
+            throw badGen.get();
         }
-        throw badGen.get();
+        this.labelPostings = value;
     }
     public void setFastSearch(boolean fastSearch)                { this.fastSearch = fastSearch; }
     public void setPaged(boolean paged)                          { this.paged = paged; }

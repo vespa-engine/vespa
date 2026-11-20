@@ -163,12 +163,12 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    void tensors_with_at_least_one_mapped_dimension_can_have_label_postings() throws ParseException {
+    void tensors_with_exactly_one_mapped_dimension_can_have_label_postings() throws ParseException {
         var attr = getAttributeFromSd(
                 "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank \n attribute: label-postings }", "t1");
         assertTrue(attr.isLabelPostings());
         assertTrue(getAttributeFromSd(
-                "field t1 type tensor(x{},y[4]) { indexing: attribute \n attribute { fast-rank \n label-postings } }", "t1").isLabelPostings());
+                "field t1 type tensor<float>(x{}) { indexing: attribute \n attribute { fast-rank \n label-postings } }", "t1").isLabelPostings());
         assertFalse(getAttributeFromSd(
                 "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }", "t1").isLabelPostings());
         // 'fast-search' gives the same backend storage and is also accepted
@@ -183,7 +183,27 @@ public class TensorFieldTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("attribute 'f1' (tensor(x[3])) does not support 'label-postings'. Only supported for tensor types with at least one mapped dimension", e.getMessage());
+            assertEquals("attribute 'f1' (tensor(x[3])) does not support 'label-postings'. Only supported for tensor types with exactly one mapped dimension and no indexed dimensions", e.getMessage());
+        }
+    }
+
+    @Test
+    void mixed_tensor_attribute_cannot_have_label_postings() throws ParseException {
+        assertLabelPostingsNotSupported("tensor(x{},y[4])");
+    }
+
+    @Test
+    void multi_mapped_tensor_attribute_cannot_have_label_postings() throws ParseException {
+        assertLabelPostingsNotSupported("tensor(a{},b{})");
+    }
+
+    private void assertLabelPostingsNotSupported(String type) throws ParseException {
+        try {
+            createFromString(getSd("field f1 type " + type + " { indexing: attribute \n attribute { fast-rank \n label-postings } }"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("attribute 'f1' (" + type + ") does not support 'label-postings'. Only supported for tensor types with exactly one mapped dimension and no indexed dimensions", e.getMessage());
         }
     }
 
