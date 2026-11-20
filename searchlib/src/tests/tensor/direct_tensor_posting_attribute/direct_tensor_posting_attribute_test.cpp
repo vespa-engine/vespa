@@ -125,6 +125,10 @@ protected:
         auto range = store->get_weight_range(lookup.posting_idx);
         EXPECT_EQ(min, range.getMin());
         EXPECT_EQ(max, range.getMax());
+        // the (frozen) iterator aggregate is what query threads use
+        const auto& frozen_range = store->create(lookup.posting_idx).getAggregated();
+        EXPECT_EQ(min, frozen_range.getMin());
+        EXPECT_EQ(max, frozen_range.getMax());
         return result;
     }
 
@@ -245,6 +249,48 @@ TEST_F(DirectTensorPostingAttributeTest, many_documents_per_label) {
     auto all = postings("all");
     EXPECT_EQ(num_docs - 1 - (num_docs - 1) / 3, all.size());
     EXPECT_TRUE(std::none_of(all.begin(), all.end(), [](uint32_t docid) { return docid % 3 == 0; }));
+}
+
+TEST_F(DirectTensorPostingAttributeTest, weight_range_is_maintained_for_large_posting_lists) {
+    // large enough for the posting list to be a btree with a bitvector
+    constexpr uint32_t num_docs = 5000;
+    auto               weight = [](uint32_t docid) { return double(docid % 100) - 50.0; };
+    for (uint32_t docid = 1; docid < num_docs; ++docid) {
+        ensure_space(docid);
+        _tensor_attr->setTensor(docid, *make_value(sparse({{"a", weight(docid)}})));
+    }
+    _attr->commit();
+    auto range_of = [&]() {
+        auto  postings = weighted_postings("a");
+        float min = std::numeric_limits<float>::max();
+        float max = std::numeric_limits<float>::lowest();
+        for (const auto& [docid, w] : postings) {
+            min = std::min(min, w);
+            max = std::max(max, w);
+        }
+        return std::make_pair(min, max);
+    };
+    EXPECT_EQ(1u, _attr->getStatus().getBitVectors());
+    EXPECT_EQ(std::make_pair(-50.0f, 49.0f), range_of());
+    // lower all max weights (needs recalculation of the aggregates)
+    for (uint32_t docid = 1; docid < num_docs; ++docid) {
+        if (weight(docid) == 49.0) {
+            _tensor_attr->setTensor(docid, *make_value(sparse({{"a", 10}})));
+        }
+    }
+    _attr->commit();
+    EXPECT_EQ(std::make_pair(-50.0f, 48.0f), range_of());
+    // remove all docs with min weight
+    for (uint32_t docid = 1; docid < num_docs; ++docid) {
+        if (weight(docid) == -50.0) {
+            _attr->clearDoc(docid);
+        }
+    }
+    _attr->commit();
+    EXPECT_EQ(std::make_pair(-49.0f, 48.0f), range_of());
+    // raise one weight above the max
+    set_tensor(7, sparse({{"a", 1000}}));
+    EXPECT_EQ(std::make_pair(-49.0f, 1000.0f), range_of());
 }
 
 TEST_F(DirectTensorPostingAttributeTest, save_and_load_rebuilds_postings) {
