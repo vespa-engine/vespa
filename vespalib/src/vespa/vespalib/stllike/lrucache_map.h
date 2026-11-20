@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <limits>
+#include <utility>
 #include <vector>
 
 namespace vespalib {
@@ -104,6 +105,8 @@ public:
     [[nodiscard]] bool empty() const noexcept { return HashTable::empty(); }
     [[nodiscard]] iterator begin() noexcept { return iterator(this, _head); }
     [[nodiscard]] iterator end() noexcept { return iterator(this, LinkedValueBase::npos); }
+    /// Hash bucket the key currently maps to; only meaningful until the table is resized. For testing.
+    [[nodiscard]] size_t bucket_of(const K& key) const noexcept { return HashTable::hash(key); }
 
     /**
      * This fetches the object without modifying the lru list.
@@ -125,6 +128,17 @@ public:
      * Erase object pointed to by iterator.
      */
     iterator erase(const iterator& it);
+
+    /**
+     * Erases the object with the given key iff it exists, using a single hash table
+     * lookup. before_erase(const V&) is invoked on the object right before it is removed.
+     * Returns true iff an object was erased.
+     *
+     * before_erase must not modify this map (no insert, erase, trim, find_and_ref etc.),
+     * as the located element is erased directly afterwards without a new lookup.
+     * If before_erase throws, the map is left unchanged.
+     */
+    template <typename F> bool erase_if_present(const K& key, F&& before_erase);
 
     /**
      * Trims the cache size so that it is within its capacity limits. Since
@@ -218,6 +232,8 @@ private:
      */
     void move(NodeStore&& oldStore) override;
     void ref(const internal_iterator& it);
+    /// Unlinks and erases the element at it, which must be in the chain of bucket h.
+    void erase_internal(next_t h, const internal_iterator& it);
     insert_result insert(value_type&& value);
     void removeOld();
     /**
