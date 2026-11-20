@@ -8,8 +8,10 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace document {
+class Document;
 class DocumentTypeRepo;
 }
 namespace search::fef {
@@ -43,6 +45,7 @@ class ReverseMatchBlueprint : public search::fef::Blueprint {
     std::shared_ptr<const ReverseMatchContext> _context;
     std::string                                _schema;
     std::string                                _shared_state_key;
+    std::string                                _prefilter_field; // rank property reverseMatch.prefilterField
 
 public:
     explicit ReverseMatchBlueprint(std::shared_ptr<const ReverseMatchContext> context);
@@ -53,6 +56,7 @@ public:
     bool setup(const search::fef::IIndexEnvironment& env, const search::fef::ParameterList& params) override;
     void prepareSharedState(const search::fef::IQueryEnvironment& env,
                             search::fef::IObjectStore&            store) const override;
+    std::vector<double> prefilter_unit(const document::Document& doc) const;
     search::fef::FeatureExecutor& createExecutor(const search::fef::IQueryEnvironment& env,
                                                  vespalib::Stash&                      stash) const override;
 };
