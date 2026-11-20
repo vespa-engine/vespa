@@ -3,9 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/vespalib/util/stash.h>
@@ -27,9 +25,8 @@ public:
         return stash.create<ConstantTensorExecutor>(std::move(tensor));
     }
     static fef::FeatureExecutor& createEmpty(const vespalib::eval::ValueType& valueType, vespalib::Stash& stash) {
-        const auto& factory = vespalib::eval::FastValueBuilderFactory::get();
-        auto        spec = vespalib::eval::TensorSpec(valueType.to_spec());
-        return stash.create<ConstantTensorExecutor>(vespalib::eval::value_from_spec(spec, factory));
+        return stash.create<ConstantTensorExecutor>(
+            vespalib::eval::FastValueBuilderFactory::get().make_empty(valueType));
     }
     static fef::FeatureExecutor& createEmpty(vespalib::Stash& stash) {
         return createEmpty(vespalib::eval::ValueType::double_type(), stash);

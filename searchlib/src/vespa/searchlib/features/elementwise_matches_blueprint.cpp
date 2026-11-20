@@ -6,7 +6,6 @@
 #include "elementwise_utils.h"
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -48,7 +47,7 @@ bool ElementwiseMatchesBlueprint::setup(const fef::IIndexEnvironment&, const fef
     if (fail_message.has_value()) {
         return fail("%s", fail_message.value().c_str());
     }
-    _empty_output = vespalib::eval::value_from_spec(_output_tensor_type.to_spec(), FastValueBuilderFactory::get());
+    _empty_output = FastValueBuilderFactory::get().make_empty(_output_tensor_type);
     FeatureType output_type = FeatureType::object(_output_tensor_type);
     describeOutput("score", "Tensor with value 1.0 for each element in the given field matched by the query",
                    output_type);

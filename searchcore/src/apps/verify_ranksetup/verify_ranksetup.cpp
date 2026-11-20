@@ -14,9 +14,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
 #include <vespa/searchlib/features/setup.h>
@@ -56,7 +54,6 @@ using vespalib::eval::BadConstantValue;
 using vespalib::eval::ConstantValue;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::SimpleConstantValue;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::make_string_short::fmt;
@@ -149,8 +146,8 @@ vespalib::eval::ConstantValue::UP DummyRankingAssetsRepo::getConstant(const std:
     for (const auto& entry : cfg.constant) {
         if (entry.name == name) {
             try {
-                auto tensor = vespalib::eval::value_from_spec(TensorSpec(entry.type), FastValueBuilderFactory::get());
-                return std::make_unique<SimpleConstantValue>(std::move(tensor));
+                auto type = ValueType::from_spec(entry.type);
+                return std::make_unique<SimpleConstantValue>(FastValueBuilderFactory::get().make_empty(type));
             } catch (std::exception&) {
                 return std::make_unique<BadConstantValue>();
             }

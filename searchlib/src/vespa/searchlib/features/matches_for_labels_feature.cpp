@@ -6,7 +6,6 @@
 #include "utils.h"
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
@@ -168,7 +167,7 @@ bool MatchesForLabelsBlueprint::setup(const fef::IIndexEnvironment&, const fef::
     if (!params.empty()) {
         _field_id = params[0].asField()->id();
     }
-    _empty_output = vespalib::eval::value_from_spec(_value_type.to_spec(), FastValueBuilderFactory::get());
+    _empty_output = FastValueBuilderFactory::get().make_empty(_value_type);
     describeOutput("out",
                    _field_id.has_value()
                        ? "1 for each query item label whose terms matched the given field, as a "

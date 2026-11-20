@@ -6,7 +6,6 @@
 #include "utils.h"
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
@@ -217,7 +216,7 @@ bool Bm25ForLabelsBlueprint::setup(const fef::IIndexEnvironment& env, const fef:
     if (bm25_utils.lookup_param(Bm25Utils::average_field_length(), _avg_field_length) == Trinary::Undefined) {
         return fail(bm25_utils.last_error());
     }
-    _empty_output = vespalib::eval::value_from_spec(_value_type.to_spec(), FastValueBuilderFactory::get());
+    _empty_output = FastValueBuilderFactory::get().make_empty(_value_type);
     describeOutput("score",
                    "The bm25 score in the given index field for the terms carrying each query item label, "
                    "as a tensor<float>(label{}) with the labels as cell labels",

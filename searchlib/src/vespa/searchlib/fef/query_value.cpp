@@ -26,7 +26,6 @@ using vespalib::eval::Function;
 using vespalib::eval::InterpretedFunction;
 using vespalib::eval::NodeTypes;
 using vespalib::eval::SimpleObjectParams;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
@@ -73,8 +72,7 @@ feature_t as_feature(const std::string& str) {
 
 // Create an empty tensor of the given type.
 std::unique_ptr<Value> empty_tensor(const ValueType& type) {
-    const auto& factory = vespalib::eval::FastValueBuilderFactory::get();
-    return vespalib::eval::value_from_spec(TensorSpec(type.to_spec()), factory);
+    return vespalib::eval::FastValueBuilderFactory::get().make_empty(type);
 }
 
 // Create a tensor value by evaluating a self-contained expression.

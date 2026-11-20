@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/eval/eval/fast_value.hpp>
@@ -258,7 +259,7 @@ const std::vector<GenSpec> layouts = {
     G().map("x", {"a", "b", "c"}).idx("y", 5).map("z", {"i", "j", "k", "l"})};
 
 TEST(FastValueBuilderFactoryTest, fast_values_can_be_copied) {
-    auto factory = FastValueBuilderFactory::get();
+    const auto& factory = FastValueBuilderFactory::get();
     for (const auto& layout : layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
             auto expect = layout.cpy().cells(ct);
@@ -271,6 +272,27 @@ TEST(FastValueBuilderFactoryTest, fast_values_can_be_copied) {
             EXPECT_EQ(actual, expect);
         }
     }
+}
+
+TEST(FastValueBuilderFactoryTest, fast_empty_values_can_be_made) {
+    for (const auto& layout : layouts) {
+        for (CellType ct : CellTypeUtils::list_types()) {
+            auto desc = layout.cpy().cells(ct);
+            if (desc.bad_scalar()) {
+                continue;
+            }
+            ValueType              type = desc.type();
+            std::unique_ptr<Value> empty = FastValueBuilderFactory::get().make_empty(type);
+            EXPECT_EQ(empty->type(), type);
+            TensorSpec actual = spec_from_value(*empty);
+            TensorSpec expect = TensorSpec(type.to_spec()).normalize();
+            EXPECT_EQ(actual, expect);
+        }
+    }
+}
+
+TEST(FastValueBuilderFactoryTest, empty_value_of_error_type_is_rejected) {
+    EXPECT_THROW((void)FastValueBuilderFactory::get().make_empty(ValueType::error_type()), IllegalArgumentException);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -4,9 +4,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/onnx_model.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -29,9 +27,7 @@ using vespalib::Issue;
 using vespalib::Stash;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::Onnx;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
-using vespalib::eval::value_from_spec;
 using vespalib::eval::ValueType;
 using vespalib::make_string_short::fmt;
 
@@ -60,8 +56,7 @@ std::string my_dry_run(const Onnx& model, const Onnx::WireInfo& wire) {
         Onnx::EvalContext      context(model, wire);
         std::vector<Value::UP> inputs;
         for (const auto& input_type : wire.vespa_inputs) {
-            TensorSpec spec(input_type.to_spec());
-            inputs.push_back(value_from_spec(spec, FastValueBuilderFactory::get()));
+            inputs.push_back(FastValueBuilderFactory::get().make_empty(input_type));
         }
         for (size_t i = 0; i < inputs.size(); ++i) {
             context.bind_param(i, *inputs[i]);

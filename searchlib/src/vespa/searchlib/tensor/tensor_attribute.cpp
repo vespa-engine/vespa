@@ -16,9 +16,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/quantization_params.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -37,7 +35,6 @@ using search::AddressSpaceComponents;
 using vespalib::Generation;
 using vespalib::GenerationGuard;
 using vespalib::eval::FastValueBuilderFactory;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
@@ -46,9 +43,7 @@ namespace search::tensor {
 namespace {
 
 Value::UP createEmptyTensor(const ValueType& type) {
-    const auto& factory = FastValueBuilderFactory::get();
-    TensorSpec  empty_spec(type.to_spec());
-    return vespalib::eval::value_from_spec(empty_spec, factory);
+    return FastValueBuilderFactory::get().make_empty(type);
 }
 
 std::string makeWrongTensorTypeMsg(const ValueType& fieldTensorType, const ValueType& tensorType) {
