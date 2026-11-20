@@ -18,7 +18,7 @@ namespace search::tensor {
  * Tensor attribute storing full tensors (like DirectTensorAttribute), that also
  * keeps a dictionary of all tensor labels with a posting list per label.
  * The posting lists contain {docid, weight} where weight is the tensor cell value
- * (converted to float, NaN is stored as 0).
+ * (converted to float, rounded up when not exactly representable; NaN is stored as 0).
  *
  * Only sparse tensor types with exactly one mapped dimension are supported.
  * Labels are matched exactly (cased).

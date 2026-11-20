@@ -11,6 +11,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <cmath>
 #include <filesystem>
 #include <limits>
 
@@ -281,6 +282,16 @@ TEST_F(DirectTensorPostingAttributeTest, nan_cell_value_gives_zero_weight) {
     set_tensor(1, sparse({{"a", std::numeric_limits<double>::quiet_NaN()}, {"b", 2}}));
     EXPECT_EQ(WeightedDocids({{1, 0.0f}}), weighted_postings("a"));
     EXPECT_EQ(WeightedDocids({{1, 2.0f}}), weighted_postings("b"));
+}
+
+TEST_F(DirectTensorPostingAttributeTest, double_cell_values_are_rounded_up_to_float_weights) {
+    constexpr float inf = std::numeric_limits<float>::infinity();
+    set_tensor(1, sparse({{"a", 1.00000001}, {"b", -1.00000001}, {"c", 1e-46}, {"d", -1e-46}, {"e", 1e300}}));
+    EXPECT_EQ(WeightedDocids({{1, std::nextafter(1.0f, inf)}}), weighted_postings("a"));
+    EXPECT_EQ(WeightedDocids({{1, -1.0f}}), weighted_postings("b"));
+    EXPECT_EQ(WeightedDocids({{1, std::numeric_limits<float>::denorm_min()}}), weighted_postings("c"));
+    EXPECT_EQ(WeightedDocids({{1, -0.0f}}), weighted_postings("d"));
+    EXPECT_EQ(WeightedDocids({{1, inf}}), weighted_postings("e"));
 }
 
 TEST_F(DirectTensorPostingAttributeTest, weights_are_converted_from_other_cell_types) {

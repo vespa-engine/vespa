@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 using vespalib::IllegalArgumentException;
 using vespalib::SharedStringRepo;
@@ -43,13 +44,26 @@ const search::attribute::Config& check_config(const search::attribute::Config& c
     return cfg;
 }
 
+// Convert a cell value to a posting weight. Values that are not exactly representable
+// as float (double cells only) are rounded up, so a posting weight is never below the
+// cell value. NaN is stored as 0.
+float to_posting_weight(double value) noexcept {
+    if (std::isnan(value)) {
+        return 0.0f;
+    }
+    float weight = static_cast<float>(value);
+    if (static_cast<double>(weight) < value) {
+        weight = std::nextafter(weight, std::numeric_limits<float>::infinity());
+    }
+    return weight;
+}
+
 struct ConvertCells {
     template <typename CT> static void invoke(TypedCells cells, std::vector<float>& dst) {
         auto src = cells.typify<CT>();
         dst.clear();
         for (auto cell : src) {
-            float weight = static_cast<float>(cell);
-            dst.push_back(std::isnan(weight) ? 0.0f : weight);
+            dst.push_back(to_posting_weight(static_cast<double>(cell)));
         }
     }
 };

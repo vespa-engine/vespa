@@ -287,6 +287,23 @@ TEST_P(SparseTensorWandTest, nan_cell_values_are_not_hits) {
     EXPECT_EQ(expect, find_matches(*bp, false));
 }
 
+TEST_P(SparseTensorWandTest, double_cell_values_not_representable_as_float_are_handled) {
+    if (cell_type() != CellType::DOUBLE) {
+        GTEST_SKIP() << "only double cells can be rounded when stored as float posting weights";
+    }
+    // the exact scores of docs 3 and 6 are tiny but positive, while rounding the cells to the
+    // nearest float would give score 0, which is not above the threshold
+    set_tensor(3, {{"a", 1.00000001}, {"b", 1.0}});
+    set_tensor(6, {{"a", 1e-46}});
+    _attr->commit();
+    auto                  query = make_value(spec({{"a", 1}, {"b", -1}}));
+    std::vector<uint32_t> expect = {3, 4, 6, 8};
+    auto                  bp = make_blueprint(100, 0.0, *query);
+    EXPECT_EQ(expect, docids(find_matches(*bp, true)));
+    bp = make_blueprint(100, 0.0, *query);
+    EXPECT_EQ(expect, docids(find_matches(*bp, false)));
+}
+
 TEST_P(SparseTensorWandTest, huge_query_weights_are_handled) {
     if (cell_type() != CellType::DOUBLE) {
         GTEST_SKIP() << "query cells must be double to be huge";
