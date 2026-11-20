@@ -1,5 +1,7 @@
 package ai.vespa.json;
 
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -7,8 +9,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,6 +20,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author bjorncs
  */
 class JsonTest {
+
+    @Test
+    void inspector_returns_the_existing_root_and_child() {
+        var slime = new Slime();
+        var root = slime.setObject();
+        var child = root.setLong("count", 42);
+        var json = Json.of(slime);
+
+        assertSame(root, json.inspector());
+        assertSame(child, json.f("count").inspector());
+        assertEquals(42, json.f("count").inspector().asLong());
+    }
+
+    @Test
+    void inspector_preserves_missing_and_null_values() {
+        var json = Json.of("{\"value\":null}");
+
+        assertFalse(json.f("missing").inspector().valid());
+        assertTrue(json.f("value").inspector().valid());
+        assertEquals(Type.NIX, json.f("value").inspector().type());
+    }
+
+    @Test
+    void inspector_exposes_binary_data() {
+        var slime = new Slime();
+        byte[] data = { 0, 15, (byte) 255 };
+        slime.setData(data);
+
+        assertEquals(Type.DATA, Json.of(slime).inspector().type());
+        assertArrayEquals(data, Json.of(slime).inspector().asData());
+    }
 
     @Test
     void parses_json_correctly() {

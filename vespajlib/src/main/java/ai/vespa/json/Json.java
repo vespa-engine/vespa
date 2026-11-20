@@ -47,6 +47,12 @@ public class Json implements Iterable<Json> {
     public static Json of(Inspector inspector) { return new Json(inspector, ""); }
     public static Json of(String json) { return of(SlimeUtils.jsonToSlime(json)); }
 
+    /**
+     * Returns the wrapped Inspector without copying it. Reads through Inspector bypass Json's
+     * type checks and error paths.
+     */
+    public Inspector inspector() { return inspector; }
+
     private Json(Inspector inspector, String path) {
         this.inspector = Objects.requireNonNull(inspector);
         this.path = Objects.requireNonNull(path);
