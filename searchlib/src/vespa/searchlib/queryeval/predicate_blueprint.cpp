@@ -266,7 +266,7 @@ SearchIterator::UP PredicateBlueprint::createLeafSearch(const fef::TermFieldMatc
     auto                                 interval_range_vector = attribute.getIntervalRangeVector();
     auto                                 max_interval_range = attribute.getMaxIntervalRange();
     return std::make_unique<PredicateSearch>(mfh.first, interval_range_vector, max_interval_range, _kV,
-                                             createPostingLists(), tfmda);
+                                             createPostingLists(), tfmda, [this]() { return createPostingLists(); });
 }
 
 namespace {
