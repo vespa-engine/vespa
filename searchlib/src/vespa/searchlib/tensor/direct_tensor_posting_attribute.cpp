@@ -6,6 +6,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -269,6 +271,11 @@ vespalib::MemoryUsage DirectTensorPostingAttribute::update_stat() {
     total.merge(_label_store.update_stat(compaction_strategy));
     total.merge(_posting_store.update_stat(compaction_strategy));
     return total;
+}
+
+void DirectTensorPostingAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const {
+    DirectTensorAttribute::populate_address_space_usage(usage);
+    usage.set(AddressSpaceComponents::enum_store, _label_store.get_values_address_space_usage());
 }
 
 void DirectTensorPostingAttribute::reclaim_memory(vespalib::Generation oldest_used_gen) {

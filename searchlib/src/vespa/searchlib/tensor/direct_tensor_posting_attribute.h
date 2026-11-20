@@ -62,6 +62,7 @@ public:
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
     const IDocidWithFloatWeightPostingStore* label_posting_store() const override { return &_posting_store_adapter; }
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
     const LabelStore& get_label_store() const noexcept { return _label_store; }
     const LabelPostingStore& get_posting_store() const noexcept { return _posting_store; }

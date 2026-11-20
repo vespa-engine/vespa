@@ -5,6 +5,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/i_docid_with_float_weight_posting_store.h>
 #include <vespa/searchlib/tensor/direct_tensor_posting_attribute.h>
@@ -15,6 +17,7 @@
 #include <filesystem>
 #include <limits>
 
+using search::AddressSpaceComponents;
 using search::AttributeFactory;
 using search::AttributeVector;
 using search::attribute::BasicType;
@@ -261,6 +264,16 @@ TEST_F(DirectTensorPostingAttributeTest, save_and_load_rebuilds_postings) {
     EXPECT_EQ(Docids({2}), postings("b"));
     EXPECT_EQ(Docids({2, 4}), postings("c"));
     EXPECT_EQ(2u, num_labels());
+}
+
+TEST_F(DirectTensorPostingAttributeTest, address_space_usage_includes_label_store) {
+    auto before = _attr->getAddressSpaceUsage();
+    EXPECT_EQ(1u, before.get_all().count(AddressSpaceComponents::enum_store));
+    EXPECT_EQ(1u, before.get_all().count(AddressSpaceComponents::tensor_store));
+    set_tensor(1, sparse({{"a", 1}, {"b", 2}}));
+    set_tensor(2, sparse({{"c", 3}}));
+    auto after = _attr->getAddressSpaceUsage();
+    EXPECT_LT(before.enum_store_usage().used(), after.enum_store_usage().used());
 }
 
 TEST_F(DirectTensorPostingAttributeTest, posting_lists_have_cell_values_as_weights) {
