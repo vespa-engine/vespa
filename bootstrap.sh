@@ -35,6 +35,36 @@ else
     exit 1
 fi
 
+# Locate the vespa source directory, often ~/git/vespa
+top=$(dirname "$0")
+
+# The build modes use relative paths from the source root, so check
+# this before touching anything (e.g. mvnw) in the current directory.
+# The 'wrapper' mode sets up mvnw in the current directory and is exempt.
+if [ "$MODE" != "wrapper" ]; then
+    here=$(/bin/pwd || pwd )
+    there=$(cd "$top" && { /bin/pwd || pwd; })
+    if [ "$here" != "$there" ]; then
+        echo "Full bootstrap.sh must be run in the top-level vespa directory $there" 1>&2
+        exit 1
+    fi
+fi
+
+# Read a required property from mvnvm.properties, which is the single
+# source of truth for the Maven version (also used by mvnvm).
+get_mvnvm_property() {
+    local prop_file="${top}/mvnvm.properties"
+    local key=$1 value
+    if [ -f "${prop_file}" ]; then
+        value=$(sed -n "s/^${key}=//p" "${prop_file}" | tail -n 1)
+    fi
+    if [ -z "${value:-}" ]; then
+        echo "Could not find ${key} in ${prop_file}" >&2
+        exit 1
+    fi
+    echo "$value"
+}
+
 get_env_var_with_optional_default() {
     local var_name=$1; shift
     local default_val=${1:-};
@@ -58,13 +88,18 @@ echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 echo "Using maven target: ${MAVEN_TARGET}"
 
-wanted_mvn_version=3.9.16
+wanted_mvn_version=$(get_mvnvm_property mvn_version)
+echo "Using maven version: ${wanted_mvn_version}"
+# Read the checksum up front, so a missing property fails before the
+# existing wrapper is touched.
+distribution_sha256=$(get_mvnvm_property mvn_distribution_sha256)
 
 current_mvn_version=$(/usr/bin/mvn -version 2>/dev/null | awk '$1 == "Apache" && $2 == "Maven" { print $3; exit }' || true)
 if [ "$current_mvn_version" = "$wanted_mvn_version" ]; then
     # we already have the correct version installed, skip the wrapper
     ln -sf /usr/bin/mvn mvnw
 else
+    rm -f mvnw
     # Set up maven wrapper.
     echo "Setting up maven wrapper ${wanted_mvn_version} in $(pwd)"
     maven_wrapper_args=(-B)
@@ -76,7 +111,6 @@ else
 
     # Keep verification independent of the mirror used to fetch the wrapper.
     wrapper_properties=.mvn/wrapper/maven-wrapper.properties
-    distribution_sha256=5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce
     if grep -q '^distributionSha256Sum=' "$wrapper_properties"; then
         grep -qx "distributionSha256Sum=$distribution_sha256" "$wrapper_properties" || {
             echo "Unexpected Maven wrapper distribution checksum" >&2
@@ -108,7 +142,6 @@ mvn_install() {
 }
 
 # Generate vtag map
-top=$(dirname "$0")
 "$top/dist/getversionmap.sh" "$top" > "$top/dist/vtag.map"
 
 # NOTES ON BUILDING JAVA MODULES
