@@ -15,6 +15,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <limits>
+
 using search::AttributeFactory;
 using search::AttributeVector;
 using search::attribute::BasicType;
@@ -32,6 +34,7 @@ using search::tensor::DirectTensorPostingAttribute;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
 using vespalib::IllegalArgumentException;
+using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -52,6 +55,14 @@ std::ostream& operator<<(std::ostream& os, const Hit& hit) {
 }
 
 using Hits = std::vector<Hit>;
+
+std::vector<uint32_t> docids(const Hits& hits) {
+    std::vector<uint32_t> result;
+    for (const auto& hit : hits) {
+        result.push_back(hit.docid);
+    }
+    return result;
+}
 
 std::unique_ptr<Value> make_value(const TensorSpec& spec) {
     return vespalib::eval::value_from_spec(spec, FastValueBuilderFactory::get());
@@ -126,6 +137,7 @@ protected:
     }
 
     bool label_postings() const noexcept { return GetParam().label_postings; }
+    CellType cell_type() const noexcept { return _attr->getTensorType().cell_type(); }
 
     static Hits find_matches(Blueprint& blueprint, bool strict) {
         blueprint.basic_plan(strict, docid_limit);
@@ -244,12 +256,67 @@ TEST_P(SparseTensorWandTest, strict_iterator_with_postings_skips_documents_witho
     EXPECT_TRUE(itr->isAtEnd());
 }
 
+TEST_P(SparseTensorWandTest, infinite_cell_values_are_handled) {
+    if (cell_type() == CellType::INT8) {
+        GTEST_SKIP() << "int8 cells cannot be infinite";
+    }
+    constexpr double inf = std::numeric_limits<double>::infinity();
+    set_tensor(3, {{"a", inf}});
+    set_tensor(6, {{"c", -inf}});
+    _attr->commit();
+    auto bp = make_blueprint(100, 3.5);
+    Hits expect = {{3, inf}, {4, 4.0}, {5, 13.0}};
+    EXPECT_EQ(expect, find_matches(*bp, true));
+    bp = make_blueprint(100, 3.5);
+    EXPECT_EQ(expect, find_matches(*bp, false));
+    bp = make_blueprint(100, 1e300);
+    expect = {{3, inf}};
+    EXPECT_EQ(expect, find_matches(*bp, true));
+}
+
+TEST_P(SparseTensorWandTest, nan_cell_values_are_not_hits) {
+    if (cell_type() == CellType::INT8) {
+        GTEST_SKIP() << "int8 cells cannot be NaN";
+    }
+    set_tensor(3, {{"a", std::numeric_limits<double>::quiet_NaN()}});
+    _attr->commit();
+    auto bp = make_blueprint(100, 0.0);
+    Hits expect = {{1, 3.0}, {2, 3.0}, {4, 4.0}, {5, 13.0}, {8, 3.0}};
+    EXPECT_EQ(expect, find_matches(*bp, true));
+    bp = make_blueprint(100, 0.0);
+    EXPECT_EQ(expect, find_matches(*bp, false));
+}
+
+TEST_P(SparseTensorWandTest, huge_query_weights_are_handled) {
+    if (cell_type() != CellType::DOUBLE) {
+        GTEST_SKIP() << "query cells must be double to be huge";
+    }
+    // the sum of the upper bounds (4 * 4e307 + 1 * 1e308) overflows
+    auto query = make_value(spec({{"a", 4e307}, {"c", 1e308}}));
+    auto bp = make_blueprint(100, 9e307, *query);
+    Hits expect = {{2, 1e308}, {4, 4 * 4e307}, {5, 1e308}};
+    EXPECT_EQ(expect, find_matches(*bp, true));
+    bp = make_blueprint(100, 9e307, *query);
+    EXPECT_EQ(expect, find_matches(*bp, false));
+}
+
+TEST_P(SparseTensorWandTest, tiny_query_weights_are_handled) {
+    if (cell_type() != CellType::DOUBLE) {
+        GTEST_SKIP() << "query cells must be double to be tiny";
+    }
+    // the score range is so small that scaling it to the integer score range overflows
+    auto                  query = make_value(spec({{"a", 1e-300}, {"b", 1e-300}, {"c", 3e-300}}));
+    auto                  bp = make_blueprint(100, 3.5e-300, *query);
+    std::vector<uint32_t> expect = {4, 5};
+    EXPECT_EQ(expect, docids(find_matches(*bp, true)));
+    bp = make_blueprint(100, 3.5e-300, *query);
+    EXPECT_EQ(expect, docids(find_matches(*bp, false)));
+}
+
 TEST_P(SparseTensorWandTest, query_tensor_type_must_match_attribute_type) {
     auto other_dim = make_value(TensorSpec("tensor(y{})").add({{"y", "a"}}, 1));
     EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *other_dim, 0.0), IllegalArgumentException);
-    std::string other_cell_type = (_attr->getTensorType().cell_type() == vespalib::eval::CellType::DOUBLE)
-                                      ? "tensor<float>(x{})"
-                                      : "tensor(x{})";
+    std::string other_cell_type = (cell_type() == CellType::DOUBLE) ? "tensor<float>(x{})" : "tensor(x{})";
     auto        other_cells = make_value(TensorSpec(other_cell_type).add({{"x", "a"}}, 1));
     EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *other_cells, 0.0), IllegalArgumentException);
     EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*_attr, *_query_tensor, 0.0));

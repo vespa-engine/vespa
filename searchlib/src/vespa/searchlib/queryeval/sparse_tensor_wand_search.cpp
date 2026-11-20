@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <functional>
 #include <limits>
 #include <queue>
@@ -236,17 +237,36 @@ public:
 };
 
 /**
- * The docid posting lists of the query labels, as terms for wand::AlgorithmT<double>.
+ * The docid posting lists of the query labels, as terms for wand::Algorithm.
  * The score of a term is its contribution to the dot product (query cell * posting weight),
  * and its max score is an upper bound of that, calculated from the min/max posting weight.
  * Terms are ordered like wand::MaxSkipOrder, so the most valuable terms are checked first.
+ *
+ * Scores are converted to scaled 64-bit integers, so the sums done by the WAND algorithm are exact:
+ * - The finite part of the score range (sum of finite positive upper bounds, minus sum of finite
+ *   negative lower bounds) is scaled to span score_range. Term scores and max scores are rounded up.
+ * - Converted thresholds are clamped to max_threshold, which is above any sum of finite term scores.
+ * - A term with an unbounded (infinite or NaN) upper bound always scores unbounded_score, so a document
+ *   matching it passes any converted threshold: the other term scores sum to at least -score_range.
+ * - Negative contributions from a term with an unbounded lower bound are raised to 0.
+ * Raising a term score never loses hits; the exact score of the candidates decides anyway.
+ * With at most 2^16 terms, the sums stay below 2^16 * unbounded_score = 2^62.
  */
 class PostingTerms {
     std::vector<uint32_t>                     _docid; // current docid of each term (as seen by the algorithm)
-    std::vector<double>                       _max_score;
+    std::vector<int64_t>                      _min_score;
+    std::vector<int64_t>                      _max_score;
     std::vector<double>                       _query_weight;
     std::vector<DocidWithFloatWeightIterator> _children;
-    double                                    _total_max_score; // sum of positive max scores
+    double                                    _scale; // conversion factor from double to integer scores
+    int64_t                                   _slack; // integer slack for float posting weight rounding
+
+    static constexpr double  score_range = 0x1.0p44;
+    static constexpr double  max_threshold = 2 * score_range;
+    static constexpr int64_t unbounded_score = static_cast<int64_t>(4 * score_range);
+    // 1e-6 of score_range (rounded up), large enough to cover float rounding of the posting weights
+    static constexpr int64_t rounding_slack = static_cast<int64_t>(score_range * 1e-6) + 1;
+    static_assert(SparseTensorWandSearch::max_postings * double(unbounded_score) <= 0x1.0p62);
 
 public:
     PostingTerms(std::vector<DocidWithFloatWeightIterator> postings, const std::vector<double>& query_weights,
@@ -255,10 +275,10 @@ public:
     PostingTerms& operator=(const PostingTerms&) = delete;
     ~PostingTerms();
 
-    // interface used by wand::AlgorithmT and wand::DualHeap
+    // interface used by wand::Algorithm and wand::DualHeap
     uint32_t* docId() noexcept { return _docid.data(); }
     uint32_t& docId(wand::ref_t ref) noexcept { return _docid[ref]; }
-    double maxScore(wand::ref_t ref) const noexcept { return _max_score[ref]; }
+    int64_t maxScore(wand::ref_t ref) const noexcept { return _max_score[ref]; }
     size_t size() const noexcept { return _children.size(); }
     uint32_t seek(wand::ref_t ref, uint32_t docid) noexcept {
         _children[ref].linearSeek(docid);
@@ -274,58 +294,131 @@ public:
         return _children[ref].valid() ? _children[ref].getKey() : endDocId;
     }
 
-    // contribution to the dot product from the given term (positioned at the current candidate)
-    double term_score(wand::ref_t ref) const noexcept { return _query_weight[ref] * _children[ref].getData(); }
-    double total_max_score() const noexcept { return _total_max_score; }
+    // Integer bound used by the WAND checks for the given (non-negative) score threshold.
+    // Term scores and max scores are rounded up, so the integer sums are never below the
+    // scaled posting score sum. The posting weights are float (possibly rounded from double
+    // tensor cells), and the exact score is summed in a different order, so the bound is
+    // lowered by a small slack to avoid losing hits close to the threshold.
+    // The threshold may be far above the max score (initial score threshold from the query,
+    // or max double when not tracking any hits), so it is clamped to max_threshold; only
+    // documents matching a term with an unbounded upper bound pass then.
+    int64_t converted_threshold(double threshold) const noexcept {
+        double scaled = threshold * _scale;
+        if (!(scaled < max_threshold)) { // also catches NaN
+            scaled = max_threshold;
+        }
+        if (!(scaled > 0.0)) {
+            return 0;
+        }
+        int64_t cvt = static_cast<int64_t>(std::floor(scaled));
+        return std::max(cvt - _slack, int64_t(0));
+    }
+
+    // contribution to the dot product from the given term (positioned at the current candidate),
+    // scaled, rounded up and clamped to [min score, max score] of the term. A NaN contribution
+    // gives the min score; the exact score is then also NaN, which is never a hit.
+    int64_t term_score(wand::ref_t ref) const noexcept {
+        double scaled = std::ceil(_query_weight[ref] * _children[ref].getData() * _scale);
+        if (!(scaled > static_cast<double>(_min_score[ref]))) { // also catches NaN
+            return _min_score[ref];
+        }
+        if (!(scaled < static_cast<double>(_max_score[ref]))) {
+            return _max_score[ref];
+        }
+        return static_cast<int64_t>(scaled);
+    }
 };
 
 /**
- * Scorer for wand::AlgorithmT using the weights in the posting lists.
+ * Scorer for wand::Algorithm using the weights in the posting lists.
  */
 struct PostingScorer {
-    static double calculateScore(const PostingTerms& terms, wand::ref_t ref, uint32_t) noexcept {
+    static int64_t calculateScore(const PostingTerms& terms, wand::ref_t ref, uint32_t) noexcept {
         return terms.term_score(ref);
     }
 };
 
 PostingTerms::PostingTerms(std::vector<DocidWithFloatWeightIterator> postings,
                            const std::vector<double>& query_weights, uint32_t docid_limit)
-    : _docid(), _max_score(), _query_weight(), _children(), _total_max_score(0.0) {
+    : _docid(), _min_score(), _max_score(), _query_weight(), _children(), _scale(1.0), _slack(0) {
     assert(query_weights.size() == postings.size());
     static_assert(SparseTensorWandSearch::max_postings == std::numeric_limits<wand::ref_t>::max());
     assert(postings.size() <= SparseTensorWandSearch::max_postings);
-    std::vector<double> max_scores;
+    constexpr double    inf = std::numeric_limits<double>::infinity();
+    size_t              num_terms = postings.size();
+    std::vector<double> upper_bounds, lower_bounds, finite_max_scores, finite_negated_mins;
     std::vector<double> est_hits;
-    max_scores.reserve(postings.size());
-    est_hits.reserve(postings.size());
+    upper_bounds.reserve(num_terms);
+    lower_bounds.reserve(num_terms);
+    finite_max_scores.reserve(num_terms);
+    finite_negated_mins.reserve(num_terms);
+    est_hits.reserve(num_terms);
     double est_num_docs = std::max(1.0, docid_limit - 1.0);
+    double max_finite_bound = 0.0;
     // posting lists are always btrees here, so the min/max weight aggregates are available
-    for (uint32_t ref = 0; ref < postings.size(); ++ref) {
+    for (uint32_t ref = 0; ref < num_terms; ++ref) {
         const auto& aggr = postings[ref].getAggregated();
         double      qw = query_weights[ref];
-        // the largest qw * w for any document weight w in [min, max]
+        // the largest and smallest qw * w for any document weight w in [min, max]
         double upper_bound = (qw >= 0.0) ? qw * aggr.getMax() : qw * aggr.getMin();
-        size_t size = postings[ref].size();
+        double lower_bound = (qw >= 0.0) ? qw * aggr.getMin() : qw * aggr.getMax();
+        upper_bounds.push_back(upper_bound);
+        lower_bounds.push_back(lower_bound);
         // a term that can only lower the score never helps a document pass the threshold
-        max_scores.push_back(std::max(upper_bound, 0.0));
+        double max_score = (upper_bound < inf) ? std::max(upper_bound, 0.0) : 0.0;
+        double negated_min = (lower_bound > -inf) ? std::max(-lower_bound, 0.0) : 0.0;
+        finite_max_scores.push_back(max_score);
+        finite_negated_mins.push_back(negated_min);
+        max_finite_bound = std::max({max_finite_bound, max_score, negated_min});
+        size_t size = postings[ref].size();
         est_hits.push_back(size);
         est_num_docs = std::max(est_num_docs, double(size));
     }
     // a document can match any subset of the terms, so only positive contributions raise the max score
-    _total_max_score = huffman_sum_positive(max_scores);
-    std::vector<uint32_t> order(postings.size());
+    // and only negative contributions lower the min score.
+    double range = huffman_sum_positive(finite_max_scores) + huffman_sum_positive(finite_negated_mins);
+    // map the finite score range onto score_range. if all finite contributions are zero (range is 0)
+    // any scale works; keep 1.0 and no slack. if the range overflows, scale each finite bound to at most
+    // score_range / num_terms instead. if the range is so small that the scale overflows, use the largest
+    // finite scale; the scaled bounds are then still below score_range.
+    if (range > 0.0) {
+        if (std::isfinite(range)) {
+            _scale = std::min(score_range / range, std::numeric_limits<double>::max());
+        } else {
+            _scale = (score_range / num_terms) / max_finite_bound;
+        }
+        _slack = rounding_slack;
+    }
+    std::vector<int64_t> min_scores, max_scores;
+    min_scores.reserve(num_terms);
+    max_scores.reserve(num_terms);
+    for (uint32_t ref = 0; ref < num_terms; ++ref) {
+        if (upper_bounds[ref] < inf) {
+            max_scores.push_back(static_cast<int64_t>(std::ceil(finite_max_scores[ref] * _scale)));
+            min_scores.push_back((lower_bounds[ref] > -inf)
+                                     ? static_cast<int64_t>(std::ceil(lower_bounds[ref] * _scale))
+                                     : int64_t(0));
+        } else {
+            max_scores.push_back(unbounded_score);
+            min_scores.push_back(unbounded_score);
+        }
+    }
+    std::vector<uint32_t> order(num_terms);
     for (uint32_t ref = 0; ref < order.size(); ++ref) {
         order[ref] = ref;
     }
-    auto skip_value = [&](uint32_t ref) { return ((est_num_docs - est_hits[ref]) / est_num_docs) * max_scores[ref]; };
+    auto p_not_hit = [&](double estHits) noexcept { return ((est_num_docs - estHits) / (est_num_docs)); };
+    auto skip_value = [&](uint32_t ref) noexcept { return p_not_hit(est_hits[ref]) * double(max_scores[ref]); };
     std::stable_sort(order.begin(), order.end(),
                      [&](uint32_t a, uint32_t b) { return skip_value(a) > skip_value(b); });
-    _docid.reserve(order.size());
-    _max_score.reserve(order.size());
-    _query_weight.reserve(order.size());
-    _children.reserve(order.size());
+    _docid.reserve(num_terms);
+    _min_score.reserve(num_terms);
+    _max_score.reserve(num_terms);
+    _query_weight.reserve(num_terms);
+    _children.reserve(num_terms);
     for (uint32_t ref : order) {
         _children.push_back(std::move(postings[ref]));
+        _min_score.push_back(min_scores[ref]);
         _max_score.push_back(max_scores[ref]);
         _query_weight.push_back(query_weights[ref]);
         _docid.push_back(get_docid(_children.size() - 1));
@@ -335,15 +428,15 @@ PostingTerms::PostingTerms(std::vector<DocidWithFloatWeightIterator> postings,
 PostingTerms::~PostingTerms() = default;
 
 /**
- * Strict iterator using the WAND algorithm (see wand::AlgorithmT) on the posting lists of the query labels,
+ * Strict iterator using the WAND algorithm (see wand::Algorithm) on the posting lists of the query labels,
  * like the parallel WAND iterator does. Candidates are found using an upper bound of the contribution from
  * each posting list, and checked using the weights in the posting lists (with early exit when the remaining
  * upper bounds cannot reach the threshold). Only candidates passing that check are scored using the document
  * tensor, and that exact score decides whether the candidate is a hit.
  *
- * The posting weights are float, and the sums are calculated in a different order than the exact score,
- * so the checks using posting weights are done against the threshold lowered by a small slack, to avoid
- * losing hits due to rounding.
+ * The posting scores are converted to scaled 64-bit integers (see PostingTerms), so the sums done by the
+ * WAND algorithm are exact. Since the float posting weights may differ slightly from the exact score,
+ * the checks are done against the threshold lowered by a small slack (see PostingTerms::converted_threshold).
  */
 template <typename Scorer, typename FutureHeap, typename PastHeap>
 class SparseTensorWandPostingSearch final : public SparseTensorWandSearch {
@@ -353,15 +446,11 @@ class SparseTensorWandPostingSearch final : public SparseTensorWandSearch {
     Scorer                   _scorer;
     PostingTerms             _terms;
     Heaps                    _heaps;
-    wand::AlgorithmT<double> _algo;
+    wand::Algorithm          _algo;
     const MatchParams        _match_params;
     std::vector<double>      _local_scores;
     const bool               _readonly_scores_heap;
-    // Upper bounds and posting scores may have different rounding errors than the exact score (float
-    // posting weights, different summation order). Lower the threshold used for them a bit to stay on
-    // the safe side.
-    const double _slack;
-    double       _last_score;
+    double                   _last_score;
 
 public:
     template <typename... ScorerArgs>
@@ -376,7 +465,6 @@ public:
           _match_params(match_params),
           _local_scores(),
           _readonly_scores_heap(readonly_scores_heap),
-          _slack(_terms.total_max_score() * 1e-6),
           _last_score(0.0) {
         _local_scores.reserve(_match_params.scoresAdjustFrequency);
     }
@@ -390,8 +478,8 @@ public:
         double threshold = _match_params.scores.getMinScore();
         // the threshold is never negative here, and a document can only score above it
         // if at least one of its posting lists has a positive upper bound.
-        double bound = std::max(threshold - _slack, 0.0);
-        auto   above_bound = [bound](double upper_bound) noexcept { return upper_bound > bound; };
+        int64_t bound = _terms.converted_threshold(threshold);
+        auto    above_bound = [bound](int64_t upper_bound) noexcept { return upper_bound > bound; };
         _algo.set_candidate(_terms, _heaps, docid);
         while (_algo.solve_wand_constraint(_terms, _heaps, above_bound)) {
             uint32_t candidate = _algo.get_candidate();
