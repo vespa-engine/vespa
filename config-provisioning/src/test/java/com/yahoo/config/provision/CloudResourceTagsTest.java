@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -153,59 +154,56 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void vai_prefix_rejected() {
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("vai_custom", "value")));
+    void reserved_keys_are_accepted_by_from() {
+        var tags = CloudResourceTags.from(Map.of("vai_os_version", "9.4", "owner", "value", "env", "prod"));
+        assertEquals(3, tags.size());
+    }
+
+    @Test
+    void twenty_customer_tags_and_a_platform_tag_are_accepted_by_from_but_not_as_customer_tags() {
+        Map<String, String> map = new HashMap<>(IntStream.rangeClosed(1, 20).boxed()
+                .collect(toMap(i -> "key" + i, i -> "val" + i)));
+        map.put("vai_os_version", "9.4");
+        var tags = CloudResourceTags.from(map);
+        assertEquals(21, tags.size());
+        assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void reserved_tag_names_rejected() {
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("applicationid", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("athenz", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("athenz-domain", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("athenzservice", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("fqdn", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("name", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("owner", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("zone", "value")));
-
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("tenant", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("tenantName", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("app", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("clusterid", "value")));
-
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("system", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("application", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("cluster", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("generation", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("auth-method", "value")));
-
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("preprovisioned", "value")));
+        for (String key : new String[] { "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name",
+                                         "owner", "zone", "tenant", "tenantName", "app", "clusterid", "system",
+                                         "application", "cluster", "generation", "auth-method", "preprovisioned" })
+            assertRejectedAsCustomerTag(key);
     }
 
     @Test
     void reserved_tag_names_rejected_case_insensitively() {
         // System tags like "Name" (capital N) must collide with reserved "name".
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Name", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("APPLICATIONID", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Owner", "value")));
+        assertRejectedAsCustomerTag("Name");
+        assertRejectedAsCustomerTag("APPLICATIONID");
+        assertRejectedAsCustomerTag("Owner");
     }
 
     @Test
     void reserved_key_prefixes_rejected() {
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("vai_tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("corp_tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("corp:tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("bastion_tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("bastion:tag", "value")));
+        for (String key : new String[] { "vai_tag", "corp_tag", "corp:tag", "bastion_tag", "bastion:tag" })
+            assertRejectedAsCustomerTag(key);
     }
 
     @Test
     void reserved_key_prefixes_rejected_case_insensitively() {
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("VAI_tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("CORP_tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("CORP:tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Bastion_tag", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Bastion:tag", "value")));
+        for (String key : new String[] { "VAI_tag", "CORP_tag", "CORP:tag", "Bastion_tag", "Bastion:tag" })
+            assertRejectedAsCustomerTag(key);
+    }
+
+    private static void assertRejectedAsCustomerTag(String key) {
+        var tags = CloudResourceTags.from(Map.of(key, "value"));
+        for (CloudName cloud : new CloudName[] { CloudName.AWS, CloudName.AZURE }) {
+            var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(cloud),
+                                 "Should reject key: " + key);
+            assertTrue(e.getMessage().contains("reserved by the platform"), e.getMessage());
+        }
     }
 
     // --- Template variables ---
@@ -251,13 +249,13 @@ class CloudResourceTagsTest {
                 "a", "${tenant}-${application}-${instance}",
                 "b", "${environment}-${region}",
                 "c", "${clustername}-${clustertype}"));
-        tags.validatePlaceholders();
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void validate_placeholders_rejects_unknown() {
         var tags = CloudResourceTags.from(Map.of("bad", "${unknown}"));
-        var e = assertThrows(IllegalArgumentException.class, tags::validatePlaceholders);
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AWS));
         assertTrue(e.getMessage().contains("Unknown template variable"));
     }
 
@@ -266,51 +264,51 @@ class CloudResourceTagsTest {
     @Test
     void aws_allows_colons_in_keys() {
         var tags = CloudResourceTags.from(Map.of("indeed:cost_tag_01", "value"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void aws_allows_uppercase_in_keys_and_values() {
         var tags = CloudResourceTags.from(Map.of("MyKey", "MyValue"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void aws_allows_slashes_dots_spaces_in_keys() {
         var tags = CloudResourceTags.from(Map.of("path/to.key with-spaces", "value"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void aws_rejects_forbidden_characters() {
         var tags = CloudResourceTags.from(Map.of("key<bad", "value"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
 
     @Test
     void aws_rejects_key_exceeding_128_chars() {
         var tags = CloudResourceTags.from(Map.of("k".repeat(129), "value"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
 
     @Test
     void aws_accepts_value_at_256_char_limit() {
         var tags = CloudResourceTags.from(Map.of("key", "v".repeat(256)));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void aws_allows_template_variables_in_values() {
         var tags = CloudResourceTags.from(Map.of("env", "prefix-${environment}-suffix"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
     }
 
     @Test
     void aws_rejects_forbidden_literal_mixed_with_template() {
         var tags = CloudResourceTags.from(Map.of("env", "${environment}<bad>"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
 
@@ -319,7 +317,7 @@ class CloudResourceTagsTest {
         Map<String, String> tags21 = IntStream.rangeClosed(1, 21).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
         var tags = CloudResourceTags.from(tags21);
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
 
@@ -328,28 +326,28 @@ class CloudResourceTagsTest {
     @Test
     void gcp_rejects_uppercase_keys() {
         var tags = CloudResourceTags.from(Map.of("MyKey", "value"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
     void gcp_rejects_uppercase_values() {
         var tags = CloudResourceTags.from(Map.of("key", "MyValue"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
     void gcp_rejects_colons_in_keys() {
         var tags = CloudResourceTags.from(Map.of("cost:tag", "value"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
     void gcp_rejects_key_starting_with_digit() {
         var tags = CloudResourceTags.from(Map.of("1key", "value"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
@@ -358,7 +356,7 @@ class CloudResourceTagsTest {
         for (String key : new String[]{"_key", "-key"}) {
             var tags = CloudResourceTags.from(Map.of(key, "value"));
             assertThrows(IllegalArgumentException.class,
-                         () -> tags.validateFor(CloudName.GCP),
+                         () -> tags.validateCustomerTags(CloudName.GCP),
                          "Should reject key: " + key);
         }
     }
@@ -368,40 +366,40 @@ class CloudResourceTagsTest {
         Map<String, String> tags21 = IntStream.rangeClosed(1, 21).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
         var tags = CloudResourceTags.from(tags21);
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
     void gcp_rejects_key_exceeding_63_chars() {
         var tags = CloudResourceTags.from(Map.of("k".repeat(64), "value"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
     void gcp_rejects_value_exceeding_63_chars() {
         var tags = CloudResourceTags.from(Map.of("key", "v".repeat(64)));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
     void gcp_allows_valid_lowercase_tags() {
         var tags = CloudResourceTags.from(Map.of("env", "prod", "team-name", "search_team"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.GCP));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.GCP));
     }
 
     @Test
     void gcp_allows_template_variables_in_values() {
         var tags = CloudResourceTags.from(Map.of("env", "${environment}-${region}"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.GCP));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.GCP));
     }
 
     @Test
     void gcp_rejects_uppercase_literal_mixed_with_template() {
         var tags = CloudResourceTags.from(Map.of("env", "PREFIX-${environment}"));
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
 
@@ -410,13 +408,13 @@ class CloudResourceTagsTest {
     @Test
     void azure_allows_uppercase_in_keys_and_values() {
         var tags = CloudResourceTags.from(Map.of("MyKey", "MyValue"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
     void azure_allows_colons_in_keys() {
         var tags = CloudResourceTags.from(Map.of("cost:tag", "value"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
@@ -424,7 +422,7 @@ class CloudResourceTagsTest {
         for (String forbidden : new String[]{"key<", "key>", "key%x", "key&x", "key\\x", "key?x", "key/x"}) {
             var tags = CloudResourceTags.from(Map.of(forbidden, "value"));
             var e = assertThrows(IllegalArgumentException.class,
-                                 () -> tags.validateFor(CloudName.AZURE),
+                                 () -> tags.validateCustomerTags(CloudName.AZURE),
                                  "Should reject key: " + forbidden);
             assertTrue(e.getMessage().contains("Azure"));
         }
@@ -433,19 +431,19 @@ class CloudResourceTagsTest {
     @Test
     void azure_allows_forbidden_key_chars_in_values() {
         var tags = CloudResourceTags.from(Map.of("key", "value<with>special%chars&more"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
     void azure_accepts_key_at_512_char_limit() {
         var tags = CloudResourceTags.from(Map.of("k".repeat(512), "value"));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
     void azure_accepts_value_at_256_char_limit() {
         var tags = CloudResourceTags.from(Map.of("key", "v".repeat(256)));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
@@ -453,7 +451,7 @@ class CloudResourceTagsTest {
         Map<String, String> tags21 = IntStream.rangeClosed(1, 21).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
         var tags = CloudResourceTags.from(tags21);
-        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AZURE));
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateCustomerTags(CloudName.AZURE));
         assertTrue(e.getMessage().contains("Azure"));
     }
 
@@ -462,9 +460,9 @@ class CloudResourceTagsTest {
     @Test
     void empty_tags_accepted_for_all_clouds() {
         var empty = CloudResourceTags.empty();
-        assertDoesNotThrow(() -> empty.validateFor(CloudName.AWS));
-        assertDoesNotThrow(() -> empty.validateFor(CloudName.GCP));
-        assertDoesNotThrow(() -> empty.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> empty.validateCustomerTags(CloudName.AWS));
+        assertDoesNotThrow(() -> empty.validateCustomerTags(CloudName.GCP));
+        assertDoesNotThrow(() -> empty.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
@@ -472,16 +470,16 @@ class CloudResourceTagsTest {
         Map<String, String> tags20 = IntStream.rangeClosed(1, 20).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
         var tags = CloudResourceTags.from(tags20);
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.GCP));
-        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.GCP));
+        assertDoesNotThrow(() -> tags.validateCustomerTags(CloudName.AZURE));
     }
 
     @Test
     void unknown_cloud_throws() {
         var tags = CloudResourceTags.from(Map.of("key", "value"));
         var e = assertThrows(IllegalArgumentException.class,
-                             () -> tags.validateFor(CloudName.from("unknown")));
+                             () -> tags.validateCustomerTags(CloudName.from("unknown")));
         assertTrue(e.getMessage().contains("No resource tag validation rules"));
     }
 
@@ -547,6 +545,16 @@ class CloudResourceTagsTest {
                                                 ClusterSpec.Id.from("c"), ClusterSpec.Type.content,
                                                 CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"), "error must mention GCP: " + e.getMessage());
+    }
+
+    @Test
+    void resolve_rejects_reserved_keys() {
+        var tags = CloudResourceTags.from(Map.of("vai_os_version", "${environment}"));
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> tags.resolve(testApp, testEnv, testRegion,
+                                                ClusterSpec.Id.from("c"), ClusterSpec.Type.content,
+                                                CloudName.AWS));
+        assertTrue(e.getMessage().contains("reserved by the platform"), e.getMessage());
     }
 
     @Test
