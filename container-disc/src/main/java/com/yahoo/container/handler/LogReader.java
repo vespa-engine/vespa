@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -51,6 +52,7 @@ class LogReader {
 
     private final Path logDirectory;
     private final Pattern logFilePattern;
+    private final AtomicInteger openFiles = new AtomicInteger();
 
     LogReader(String logDirectory, String logFilePattern) {
         this(Paths.get(Defaults.getDefaults().underVespaHome(logDirectory)), Pattern.compile(logFilePattern));
@@ -69,9 +71,14 @@ class LogReader {
         for (List<Path> logs : getMatchingFiles(from, to)) {
             List<LogLineIterator> logLineIterators = new ArrayList<>();
             try {
-                // Logs in each sub-list contain entries covering the same time interval, so do a merge sort while reading
-                for (Path log : logs)
-                    logLineIterators.add(new LogLineIterator(log, fromSeconds, toSeconds, hostname));
+                // Logs in each sub-list contain entries covering the same time interval, so do a merge sort while reading.
+                // Only files with entries in range stay open during the merge: an hour may have hundreds of files.
+                for (Path log : logs) {
+                    LogLineIterator iterator = new LogLineIterator(log, fromSeconds, toSeconds, hostname);
+                    openFiles.incrementAndGet();
+                    if (iterator.hasNext()) logLineIterators.add(iterator);
+                    else close(iterator);
+                }
 
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
@@ -94,12 +101,19 @@ class LogReader {
                 throw new UncheckedIOException(e);
             }
             finally {
-                for (LogLineIterator ll : logLineIterators) {
-                    try { ll.close(); } catch (IOException ignored) { }
-                }
+                for (LogLineIterator ll : logLineIterators)
+                    close(ll);
                 Exceptions.uncheck(writer::flush);
             }
         }
+    }
+
+    /** Returns the number of log files currently open for reading. */
+    int openFiles() { return openFiles.get(); }
+
+    private void close(LogLineIterator iterator) {
+        try { iterator.close(); } catch (IOException ignored) { }
+        finally { openFiles.decrementAndGet(); }
     }
 
     private static class LogLineIterator implements Iterator<LineWithTimestamp>, AutoCloseable {

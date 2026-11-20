@@ -112,6 +112,40 @@ public class LogReaderTest {
         assertEquals(log101 + log100b, baos.toString(UTF_8));
     }
 
+    @Test
+    void onlyFilesWithEntriesInRangeStayOpen() throws IOException {
+        // An hour split into 10 sequential files, as the archiver writes a busy hour; the range is inside file 2
+        Path hour = Files.createDirectories(logDirectory.resolve("1970/01/03"));
+        double hourStart = 2 * 86400;
+        StringBuilder expected = new StringBuilder();
+        for (int file = 0; file < 10; file++) {
+            StringBuilder content = new StringBuilder();
+            for (int line = 0; line < 2000; line++) {
+                double timestamp = hourStart + file * 360 + line * 0.1;
+                String entry = String.format("%.1f\tnode1.com\t5480\tcontainer\tstdout\tinfo\tfile %d line %d\n", timestamp, file, line);
+                content.append(entry);
+                if (file == 2 && line >= 100 && line <= 1500) expected.append(entry);
+            }
+            Files.writeString(hour.resolve("00-" + file), content);
+        }
+        LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
+        int[] openWhileWriting = { -1 };
+        ByteArrayOutputStream baos = new ByteArrayOutputStream() {
+            @Override public synchronized void write(byte[] b, int off, int len) {
+                if (openWhileWriting[0] < 0) openWhileWriting[0] = logReader.openFiles();
+                super.write(b, off, len);
+            }
+        };
+        logReader.writeLogs(baos,
+                            Instant.ofEpochMilli((long) ((hourStart + 720 + 10) * 1000)),
+                            Instant.ofEpochMilli((long) ((hourStart + 720 + 150) * 1000)),
+                            100_000, Optional.empty());
+
+        assertEquals(expected.toString(), baos.toString(UTF_8));
+        assertEquals(1, openWhileWriting[0]);
+        assertEquals(0, logReader.openFiles());
+    }
+
     private byte[] compress1(String input) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream zip = new GZIPOutputStream(baos);
