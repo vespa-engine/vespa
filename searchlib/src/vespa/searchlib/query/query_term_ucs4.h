@@ -29,7 +29,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     std::unique_ptr<ucs4_t[]> asUcs4() const;
     uint32_t term(const ucs4_t*& t) {
-        t = _termUCS4.load(std::memory_order_relaxed);
+        t = _termUCS4.load(std::memory_order_acquire);
         if (t == nullptr) {
             t = fillUCS4();
         }

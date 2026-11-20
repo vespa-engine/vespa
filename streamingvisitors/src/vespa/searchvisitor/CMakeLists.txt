@@ -9,9 +9,11 @@ vespa_add_library(vespa_streamingvisitors
     querywrapper.cpp
     rankmanager.cpp
     rankprocessor.cpp
+    reverse_match_feature.cpp
     search_environment_snapshot.cpp
     searchenvironment.cpp
     searchvisitor.cpp
+    single_document_matcher.cpp
     $<TARGET_OBJECTS:vsm_vconfig>
     $<TARGET_OBJECTS:vsm_vsmbase>
     $<TARGET_OBJECTS:vsm_vsmcommon>

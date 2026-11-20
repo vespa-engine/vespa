@@ -76,6 +76,8 @@ private:
         std::unique_ptr<search::attribute::ISortBlobWriter> _sort_blob_writer;
     };
 
+public:
+    // Public so SingleDocumentMatcher can fill attributes the same way.
     /**
      * This class gets callbacks when iterating through a field value and
      * inserts the values into a given attribute vector.
@@ -104,6 +106,8 @@ private:
         document::IntFieldValue _valueX;
         document::IntFieldValue _valueY;
     };
+
+private:
 
     /**
      * This class controls all the ranking related objects.

@@ -5,13 +5,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/text/utf8.h>
 
-#include <mutex>
-
 namespace search {
-
-namespace {
-std::mutex _globalMutex;
-}
 
 QueryTermUCS4::~QueryTermUCS4() {
     ucs4_t* ucs4 = _termUCS4.load(std::memory_order_relaxed);
@@ -40,22 +34,16 @@ QueryTermUCS4::QueryTermUCS4(const string& termS, Type type)
 
 const QueryTermUCS4::ucs4_t* QueryTermUCS4::fillUCS4() {
     /*
-     * Double checked locking......
-     * This is a 'dirty' optimisation, but this is done to avoid writing a lot of data and blow the cpu caches with
-     * something you do not really need most of the time. That matters when qps is very high and query is wide, and
-     * hits are few.
+     * Filled lazily to avoid writing a lot of data and blow the cpu caches with something you do not really need
+     * most of the time. That matters when qps is very high and query is wide, and hits are few.
+     * Lock free: reverse matching fills terms of a fresh query per stored query on all match threads.
      */
     std::unique_ptr<ucs4_t[]> ucs4 = asUcs4();
-    ucs4_t*                   next = ucs4.get();
-    {
-        std::lock_guard guard(_globalMutex);
-        ucs4_t*         prev = _termUCS4.load(std::memory_order_relaxed);
-        if (prev != nullptr) {
-            return prev;
-        }
-        _termUCS4.store(ucs4.release(), std::memory_order_relaxed);
+    ucs4_t*                   prev = nullptr;
+    if (_termUCS4.compare_exchange_strong(prev, ucs4.get(), std::memory_order_release, std::memory_order_acquire)) {
+        return ucs4.release();
     }
-    return next;
+    return prev;
 }
 
 std::unique_ptr<QueryTermUCS4::ucs4_t[]> QueryTermUCS4::asUcs4() const {

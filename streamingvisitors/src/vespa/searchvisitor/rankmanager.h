@@ -71,6 +71,9 @@ public:
         const std::vector<NamedPropertySet>& getProperties() const { return _properties; }
         bool setup(const RankManager& manager, const vespa::config::search::RankProfilesConfig& cfg,
                    std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo);
+        bool has_rank_profile(const std::string& rankProfile) const {
+            return _rpmap.find(rankProfile) != _rpmap.end();
+        }
         const search::fef::RankSetup& getRankSetup(const std::string& rankProfile) const {
             return *(_rankSetup[getIndex(rankProfile)]);
         }

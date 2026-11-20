@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
+#include <functional>
 #include <mutex>
 
 namespace search::grouping {
@@ -105,6 +106,14 @@ public:
             uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment& get_index_env() const { return _indexEnv; }
+
+    using ExtraBlueprintSetup = std::function<void(search::fef::IBlueprintRegistry&)>;
+    /**
+     * Registers additional rank feature blueprints in all matchers created afterwards.
+     * Used by the proton binary for features living outside searchlib (e.g. reverseMatch).
+     * Must be called before any Matcher is created, and cleared (empty function) at shutdown.
+     **/
+    static void set_extra_blueprint_setup(ExtraBlueprintSetup setup);
 
     /**
      * Observe and reset stats for this object.

@@ -7,8 +7,11 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/opentelemetry/opentelemetry_tracer_providers.h>
+#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/searchcorespi/common/tracing.h>
+#include <vespa/searchvisitor/reverse_match_feature.h>
+#include <vespa/searchvisitor/searchenvironment.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -289,13 +292,29 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
         const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
         std::string         basedir = protonConfig.basedir;
         std::filesystem::create_directories(std::filesystem::path(basedir));
+        std::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
+        // Must be set before proton.init() creates matchers, or rank profiles using reverseMatch fail to compile.
+        // shortcut: config ids are taken from the bootstrap config, so new document types need a proton restart.
+        // shortcut: a second SearchEnvironment next to the visitor factory's; match threads only use this one.
+        auto reverse_match = std::make_shared<streaming::ReverseMatchContext>();
+        reverse_match->env =
+            std::make_shared<streaming::SearchEnvironment>(identityUri, &transport, file_distributor_connection_spec);
+        for (const auto& db : protonConfig.documentdb) {
+            reverse_match->config_ids[db.inputdoctypename] = db.configid;
+        }
+        reverse_match->repo = [&proton]() -> std::shared_ptr<const document::DocumentTypeRepo> {
+            auto active = proton.getActiveConfigSnapshot();
+            return active ? active->getDocumentTypeRepoSP() : nullptr;
+        };
+        proton::matching::Matcher::set_extra_blueprint_setup(
+            [context = std::shared_ptr<const streaming::ReverseMatchContext>(reverse_match)](
+                search::fef::IBlueprintRegistry& registry) { streaming::register_reverse_match(registry, context); });
         {
             ExitOnSignal exit_on_signal;
             span->AddEvent("Starting proton");
             auto scope = tracer->WithActiveSpan(span);
             proton.init(configSnapshot);
         }
-        std::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
         std::unique_ptr<ProtonServiceLayerProcess> spiProton;
 
         if (!params.serviceidentity.empty()) {
@@ -334,6 +353,7 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
             EV_STOPPING("servicelayer", "clean shutdown");
         }
         protonUP.reset();
+        proton::matching::Matcher::set_extra_blueprint_setup({});
         span->End();
         span.reset();
         EV_STOPPING("proton", "clean shutdown");

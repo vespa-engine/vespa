@@ -29,6 +29,7 @@ vespa_define_module(
     src/tests/querywrapper
     src/tests/searcher
     src/tests/searchvisitor
+    src/tests/single_document_matcher
     src/tests/sparse_tensor_wand_field_searcher
     src/tests/textutil
     src/tests/tokens_converter
