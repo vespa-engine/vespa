@@ -26,26 +26,35 @@ public final class ClusterSpec {
     private final boolean stateful;
     private final List<SidecarSpec> sidecars;
     private final List<AzName> availabilityZones;
-    private final String profile;
+    private final Optional<String> profile;
+    private final CloudAccount cloudAccount;
+    private final CloudResourceTags cloudResourceTags;
+    private final ClusterInfo clusterInfo;
 
     private ClusterSpec(Type type, Id id, Capacity capacity, Version vespaVersion, boolean exclusive,
                         Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
-                        List<SidecarSpec> sidecars, List<AzName> availabilityZones, String profile) {
+                        List<SidecarSpec> sidecars, List<AzName> availabilityZones, Optional<String> profile,
+                        CloudAccount cloudAccount, CloudResourceTags cloudResourceTags, ClusterInfo clusterInfo) {
+        if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
+            throw new IllegalArgumentException("dockerImageRepo is not allowed to have a tag");
+        if (type.isContent() && !stateful)
+            throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
+        if (cloudAccount.isUnspecified() && ! clusterInfo.hostTTL().isZero())
+            throw new IllegalArgumentException("Cannot set hostTTL without a custom cloud account");
         this.type = type;
         this.id = id;
         this.capacity = capacity;
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "vespaVersion cannot be null");
         this.exclusive = exclusive;
-        if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
-            throw new IllegalArgumentException("dockerImageRepo is not allowed to have a tag");
         this.dockerImageRepo = dockerImageRepo;
-        if (type.isContent() && !stateful)
-            throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
         this.zoneEndpoint = Objects.requireNonNull(zoneEndpoint);
         this.stateful = stateful;
         this.sidecars = sidecars;
         this.availabilityZones = availabilityZones.isEmpty() ? List.of(AzName.unspecified()) : availabilityZones;
         this.profile = profile;
+        this.cloudAccount = cloudAccount;
+        this.cloudResourceTags = cloudResourceTags;
+        this.clusterInfo = clusterInfo;
     }
 
     public Type type() { return type; }
@@ -89,27 +98,40 @@ public final class ClusterSpec {
      * is not required.
      */
     public Optional<String> profile() {
-        return Optional.ofNullable(profile);
+        return profile;
     }
+
+    /** Returns the cloud account where this capacity is requested */
+    public CloudAccount cloudAccount() { return cloudAccount; }
+
+    /** Returns the cloud resource tags for this capacity */
+    public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
+
+    /** Returns the cluster info for this capacity */
+    public ClusterInfo clusterInfo() { return clusterInfo; }
 
     public ClusterSpec with(CloudAccount account) {
         return new ClusterSpec(type, id, capacity.with(account), vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones, profile);
+                               stateful, sidecars, availabilityZones, profile,
+                               account, cloudResourceTags, clusterInfo);
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
         return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones, profile);
+                               stateful, sidecars, availabilityZones, profile,
+                               cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     public ClusterSpec withAvailabilityZones(List<AzName> availabilityZones) {
         return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones, profile);
+                               stateful, sidecars, availabilityZones, profile,
+                               cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     public ClusterSpec withSidecars(List<SidecarSpec> sidecars) {
         return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones, profile);
+                               stateful, sidecars, availabilityZones, profile,
+                               cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     /** Creates a ClusterSpec builder that builds this spec. */
@@ -122,6 +144,9 @@ public final class ClusterSpec {
         b.sidecars(sidecars);
         b.availabilityZones(availabilityZones);
         b.profile(profile);
+        b.cloudAccount(cloudAccount);
+        b.cloudResourceTags(cloudResourceTags);
+        b.clusterInfo(clusterInfo);
         return b;
     }
 
@@ -156,7 +181,10 @@ public final class ClusterSpec {
         private boolean stateful;
         private List<SidecarSpec> sidecars = List.of();
         private List<AzName> availabilityZones = List.of();
-        private String profile;
+        private Optional<String> profile = Optional.empty();
+        private CloudAccount cloudAccount = CloudAccount.unspecified();
+        private CloudResourceTags cloudResourceTags = CloudResourceTags.empty();
+        private ClusterInfo clusterInfo = ClusterInfo.empty();
 
         private Builder(Type type, Id id, Capacity capacity, Version vespaVersion) {
             this.type = type;
@@ -168,7 +196,8 @@ public final class ClusterSpec {
 
         public ClusterSpec build() {
             return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                                   stateful, sidecars, availabilityZones, profile);
+                                   stateful, sidecars, availabilityZones, profile,
+                                   cloudAccount, cloudResourceTags, clusterInfo);
         }
 
         public Builder capacity(Capacity capacity) {
@@ -205,7 +234,7 @@ public final class ClusterSpec {
             this.stateful = stateful;
             return this;
         }
-        
+
         public Builder sidecars(List<SidecarSpec> sidecars) {
             this.sidecars = sidecars;
             return this;
@@ -217,7 +246,27 @@ public final class ClusterSpec {
         }
 
         public Builder profile(String profile) {
+            this.profile = Optional.ofNullable(profile);
+            return this;
+        }
+
+        public Builder profile(Optional<String> profile) {
             this.profile = profile;
+            return this;
+        }
+
+        public Builder cloudAccount(CloudAccount cloudAccount) {
+            this.cloudAccount = cloudAccount;
+            return this;
+        }
+
+        public Builder cloudResourceTags(CloudResourceTags cloudResourceTags) {
+            this.cloudResourceTags = cloudResourceTags;
+            return this;
+        }
+
+        public Builder clusterInfo(ClusterInfo clusterInfo) {
+            this.clusterInfo = clusterInfo;
             return this;
         }
 
@@ -243,13 +292,16 @@ public final class ClusterSpec {
                zoneEndpoint.equals(that.zoneEndpoint) &&
                sidecars.equals(that.sidecars) &&
                availabilityZones.equals(that.availabilityZones) &&
-               Objects.equals(profile, that.profile);
+               Objects.equals(profile, that.profile) &&
+               cloudAccount.equals(that.cloudAccount) &&
+               cloudResourceTags.equals(that.cloudResourceTags) &&
+               clusterInfo.equals(that.clusterInfo);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                            stateful, sidecars, availabilityZones, profile);
+                            stateful, sidecars, availabilityZones, profile, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     /**
