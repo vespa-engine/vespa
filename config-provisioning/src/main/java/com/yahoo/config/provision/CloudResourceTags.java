@@ -64,7 +64,8 @@ public class CloudResourceTags {
         tags.forEach((key, value) -> rules.validate(key, value, TEMPLATE_VARIABLE.matcher(value).replaceAll("")));
     }
 
-    private void validateNotReserved() {
+    /** Validates that no key is a name or has a prefix reserved by the platform, ignoring case. */
+    public void validateNotReserved() {
         for (String key : tags.keySet()) {
             if (CloudTagRules.isReservedName(key))
                 throw new IllegalArgumentException("Tag key '" + key + "' is reserved by the platform");
