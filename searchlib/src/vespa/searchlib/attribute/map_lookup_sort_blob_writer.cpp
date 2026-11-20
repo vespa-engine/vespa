@@ -55,7 +55,7 @@ public:
         auto keys = _view->get_values(docid);
         for (uint32_t i = 0; i < keys.size(); ++i) {
             if (keys[i].load_acquire().ref() == _key_handle) {
-                return i; // first match wins for a malformed map with duplicate keys
+                return i;
             }
         }
         return npos;
