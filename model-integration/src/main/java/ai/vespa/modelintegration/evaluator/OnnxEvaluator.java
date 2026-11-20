@@ -8,6 +8,7 @@ import com.yahoo.tensor.TensorType;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -59,7 +60,7 @@ public interface OnnxEvaluator extends AutoCloseable {
     }
 
     private static Optional<Instant> deadlineAfter(Duration timeout) {
-        return timeout == null ? Optional.empty() : Optional.of(Instant.now().plus(timeout));
+        return Optional.of(Instant.now().plus(Objects.requireNonNull(timeout, "timeout")));
     }
 
     Map<String, OnnxEvaluator.IdAndType> getInputs();

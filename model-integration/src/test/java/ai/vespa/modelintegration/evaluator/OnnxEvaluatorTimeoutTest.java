@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests the overloads of {@link OnnxEvaluator#evaluate} that take a timeout.
@@ -34,11 +35,11 @@ class OnnxEvaluatorTimeoutTest {
     }
 
     @Test
-    void aNullTimeoutIsPassedAsAnEmptyDeadline() {
+    void aNullTimeoutFails() {
         var evaluator = new DeadlineRecordingEvaluator();
-        evaluator.evaluate(Map.of(), "output", (Duration) null);
-        evaluator.evaluate(Map.of(), (Duration) null);
-        assertEquals(List.of(Optional.empty(), Optional.empty()), evaluator.deadlines);
+        assertThrows(NullPointerException.class, () -> evaluator.evaluate(Map.of(), "output", (Duration) null));
+        assertThrows(NullPointerException.class, () -> evaluator.evaluate(Map.of(), (Duration) null));
+        assertEquals(List.of(), evaluator.deadlines);
     }
 
     private static void assertDeadlineBetween(Instant earliest, Instant latest, Optional<Instant> deadline) {
