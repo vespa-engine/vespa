@@ -8,6 +8,8 @@
 #include <vespa/searchlib/predicate/predicate_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 
+#include <functional>
+#include <span>
 #include <vector>
 
 namespace search::fef {
@@ -32,7 +34,12 @@ public:
 using IntervalRange = uint16_t;
 
 class PredicateSearch : public SearchIterator {
+public:
+    using PostingListFactory = std::function<std::vector<predicate::PredicatePostingList::UP>()>;
+
+private:
     SkipMinFeature::UP                               _skip;
+    uint32_t                                         _skip_offset; // _skip scans the docid space from here
     std::vector<predicate::PredicatePostingList::UP> _posting_lists;
     std::vector<uint16_t>                            _sorted_indexes;
     std::vector<uint16_t>                            _sorted_indexes_merge_buffer;
@@ -44,19 +51,28 @@ class PredicateSearch : public SearchIterator {
     fef::TermFieldMatchData*                         _termFieldMatchData;
     const uint8_t*                                   _min_feature_vector;
     const IntervalRange*                             _interval_range_vector;
+    std::span<const uint8_t>                         _kv;
+    PostingListFactory                               _recreate_posting_lists; // for rewinding, may be empty
+    bool                                             _used; // seeked since the posting lists were created
 
     VESPA_DLL_LOCAL bool advanceOneTo(uint32_t doc_id, size_t index);
     VESPA_DLL_LOCAL void advanceAllTo(uint32_t doc_id);
     VESPA_DLL_LOCAL bool evaluateHit(uint32_t doc_id, uint32_t k);
     VESPA_DLL_LOCAL size_t sortIntervals(uint32_t doc_id, uint32_t k);
     VESPA_DLL_LOCAL void skipMinFeature(uint32_t doc_id) __attribute__((noinline));
+    VESPA_DLL_LOCAL void reset_posting_lists();
 
 public:
     PredicateSearch(const uint8_t* minFeature, const IntervalRange* interval_range_vector,
                     IntervalRange max_interval_range, std::span<uint8_t> kV,
                     std::vector<predicate::PredicatePostingList::UP> posting_lists,
-                    const fef::TermFieldMatchDataArray&              tfmda);
+                    const fef::TermFieldMatchDataArray&              tfmda,
+                    PostingListFactory                               recreate_posting_lists = {});
     ~PredicateSearch() override;
+
+    // Posting lists only move forward: rewinding (a range starting before the current position, as work sharing
+    // between match threads does) recreates them. Without a posting list factory, ranges must not rewind.
+    void initRange(uint32_t begin_id, uint32_t end_id) override;
 
     void doSeek(uint32_t doc_id) override;
     void doUnpack(uint32_t doc_id) override;

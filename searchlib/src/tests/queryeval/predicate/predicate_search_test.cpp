@@ -337,6 +337,41 @@ TEST(PredicateSearchTest, require_that_subquery_bitmap_is_unpacked_to_subqueries
     EXPECT_EQ(0xffffffffffffffffUL, data.getSubqueries());
 }
 
+// Hits at docids around the skipper's 32-doc chunks: 2, 31, 32, 33, 63, 64, 65, 100.
+std::vector<uint32_t> hits_in_range(PredicateSearch& search, uint32_t begin, uint32_t end) {
+    std::vector<uint32_t> hits;
+    search.initRange(begin, end);
+    for (uint32_t doc_id = search.seekFirst(begin); doc_id < end; doc_id = search.seekNext(doc_id + 1)) {
+        hits.push_back(doc_id);
+    }
+    return hits;
+}
+
+TEST(PredicateSearchTest, require_that_ranges_can_start_anywhere_and_rewind) {
+    const std::vector<uint32_t>           docs{2, 31, 32, 33, 63, 64, 65, 100};
+    std::vector<pair<uint32_t, uint32_t>> entries;
+    for (uint32_t doc : docs) {
+        entries.emplace_back(doc, 0x0001ffff);
+    }
+    MF   mf(110, 0);
+    CV   cv(110, 1);
+    IR   ir(110, 0xffff);
+    auto factory = [&entries]() {
+        vector<PredicatePostingList::UP> posting_lists;
+        posting_lists.emplace_back(std::make_unique<MyPostingList>(entries));
+        return posting_lists;
+    };
+    PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, factory(), tfmda, factory);
+    EXPECT_EQ(docs, hits_in_range(search, 1, 110));
+    EXPECT_EQ((std::vector<uint32_t>{32, 33, 63, 64}), hits_in_range(search, 32, 65));
+    EXPECT_EQ((std::vector<uint32_t>{2, 31}), hits_in_range(search, 1, 32)); // rewinds
+    EXPECT_EQ((std::vector<uint32_t>{64, 65, 100}), hits_in_range(search, 64, 110));
+    EXPECT_EQ((std::vector<uint32_t>{33}), hits_in_range(search, 33, 34)); // rewinds
+    EXPECT_EQ((std::vector<uint32_t>{65, 100}), hits_in_range(search, 65, 110));
+    EXPECT_EQ((std::vector<uint32_t>{}), hits_in_range(search, 101, 110));
+    EXPECT_EQ(docs, hits_in_range(search, 1, 110)); // rewinds
+}
+
 } // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()
