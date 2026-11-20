@@ -509,9 +509,12 @@ struct GreaterThanEqual {
 //-----------------------------------------------------------------------------
 
 /**
- * The WAND algorithm, generic on score type (scorers and term max scores must use the same type).
+ * The WAND algorithm, using integer scores (wand::score_t aka int64_t)
  */
-template <typename ScoreT> class AlgorithmT {
+class Algorithm {
+public:
+    using ScoreT = wand::score_t;
+
 private:
     docid_t _candidate;
     ScoreT  _upperBound;
@@ -603,7 +606,7 @@ private:
     }
 
 public:
-    AlgorithmT() : _candidate(SearchIterator::beginId()), _upperBound(0), _maxUpperBound(0), _partial_score(0) {}
+    Algorithm() : _candidate(SearchIterator::beginId()), _upperBound(0), _maxUpperBound(0), _partial_score(0) {}
 
     template <typename VectorizedTerms, typename Heaps>
     void init_range(VectorizedTerms& terms, Heaps& heaps, uint32_t begin_id, uint32_t end_id) {
@@ -697,8 +700,6 @@ public:
         }
     }
 };
-
-using Algorithm = AlgorithmT<score_t>;
 
 //-----------------------------------------------------------------------------
 
