@@ -154,7 +154,16 @@ SelectedSortFeatures select_sort_features(const std::string& sort_spec, const Ra
     return selected;
 }
 
+Matcher::ExtraBlueprintSetup& extra_blueprint_setup() {
+    static Matcher::ExtraBlueprintSetup setup;
+    return setup;
+}
+
 } // namespace
+
+void Matcher::set_extra_blueprint_setup(ExtraBlueprintSetup setup) {
+    extra_blueprint_setup() = std::move(setup);
+}
 
 Matcher::Matcher(const search::index::Schema& schema, Properties props, const std::atomic<steady_time>& now_ref,
                  QueryLimiter& queryLimiter, const search::fef::IRankingAssetsRepo& rankingAssetsRepo,
@@ -171,6 +180,9 @@ Matcher::Matcher(const search::index::Schema& schema, Properties props, const st
       _distributionKey(distributionKey) {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
+    if (extra_blueprint_setup()) {
+        extra_blueprint_setup()(_blueprintFactory);
+    }
     _rankSetup = std::make_shared<search::fef::RankSetup>(_blueprintFactory, _indexEnv);
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {

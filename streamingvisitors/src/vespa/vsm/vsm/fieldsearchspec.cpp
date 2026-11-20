@@ -22,6 +22,7 @@
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 
+#include <algorithm>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -401,6 +402,37 @@ search::attribute::DistanceMetric FieldSearchSpecMap::get_distance_metric(const 
         return dm;
     }
     return vsm::NearestNeighborFieldSearcher::distance_metric_from_string(itr->second.arg1());
+}
+
+bool FieldSearchSpecMap::is_text_matching(std::string_view index) const noexcept {
+    StringFieldIdTMap fieldIdMap;
+    addFieldsFromIndex(index, fieldIdMap);
+    return std::any_of(fieldIdMap.map().begin(), fieldIdMap.map().end(), [this](const auto& fieldId) {
+        auto found = _specMap.find(fieldId.second);
+        return (found != _specMap.end() && found->second.uses_string_search_method());
+    });
+}
+
+search::Normalizing FieldSearchSpecMap::normalizing_mode(std::string_view index) const noexcept {
+    StringFieldIdTMap fieldIdMap;
+    addFieldsFromIndex(index, fieldIdMap);
+    size_t none = 0;
+    size_t lowercase = 0;
+    for (const auto& fieldId : fieldIdMap.map()) {
+        auto found = _specMap.find(fieldId.second);
+        if (found != _specMap.end()) {
+            auto mode = found->second.searcher().normalize_mode();
+            none += (mode == search::Normalizing::NONE) ? 1 : 0;
+            lowercase += (mode == search::Normalizing::LOWERCASE) ? 1 : 0;
+        }
+    }
+    if (none == fieldIdMap.map().size()) {
+        return search::Normalizing::NONE;
+    }
+    if (lowercase == fieldIdMap.map().size()) {
+        return search::Normalizing::LOWERCASE;
+    }
+    return search::Normalizing::LOWERCASE_AND_FOLD;
 }
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const FieldSearchSpecMap& df) {
