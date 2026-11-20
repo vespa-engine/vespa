@@ -18,6 +18,7 @@
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -65,19 +66,24 @@ std::optional<std::vector<double>> to_doubles(TypedCells cells) {
 }
 
 // Angle (Vespa's angular distance) between stored query cells and a unit vector, nullopt when not comparable.
-std::optional<double> angle(TypedCells cells, const std::vector<double>& unit) {
+// Float cells (the common case) are compared in place with SIMD dot products: no copy per candidate.
+std::optional<double> angle(TypedCells cells, const std::vector<float>& unit) {
     if (cells.non_existing_attribute_value() || cells.size != unit.size()) {
-        return std::nullopt;
-    }
-    auto values = to_doubles(cells);
-    if (!values) {
         return std::nullopt;
     }
     double dot = 0.0;
     double norm = 0.0;
-    for (size_t i = 0; i < unit.size(); ++i) {
-        dot += (*values)[i] * unit[i];
-        norm += (*values)[i] * (*values)[i];
+    if (cells.type == CellType::FLOAT) {
+        const float* values = cells.unsafe_typify<float>().data();
+        dot = vespalib::hwaccelerated::dot_product(values, unit.data(), unit.size());
+        norm = vespalib::hwaccelerated::dot_product(values, values, unit.size());
+    } else if (auto values = to_doubles(cells)) {
+        for (size_t i = 0; i < unit.size(); ++i) {
+            dot += (*values)[i] * unit[i];
+            norm += (*values)[i] * (*values)[i];
+        }
+    } else {
+        return std::nullopt;
     }
     if (norm <= 0.0) {
         return std::nullopt;
@@ -90,13 +96,13 @@ struct SharedState {
     std::shared_ptr<const SearchEnvironmentSnapshot> snapshot;
     std::shared_ptr<const document::DocumentTypeRepo> repo;
     std::unique_ptr<const document::Document>        document;
-    std::vector<double> prefilter_unit; // the input document's prefilter vector, normalized; empty if none
+    std::vector<float> prefilter_unit; // the input document's prefilter vector, normalized; empty if none
 };
 using SharedStateWrapper = AnyWrapper<SharedState>;
 
 class ReverseMatchExecutor : public FeatureExecutor {
     std::unique_ptr<SingleDocumentMatcher>   _matcher;
-    const std::vector<double>*               _prefilter_unit;
+    const std::vector<float>*                _prefilter_unit;
     const search::tensor::ITensorAttribute*  _prefilter_vector;
     const IAttributeVector*                  _prefilter_distance;
     const IAttributeVector*                  _query_tree;
@@ -106,7 +112,7 @@ class ReverseMatchExecutor : public FeatureExecutor {
     search::attribute::ConstCharContent      _profile_buf;
 
 public:
-    ReverseMatchExecutor(std::unique_ptr<SingleDocumentMatcher> matcher, const std::vector<double>* prefilter_unit,
+    ReverseMatchExecutor(std::unique_ptr<SingleDocumentMatcher> matcher, const std::vector<float>* prefilter_unit,
                          const IQueryEnvironment& env)
         : _matcher(std::move(matcher)),
           _prefilter_unit(prefilter_unit),
@@ -213,7 +219,7 @@ void ReverseMatchBlueprint::prepareSharedState(const IQueryEnvironment& env, IOb
     }
 }
 
-std::vector<double> ReverseMatchBlueprint::prefilter_unit(const document::Document& doc) const {
+std::vector<float> ReverseMatchBlueprint::prefilter_unit(const document::Document& doc) const {
     try {
         auto value = doc.getValue(_prefilter_field);
         const auto* tensor = dynamic_cast<const document::TensorFieldValue*>(value.get());
@@ -231,10 +237,12 @@ std::vector<double> ReverseMatchBlueprint::prefilter_unit(const document::Docume
         if (norm <= 0.0) {
             return {};
         }
-        for (double& v : *values) {
-            v /= std::sqrt(norm);
+        std::vector<float> unit;
+        unit.reserve(values->size());
+        for (double v : *values) {
+            unit.push_back(static_cast<float>(v / std::sqrt(norm)));
         }
-        return std::move(*values);
+        return unit;
     } catch (const std::exception& e) {
         LOG(debug, "reverseMatch(%s): no prefilter vector '%s': %s", _schema.c_str(), _prefilter_field.c_str(), e.what());
         return {};
@@ -251,7 +259,7 @@ FeatureExecutor& ReverseMatchBlueprint::createExecutor(const IQueryEnvironment& 
             LOG(warning, "reverseMatch(%s): could not set up matcher: %s", _schema.c_str(), e.what());
         }
     }
-    const std::vector<double>* prefilter_unit = nullptr;
+    const std::vector<float>* prefilter_unit = nullptr;
     if (const Anything* any = env.getObjectStore().get(_shared_state_key)) {
         prefilter_unit = &SharedStateWrapper::getValue(*any).prefilter_unit;
     }

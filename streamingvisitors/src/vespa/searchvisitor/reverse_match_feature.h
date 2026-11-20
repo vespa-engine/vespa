@@ -56,7 +56,7 @@ public:
     bool setup(const search::fef::IIndexEnvironment& env, const search::fef::ParameterList& params) override;
     void prepareSharedState(const search::fef::IQueryEnvironment& env,
                             search::fef::IObjectStore&            store) const override;
-    std::vector<double> prefilter_unit(const document::Document& doc) const;
+    std::vector<float> prefilter_unit(const document::Document& doc) const;
     search::fef::FeatureExecutor& createExecutor(const search::fef::IQueryEnvironment& env,
                                                  vespalib::Stash&                      stash) const override;
 };
