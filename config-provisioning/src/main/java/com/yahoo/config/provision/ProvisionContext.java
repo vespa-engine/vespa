@@ -38,11 +38,6 @@ public class ProvisionContext {
 
         private final ValidationOverrides.Builder validationOverrides = new ValidationOverrides.Builder();
 
-        @Deprecated // Remove after December 2026
-        public Builder() {
-            this.canFail = true;
-        }
-
         public Builder(boolean canFail) {
             this.canFail = canFail;
         }
