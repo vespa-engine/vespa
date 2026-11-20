@@ -114,6 +114,9 @@ SingleDocumentMatcher::SingleDocumentMatcher(std::shared_ptr<const SearchEnviron
                                              const document::Document&                         doc)
     : _snapshot(std::move(snapshot)),
       _repo(std::move(repo)),
+      _rank_manager(std::make_shared<std::shared_ptr<const RankManager::Snapshot>>(
+                        _snapshot->get_rank_manager_snapshot()),
+                    _snapshot->get_rank_manager_snapshot().get()),
       _doc_type_mapping(),
       _field_path_map(),
       _document(),
@@ -173,7 +176,7 @@ void SingleDocumentMatcher::setup_attributes() {
 std::optional<SingleDocumentMatcher::Result> SingleDocumentMatcher::evaluate(std::span<const char> query_tree,
                                                                              std::span<const char> query_props,
                                                                              const std::string&    rank_profile) {
-    const auto& rank_manager = _snapshot->get_rank_manager_snapshot();
+    const auto& rank_manager = _rank_manager;
     if (!rank_manager->has_rank_profile(rank_profile)) {
         LOG(debug, "Unknown rank profile '%s'", rank_profile.c_str());
         return std::nullopt;

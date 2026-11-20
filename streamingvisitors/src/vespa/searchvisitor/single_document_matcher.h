@@ -10,6 +10,8 @@
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 
+#include "rankmanager.h"
+
 #include <map>
 #include <memory>
 #include <optional>
@@ -56,6 +58,9 @@ public:
 private:
     std::shared_ptr<const SearchEnvironmentSnapshot>  _snapshot;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
+    // Aliases the shared rank manager snapshot with a control block private to this matcher: RankProcessor copies
+    // it per stored query, and copies of the shared one contend on its reference count across match threads.
+    std::shared_ptr<const RankManager::Snapshot>      _rank_manager;
     vsm::DocumentTypeMapping                          _doc_type_mapping;
     vsm::SharedFieldPathMap                           _field_path_map;
     std::unique_ptr<vsm::StorageDocument>             _document;
