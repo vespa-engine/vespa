@@ -786,7 +786,11 @@ public class DeploymentSpecXmlReader {
                         String value = requireStringAttribute("value", tagChild);
                         tags.put(key, value);
                     }
-                    return CloudResourceTags.from(tags);
+                    // Customers cannot use keys reserved by the platform. Rejecting them here also keeps them out
+                    // of stored deployment specs, which older versions parse with the same check.
+                    CloudResourceTags cloudResourceTags = CloudResourceTags.from(tags);
+                    cloudResourceTags.validateNotReserved();
+                    return cloudResourceTags;
                 })
                 .orElse(CloudResourceTags.empty());
     }
