@@ -25,6 +25,9 @@ public class ProvisionContext {
 
     public static class Builder {
 
+        // For backward compatibility
+        public Builder(boolean ignore) {}
+
         private ProvisionLogger provisionLogger;
 
         private final ValidationOverrides.Builder validationOverrides = new ValidationOverrides.Builder();
