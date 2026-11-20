@@ -10,13 +10,21 @@ import java.util.Objects;
  */
 public class ProvisionContext {
 
+    private final boolean canFail;
     private final ProvisionLogger provisionLogger;
     private final ValidationOverrides validationOverrides;
 
     private ProvisionContext(Builder builder) {
+        this.canFail = builder.canFail;
         this.provisionLogger = Objects.requireNonNull(builder.provisionLogger, "provisionLogger must be set");
         this.validationOverrides = builder.validationOverrides().build();
     }
+
+    /**
+     * Returns true if it's acceptable to throw an exception (we're in a context where provisioning can fail).
+     * Provisioning cannot fail on config server bootstrap.
+     */
+    public boolean canFail() { return canFail; }
 
     /** Returns the logger which receives messages which are returned to the requestor. */
     public ProvisionLogger provisionLogger() { return provisionLogger; }
@@ -25,9 +33,18 @@ public class ProvisionContext {
 
     public static class Builder {
 
+        private final boolean canFail;
         private ProvisionLogger provisionLogger;
 
         private final ValidationOverrides.Builder validationOverrides = new ValidationOverrides.Builder();
+
+        public Builder() {
+            this.canFail = true;
+        }
+
+        public Builder(boolean canFail) {
+            this.canFail = canFail;
+        }
 
         public Builder setLogger(ProvisionLogger provisionLogger) {
             this.provisionLogger = provisionLogger;

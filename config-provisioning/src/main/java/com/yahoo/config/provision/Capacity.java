@@ -163,6 +163,10 @@ public final class Capacity {
         return from(resources, resources);
     }
 
+    public static Capacity from(ClusterResources resources, boolean required) {
+        return from(resources, required, true);
+    }
+
     /** Create a non-required, failable capacity request */
     public static Capacity from(ClusterResources min, ClusterResources max) {
         return from(min, max, IntRange.empty());
@@ -189,6 +193,17 @@ public final class Capacity {
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 CloudAccount cloudAccount, ClusterInfo clusterInfo) {
         return from(min, max, groupSize, 1.0, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required) {
+        return from(min, max, groupSize, 1.0, required);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, double maxCostFactor, boolean required) {
+        return from(min, max, groupSize, maxCostFactor, required, true,
+                    CloudAccount.unspecified(),
+                    CloudResourceTags.empty(),
+                    ClusterInfo.empty());
     }
 
     @Deprecated // TODO: Remove after September 2026
