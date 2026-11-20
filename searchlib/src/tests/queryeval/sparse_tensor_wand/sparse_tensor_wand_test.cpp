@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/queryeval/sparse_tensor_wand_blueprint.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
+#include <vespa/searchlib/tensor/direct_tensor_posting_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -27,6 +28,7 @@ using search::queryeval::FieldSpec;
 using search::queryeval::MatchingPhase;
 using search::queryeval::SparseTensorWandBlueprint;
 using search::tensor::DirectTensorAttribute;
+using search::tensor::DirectTensorPostingAttribute;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
 using vespalib::IllegalArgumentException;
@@ -58,10 +60,12 @@ std::unique_ptr<Value> make_value(const TensorSpec& spec) {
 struct TestParam {
     const char* type_spec;
     bool        fast_search;
+    bool        label_postings = false;
 };
 
 std::ostream& operator<<(std::ostream& os, const TestParam& param) {
-    return os << param.type_spec << (param.fast_search ? " fast-search" : "");
+    return os << param.type_spec << (param.fast_search ? " fast-search" : "")
+              << (param.label_postings ? " label-postings" : "");
 }
 
 class SparseTensorWandTest : public ::testing::TestWithParam<TestParam> {
@@ -73,7 +77,11 @@ protected:
     SparseTensorWandTest() : _type_spec(GetParam().type_spec), _attr(), _query_tensor() {
         Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
         cfg.setTensorType(ValueType::from_spec(_type_spec));
-        if (GetParam().fast_search) {
+        if (GetParam().label_postings) {
+            cfg.setFastSearch(true);
+            cfg.set_tensor_label_postings(true);
+            _attr = std::make_shared<DirectTensorPostingAttribute>("field", cfg);
+        } else if (GetParam().fast_search) {
             _attr = std::make_shared<DirectTensorAttribute>("field", cfg);
         } else {
             _attr = std::make_shared<SerializedFastValueAttribute>("field", cfg);
@@ -106,11 +114,18 @@ protected:
         _attr->setTensor(docid, *make_value(spec(std::move(cells))));
     }
 
-    std::unique_ptr<SparseTensorWandBlueprint> make_blueprint(uint32_t target_hits, double score_threshold) {
-        SparseTensorWandBlueprint::validate(*_attr, *_query_tensor);
-        return std::make_unique<SparseTensorWandBlueprint>(FieldSpec("field", 0, 0), *_attr, *_query_tensor,
+    std::unique_ptr<SparseTensorWandBlueprint> make_blueprint(uint32_t target_hits, double score_threshold,
+                                                              const Value& query_tensor) {
+        SparseTensorWandBlueprint::validate(*_attr, query_tensor, score_threshold);
+        return std::make_unique<SparseTensorWandBlueprint>(FieldSpec("field", 0, 0), *_attr, query_tensor,
                                                            target_hits, score_threshold);
     }
+
+    std::unique_ptr<SparseTensorWandBlueprint> make_blueprint(uint32_t target_hits, double score_threshold) {
+        return make_blueprint(target_hits, score_threshold, *_query_tensor);
+    }
+
+    bool label_postings() const noexcept { return GetParam().label_postings; }
 
     static Hits find_matches(Blueprint& blueprint, bool strict) {
         blueprint.basic_plan(strict, docid_limit);
@@ -118,7 +133,9 @@ protected:
         auto                md = MatchData::makeTestInstance(1, 1);
         TermFieldMatchData& tfmd = *md->resolveTermField(0);
         auto                itr = blueprint.createSearch(*md);
-        EXPECT_EQ(strict, itr->is_strict() == vespalib::Trinary::True);
+        if (!blueprint.getState().estimate().empty) { // empty search is always strict
+            EXPECT_EQ(strict, itr->is_strict() == vespalib::Trinary::True);
+        }
         Hits hits;
         itr->initRange(1, docid_limit);
         for (uint32_t docid = 1; docid < docid_limit; ++docid) {
@@ -147,6 +164,10 @@ TEST_P(SparseTensorWandTest, initial_score_threshold_is_used) {
     auto bp = make_blueprint(100, 3.5);
     Hits expect = {{4, 4.0}, {5, 13.0}};
     EXPECT_EQ(expect, find_matches(*bp, true));
+    if (label_postings()) {
+        EXPECT_THROW(make_blueprint(100, -2.0), IllegalArgumentException);
+        return;
+    }
     bp = make_blueprint(100, -2.0);
     expect = {{1, 3.0}, {2, 3.0}, {3, 0.0}, {4, 4.0}, {5, 13.0}, {6, 0.0}, {7, -1.0}, {8, 3.0}};
     EXPECT_EQ(expect, find_matches(*bp, true));
@@ -169,33 +190,89 @@ TEST_P(SparseTensorWandTest, later_matching_phases_use_original_threshold_withou
     EXPECT_EQ(expect, find_matches(*bp, true));
 }
 
+TEST_P(SparseTensorWandTest, label_postings_are_used_when_available) {
+    auto bp = make_blueprint(100, 0.0);
+    EXPECT_EQ(label_postings(), bp->uses_postings());
+    // a: docs 1, 4, 7, 8; b: docs 1, 5, 8; c: docs 2, 5 => 9 postings, capped at number of docs
+    EXPECT_EQ(9u, bp->getState().estimate().estHits);
+    EXPECT_FALSE(bp->getState().estimate().empty);
+}
+
+TEST_P(SparseTensorWandTest, negative_score_threshold_is_rejected_with_label_postings) {
+    if (label_postings()) {
+        EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *_query_tensor, -0.5), IllegalArgumentException);
+        EXPECT_THROW(SparseTensorWandBlueprint(FieldSpec("field", 0, 0), *_attr, *_query_tensor, 100, -0.5),
+                     IllegalArgumentException);
+    } else {
+        EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*_attr, *_query_tensor, -0.5));
+    }
+    EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*_attr, *_query_tensor, 0.0));
+}
+
+TEST_P(SparseTensorWandTest, hit_estimate_is_based_on_label_postings) {
+    auto query = make_value(spec({{"c", 3}}));
+    auto bp = make_blueprint(100, 0.0, *query);
+    EXPECT_EQ(label_postings() ? 2u : 9u, bp->getState().estimate().estHits);
+    Hits expect = {{2, 3.0}, {5, 3.0}};
+    EXPECT_EQ(expect, find_matches(*bp, true));
+    bp = make_blueprint(100, 0.0, *query);
+    EXPECT_EQ(expect, find_matches(*bp, false));
+}
+
+TEST_P(SparseTensorWandTest, query_with_unknown_labels_gives_no_hits) {
+    auto query = make_value(spec({{"x", 1}, {"y", 2}}));
+    auto bp = make_blueprint(100, 0.0, *query);
+    EXPECT_EQ(label_postings(), bp->getState().estimate().empty);
+    EXPECT_EQ(Hits(), find_matches(*bp, true));
+    bp = make_blueprint(100, 0.0, *query);
+    EXPECT_EQ(Hits(), find_matches(*bp, false));
+}
+
+TEST_P(SparseTensorWandTest, strict_iterator_with_postings_skips_documents_without_query_labels) {
+    auto bp = make_blueprint(100, 0.0);
+    bp->basic_plan(true, docid_limit);
+    bp->fetchPostings(ExecuteInfo::FULL);
+    auto md = MatchData::makeTestInstance(1, 1);
+    auto itr = bp->createSearch(*md);
+    itr->initRange(1, docid_limit);
+    EXPECT_FALSE(itr->seek(3)); // doc 3 has label d only
+    EXPECT_EQ(4u, itr->getDocId());
+    EXPECT_FALSE(itr->seek(6)); // doc 6 has no tensor, doc 7 has a negative score
+    EXPECT_EQ(8u, itr->getDocId());
+    EXPECT_TRUE(itr->seek(8));
+    EXPECT_FALSE(itr->seek(9));
+    EXPECT_TRUE(itr->isAtEnd());
+}
+
 TEST_P(SparseTensorWandTest, query_tensor_type_must_match_attribute_type) {
     auto other_dim = make_value(TensorSpec("tensor(y{})").add({{"y", "a"}}, 1));
-    EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *other_dim), IllegalArgumentException);
+    EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *other_dim, 0.0), IllegalArgumentException);
     std::string other_cell_type = (_attr->getTensorType().cell_type() == vespalib::eval::CellType::DOUBLE)
                                       ? "tensor<float>(x{})"
                                       : "tensor(x{})";
     auto        other_cells = make_value(TensorSpec(other_cell_type).add({{"x", "a"}}, 1));
-    EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *other_cells), IllegalArgumentException);
-    EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*_attr, *_query_tensor));
+    EXPECT_THROW(SparseTensorWandBlueprint::validate(*_attr, *other_cells, 0.0), IllegalArgumentException);
+    EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*_attr, *_query_tensor, 0.0));
 }
 
-INSTANTIATE_TEST_SUITE_P(, SparseTensorWandTest,
-                         ::testing::Values(TestParam{"tensor(x{})", false}, TestParam{"tensor<float>(x{})", false},
-                                           TestParam{"tensor<bfloat16>(x{})", false},
-                                           TestParam{"tensor<int8>(x{})", false}, TestParam{"tensor(x{})", true},
-                                           TestParam{"tensor<float>(x{})", true},
-                                           TestParam{"tensor<bfloat16>(x{})", true},
-                                           TestParam{"tensor<int8>(x{})", true}),
-                         [](const auto& param_info) {
-                             std::string name;
-                             for (char c : std::string(param_info.param.type_spec)) {
-                                 if (std::isalnum(static_cast<unsigned char>(c))) {
-                                     name.push_back(c);
-                                 }
-                             }
-                             return name + (param_info.param.fast_search ? "_fast_search" : "");
-                         });
+INSTANTIATE_TEST_SUITE_P(
+    , SparseTensorWandTest,
+    ::testing::Values(TestParam{"tensor(x{})", false}, TestParam{"tensor<float>(x{})", false},
+                      TestParam{"tensor<bfloat16>(x{})", false}, TestParam{"tensor<int8>(x{})", false},
+                      TestParam{"tensor(x{})", true}, TestParam{"tensor<float>(x{})", true},
+                      TestParam{"tensor<bfloat16>(x{})", true}, TestParam{"tensor<int8>(x{})", true},
+                      TestParam{"tensor(x{})", true, true}, TestParam{"tensor<float>(x{})", true, true},
+                      TestParam{"tensor<bfloat16>(x{})", true, true}, TestParam{"tensor<int8>(x{})", true, true}),
+    [](const auto& param_info) {
+        std::string name;
+        for (char c : std::string(param_info.param.type_spec)) {
+            if (std::isalnum(static_cast<unsigned char>(c))) {
+                name.push_back(c);
+            }
+        }
+        return name + (param_info.param.fast_search ? "_fast_search" : "") +
+               (param_info.param.label_postings ? "_label_postings" : "");
+    });
 
 AttributeVector::SP make_attribute(const std::string& type_spec) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
@@ -205,7 +282,7 @@ AttributeVector::SP make_attribute(const std::string& type_spec) {
 
 void expect_invalid_attribute(const AttributeVector& attr, const std::string& query_type_spec) {
     auto query = make_value(TensorSpec(query_type_spec));
-    EXPECT_THROW(SparseTensorWandBlueprint::validate(attr, *query), IllegalArgumentException);
+    EXPECT_THROW(SparseTensorWandBlueprint::validate(attr, *query, 0.0), IllegalArgumentException);
 }
 
 TEST(SparseTensorWandValidateTest, attribute_must_be_sparse_tensor_with_one_mapped_dimension) {
@@ -215,7 +292,7 @@ TEST(SparseTensorWandValidateTest, attribute_must_be_sparse_tensor_with_one_mapp
     expect_invalid_attribute(*make_attribute("tensor(x{},y[3])"), "tensor(x{},y[3])");
     expect_invalid_attribute(*make_attribute("tensor(x{},y{})"), "tensor(x{},y{})");
     auto query = make_value(TensorSpec("tensor(x{})"));
-    EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*make_attribute("tensor(x{})"), *query));
+    EXPECT_NO_THROW(SparseTensorWandBlueprint::validate(*make_attribute("tensor(x{})"), *query, 0.0));
 }
 
 } // namespace

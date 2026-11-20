@@ -7,6 +7,7 @@
 
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/lazy_params.h>
+#include <vespa/searchlib/attribute/i_docid_with_float_weight_posting_store.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 #include <memory>
@@ -83,11 +84,20 @@ public:
  * document tensor and a sparse query tensor exceeds the current score threshold.
  * Uses unpack() as feedback mechanism to track which matches actually became hits,
  * raising the threshold in the shared heap like the parallel WAND iterator does.
- * Since tensor attributes have no posting lists, all documents are scanned.
+ * Without posting lists all documents are scanned. With posting lists for the
+ * labels of the query tensor (see create_with_postings), the WAND algorithm is
+ * used: each posting list has an upper bound of its contribution to the dot product,
+ * and candidates are first checked using the (float) weights in the posting lists,
+ * and only scored using the document tensor if that check passes. This is only
+ * exact when the score threshold is never negative, since documents without any
+ * query label have a dot product of 0.
  **/
 class SparseTensorWandSearch : public SearchIterator {
 public:
     using MatchParams = wand::CommonMatchParamsT<double>;
+
+    // Max number of posting lists for create_with_postings.
+    static constexpr size_t max_postings = 65535;
 
     // Whether the given type is a sparse tensor type with exactly one mapped dimension.
     static bool is_supported_type(const vespalib::eval::ValueType& type);
@@ -108,6 +118,21 @@ public:
                                                   const vespalib::eval::InterpretedFunction& dot_product,
                                                   const vespalib::eval::Value&               query_tensor,
                                                   const MatchParams& match_params, bool readonly_scores_heap);
+
+    // Strict WAND iterators only scoring documents found in the given posting lists.
+    // There can be at most 65535 posting lists (see max_postings).
+    static std::unique_ptr<SearchIterator>
+    create_with_postings(fef::TermFieldMatchData& tfmd, const tensor::ITensorAttribute& attr_tensor,
+                         const SparseTensorDotProduct& dot_product, const MatchParams& match_params,
+                         bool readonly_scores_heap, std::vector<DocidWithFloatWeightIterator> postings,
+                         std::vector<double> query_weights);
+
+    static std::unique_ptr<SearchIterator>
+    create_with_postings(fef::TermFieldMatchData& tfmd, const tensor::ITensorAttribute& attr_tensor,
+                         const vespalib::eval::InterpretedFunction& dot_product,
+                         const vespalib::eval::Value& query_tensor, const MatchParams& match_params,
+                         bool readonly_scores_heap, std::vector<DocidWithFloatWeightIterator> postings,
+                         std::vector<double> query_weights);
 };
 
 } // namespace search::queryeval

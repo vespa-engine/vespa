@@ -2,6 +2,8 @@
 
 #include "sparse_tensor_wand_search.h"
 
+#include "wand/wand_parts.h"
+
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/fast_value_index.h>
 #include <vespa/eval/eval/function.h>
@@ -10,8 +12,14 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_tensor_ref.h>
+#include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/typify.h>
 
+#include <algorithm>
+#include <cassert>
+#include <functional>
+#include <limits>
+#include <queue>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -145,6 +153,33 @@ public:
     double score(uint32_t docid) { return _dot_product.eval(_doc_access.get(docid)); }
 };
 
+/**
+ * Sums the positive values Huffman style: repeatedly add the two smallest
+ * values, to minimize the accumulated rounding error.
+ */
+double huffman_sum_positive(const std::vector<double>& values) {
+    std::priority_queue<double, std::vector<double>, std::greater<>> heap;
+    for (double value : values) {
+        if (value > 0.0) {
+            heap.push(value);
+        }
+    }
+    if (heap.empty()) {
+        return 0.0;
+    }
+    while (heap.size() > 1) {
+        double a = heap.top();
+        heap.pop();
+        double b = heap.top();
+        heap.pop();
+        heap.push(a + b);
+    }
+    return heap.top();
+}
+
+/**
+ * Scans all documents, scoring each of them.
+ */
 template <bool strict, typename Scorer> class SparseTensorWandSearchImpl final : public SparseTensorWandSearch {
     fef::TermFieldMatchData& _tfmd;
     Scorer                   _scorer;
@@ -200,6 +235,200 @@ public:
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False; }
 };
 
+/**
+ * The docid posting lists of the query labels, as terms for wand::AlgorithmT<double>.
+ * The score of a term is its contribution to the dot product (query cell * posting weight),
+ * and its max score is an upper bound of that, calculated from the min/max posting weight.
+ * Terms are ordered like wand::MaxSkipOrder, so the most valuable terms are checked first.
+ */
+class PostingTerms {
+    std::vector<uint32_t>                     _docid; // current docid of each term (as seen by the algorithm)
+    std::vector<double>                       _max_score;
+    std::vector<double>                       _query_weight;
+    std::vector<DocidWithFloatWeightIterator> _children;
+    double                                    _total_max_score; // sum of positive max scores
+
+public:
+    PostingTerms(std::vector<DocidWithFloatWeightIterator> postings, const std::vector<double>& query_weights,
+                 uint32_t docid_limit);
+    PostingTerms(const PostingTerms&) = delete;
+    PostingTerms& operator=(const PostingTerms&) = delete;
+    ~PostingTerms();
+
+    // interface used by wand::AlgorithmT and wand::DualHeap
+    uint32_t* docId() noexcept { return _docid.data(); }
+    uint32_t& docId(wand::ref_t ref) noexcept { return _docid[ref]; }
+    double maxScore(wand::ref_t ref) const noexcept { return _max_score[ref]; }
+    size_t size() const noexcept { return _children.size(); }
+    uint32_t seek(wand::ref_t ref, uint32_t docid) noexcept {
+        _children[ref].linearSeek(docid);
+        return get_docid(ref);
+    }
+    PostingTerms& iteratorPack() noexcept { return *this; }
+    void initRange(uint32_t begin, uint32_t) {
+        for (auto& child : _children) {
+            child.lower_bound(begin);
+        }
+    }
+    uint32_t get_docid(wand::ref_t ref) const noexcept {
+        return _children[ref].valid() ? _children[ref].getKey() : endDocId;
+    }
+
+    // contribution to the dot product from the given term (positioned at the current candidate)
+    double term_score(wand::ref_t ref) const noexcept { return _query_weight[ref] * _children[ref].getData(); }
+    double total_max_score() const noexcept { return _total_max_score; }
+};
+
+/**
+ * Scorer for wand::AlgorithmT using the weights in the posting lists.
+ */
+struct PostingScorer {
+    static double calculateScore(const PostingTerms& terms, wand::ref_t ref, uint32_t) noexcept {
+        return terms.term_score(ref);
+    }
+};
+
+PostingTerms::PostingTerms(std::vector<DocidWithFloatWeightIterator> postings,
+                           const std::vector<double>& query_weights, uint32_t docid_limit)
+    : _docid(), _max_score(), _query_weight(), _children(), _total_max_score(0.0) {
+    assert(query_weights.size() == postings.size());
+    static_assert(SparseTensorWandSearch::max_postings == std::numeric_limits<wand::ref_t>::max());
+    assert(postings.size() <= SparseTensorWandSearch::max_postings);
+    std::vector<double> max_scores;
+    std::vector<double> est_hits;
+    max_scores.reserve(postings.size());
+    est_hits.reserve(postings.size());
+    double est_num_docs = std::max(1.0, docid_limit - 1.0);
+    // posting lists are always btrees here, so the min/max weight aggregates are available
+    for (uint32_t ref = 0; ref < postings.size(); ++ref) {
+        const auto& aggr = postings[ref].getAggregated();
+        double      qw = query_weights[ref];
+        // the largest qw * w for any document weight w in [min, max]
+        double upper_bound = (qw >= 0.0) ? qw * aggr.getMax() : qw * aggr.getMin();
+        size_t size = postings[ref].size();
+        // a term that can only lower the score never helps a document pass the threshold
+        max_scores.push_back(std::max(upper_bound, 0.0));
+        est_hits.push_back(size);
+        est_num_docs = std::max(est_num_docs, double(size));
+    }
+    // a document can match any subset of the terms, so only positive contributions raise the max score
+    _total_max_score = huffman_sum_positive(max_scores);
+    std::vector<uint32_t> order(postings.size());
+    for (uint32_t ref = 0; ref < order.size(); ++ref) {
+        order[ref] = ref;
+    }
+    auto skip_value = [&](uint32_t ref) { return ((est_num_docs - est_hits[ref]) / est_num_docs) * max_scores[ref]; };
+    std::stable_sort(order.begin(), order.end(),
+                     [&](uint32_t a, uint32_t b) { return skip_value(a) > skip_value(b); });
+    _docid.reserve(order.size());
+    _max_score.reserve(order.size());
+    _query_weight.reserve(order.size());
+    _children.reserve(order.size());
+    for (uint32_t ref : order) {
+        _children.push_back(std::move(postings[ref]));
+        _max_score.push_back(max_scores[ref]);
+        _query_weight.push_back(query_weights[ref]);
+        _docid.push_back(get_docid(_children.size() - 1));
+    }
+}
+
+PostingTerms::~PostingTerms() = default;
+
+/**
+ * Strict iterator using the WAND algorithm (see wand::AlgorithmT) on the posting lists of the query labels,
+ * like the parallel WAND iterator does. Candidates are found using an upper bound of the contribution from
+ * each posting list, and checked using the weights in the posting lists (with early exit when the remaining
+ * upper bounds cannot reach the threshold). Only candidates passing that check are scored using the document
+ * tensor, and that exact score decides whether the candidate is a hit.
+ *
+ * The posting weights are float, and the sums are calculated in a different order than the exact score,
+ * so the checks using posting weights are done against the threshold lowered by a small slack, to avoid
+ * losing hits due to rounding.
+ */
+template <typename Scorer, typename FutureHeap, typename PastHeap>
+class SparseTensorWandPostingSearch final : public SparseTensorWandSearch {
+    using Heaps = wand::DualHeap<FutureHeap, PastHeap>;
+
+    fef::TermFieldMatchData& _tfmd;
+    Scorer                   _scorer;
+    PostingTerms             _terms;
+    Heaps                    _heaps;
+    wand::AlgorithmT<double> _algo;
+    const MatchParams        _match_params;
+    std::vector<double>      _local_scores;
+    const bool               _readonly_scores_heap;
+    // Upper bounds and posting scores may have different rounding errors than the exact score (float
+    // posting weights, different summation order). Lower the threshold used for them a bit to stay on
+    // the safe side.
+    const double _slack;
+    double       _last_score;
+
+public:
+    template <typename... ScorerArgs>
+    SparseTensorWandPostingSearch(fef::TermFieldMatchData& tfmd, std::vector<DocidWithFloatWeightIterator> postings,
+                                  const std::vector<double>& query_weights, const MatchParams& match_params,
+                                  bool readonly_scores_heap, ScorerArgs&&... scorer_args)
+        : _tfmd(tfmd),
+          _scorer(std::forward<ScorerArgs>(scorer_args)...),
+          _terms(std::move(postings), query_weights, match_params.docid_limit),
+          _heaps(wand::DocIdOrder(_terms.docId()), _terms.size()),
+          _algo(),
+          _match_params(match_params),
+          _local_scores(),
+          _readonly_scores_heap(readonly_scores_heap),
+          _slack(_terms.total_max_score() * 1e-6),
+          _last_score(0.0) {
+        _local_scores.reserve(_match_params.scoresAdjustFrequency);
+    }
+
+    void initRange(uint32_t begin_id, uint32_t end_id) override {
+        SparseTensorWandSearch::initRange(begin_id, end_id);
+        _algo.init_range(_terms, _heaps, begin_id, end_id);
+    }
+
+    void doSeek(uint32_t docid) override {
+        double threshold = _match_params.scores.getMinScore();
+        // the threshold is never negative here, and a document can only score above it
+        // if at least one of its posting lists has a positive upper bound.
+        double bound = std::max(threshold - _slack, 0.0);
+        auto   above_bound = [bound](double upper_bound) noexcept { return upper_bound > bound; };
+        _algo.set_candidate(_terms, _heaps, docid);
+        while (_algo.solve_wand_constraint(_terms, _heaps, above_bound)) {
+            uint32_t candidate = _algo.get_candidate();
+            if (candidate >= getEndId()) {
+                break;
+            }
+            // check_score may stop early when the partial score is above the bound,
+            // so the remaining terms are included before comparing with the bound.
+            if (_algo.check_score(_terms, _heaps, PostingScorer(), above_bound) &&
+                above_bound(_algo.get_full_score(_terms, _heaps, PostingScorer())))
+            {
+                double s = _scorer.score(candidate);
+                if (s > threshold) {
+                    _last_score = s;
+                    setDocId(candidate);
+                    return;
+                }
+            }
+            _algo.set_candidate(_terms, _heaps, candidate + 1);
+        }
+        setAtEnd();
+    }
+
+    void doUnpack(uint32_t docid) override {
+        _tfmd.setRawScore(docid, _last_score);
+        if (!_readonly_scores_heap) {
+            _local_scores.push_back(_last_score);
+            if (_local_scores.size() == _match_params.scoresAdjustFrequency) {
+                _match_params.scores.adjust(_local_scores);
+                _local_scores.clear();
+            }
+        }
+    }
+
+    Trinary is_strict() const override { return Trinary::True; }
+};
+
 template <typename Scorer, typename... ScorerArgs>
 std::unique_ptr<SearchIterator> create_with_scorer(bool strict, fef::TermFieldMatchData& tfmd,
                                                    const SparseTensorWandSearch::MatchParams& match_params,
@@ -211,6 +440,24 @@ std::unique_ptr<SearchIterator> create_with_scorer(bool strict, fef::TermFieldMa
         return std::make_unique<SparseTensorWandSearchImpl<false, Scorer>>(tfmd, match_params, readonly_scores_heap,
                                                                            std::forward<ScorerArgs>(scorer_args)...);
     }
+}
+
+template <typename Scorer, typename... ScorerArgs>
+std::unique_ptr<SearchIterator>
+create_with_postings_and_scorer(fef::TermFieldMatchData& tfmd, std::vector<DocidWithFloatWeightIterator> postings,
+                                const std::vector<double>&                 query_weights,
+                                const SparseTensorWandSearch::MatchParams& match_params, bool readonly_scores_heap,
+                                ScorerArgs&&... scorer_args) {
+    // same choice of heap implementation as for parallel wand
+    if (postings.size() < 128) {
+        return std::make_unique<
+            SparseTensorWandPostingSearch<Scorer, vespalib::LeftArrayHeap, vespalib::RightArrayHeap>>(
+            tfmd, std::move(postings), query_weights, match_params, readonly_scores_heap,
+            std::forward<ScorerArgs>(scorer_args)...);
+    }
+    return std::make_unique<SparseTensorWandPostingSearch<Scorer, vespalib::LeftHeap, vespalib::RightHeap>>(
+        tfmd, std::move(postings), query_weights, match_params, readonly_scores_heap,
+        std::forward<ScorerArgs>(scorer_args)...);
 }
 
 } // namespace
@@ -291,6 +538,29 @@ SparseTensorWandSearch::create(bool strict, fef::TermFieldMatchData& tfmd, const
                                const MatchParams& match_params, bool readonly_scores_heap) {
     return create_with_scorer<InterpretedScorer>(strict, tfmd, match_params, readonly_scores_heap, attr_tensor,
                                                  dot_product, query_tensor);
+}
+
+std::unique_ptr<SearchIterator> SparseTensorWandSearch::create_with_postings(
+    fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr_tensor, const SparseTensorDotProduct& dot_product,
+    const MatchParams& match_params, bool readonly_scores_heap, std::vector<DocidWithFloatWeightIterator> postings,
+    std::vector<double> query_weights) {
+    if (attr_tensor.supports_get_tensor_ref()) {
+        return create_with_postings_and_scorer<DirectScorer<TensorRefAccess>>(
+            tfmd, std::move(postings), std::move(query_weights), match_params, readonly_scores_heap, attr_tensor,
+            dot_product);
+    }
+    return create_with_postings_and_scorer<DirectScorer<SerializedTensorRefAccess>>(
+        tfmd, std::move(postings), std::move(query_weights), match_params, readonly_scores_heap, attr_tensor,
+        dot_product);
+}
+
+std::unique_ptr<SearchIterator> SparseTensorWandSearch::create_with_postings(
+    fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr_tensor, const InterpretedFunction& dot_product,
+    const Value& query_tensor, const MatchParams& match_params, bool readonly_scores_heap,
+    std::vector<DocidWithFloatWeightIterator> postings, std::vector<double> query_weights) {
+    return create_with_postings_and_scorer<InterpretedScorer>(tfmd, std::move(postings), std::move(query_weights),
+                                                              match_params, readonly_scores_heap, attr_tensor,
+                                                              dot_product, query_tensor);
 }
 
 } // namespace search::queryeval

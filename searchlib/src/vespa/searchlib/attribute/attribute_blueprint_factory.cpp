@@ -802,7 +802,8 @@ public:
             return setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
         }
         try {
-            const auto& attr_tensor = queryeval::SparseTensorWandBlueprint::validate(_attr, *query_tensor);
+            const auto& attr_tensor =
+                queryeval::SparseTensorWandBlueprint::validate(_attr, *query_tensor, n.get_score_threshold());
             setResult(std::make_unique<queryeval::SparseTensorWandBlueprint>(
                 _field, attr_tensor, *query_tensor, n.get_target_num_hits(), n.get_score_threshold()));
         } catch (const vespalib::IllegalArgumentException& ex) {

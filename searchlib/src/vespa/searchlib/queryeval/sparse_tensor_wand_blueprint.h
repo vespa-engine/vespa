@@ -5,6 +5,13 @@
 #include "sparse_tensor_wand_search.h"
 #include "wand/weak_and_heap.h"
 
+#include <vespa/vespalib/datastore/entryref.h>
+
+#include <vector>
+
+namespace search {
+class IDocidWithFloatWeightPostingStore;
+}
 namespace search::attribute {
 class IAttributeVector;
 }
@@ -25,6 +32,10 @@ namespace search::queryeval {
  * tensor and a sparse query tensor, both with the same tensor type having exactly
  * one mapped dimension. A heap of the best target hits scores is used to gradually
  * raise the score threshold, like the parallel WAND operator does.
+ *
+ * When the attribute has posting lists for its labels (see ITensorAttribute::label_posting_store),
+ * the strict iterator only scores documents having at least one of the query tensor labels.
+ * The score threshold must then not be negative.
  */
 class SparseTensorWandBlueprint : public ComplexLeafBlueprint {
 private:
@@ -36,6 +47,9 @@ private:
     double                                               _score_threshold;
     mutable SharedWeakAndPriorityQueueT<double>          _scores;
     MatchingPhase                                        _matching_phase;
+    const IDocidWithFloatWeightPostingStore*             _posting_store; // only set when postings are used
+    std::vector<vespalib::datastore::EntryRef>           _posting_refs;
+    std::vector<double>                                  _query_weights; // query cell for each posting list
 
 public:
     SparseTensorWandBlueprint(const FieldSpec& field, const tensor::ITensorAttribute& attr_tensor,
@@ -48,13 +62,17 @@ public:
     /**
      * Checks that the attribute is a tensor attribute with a sparse tensor type
      * with exactly one mapped dimension, and that the query tensor has the same type.
+     * Also checks that the score threshold is not negative when the attribute
+     * has label posting lists (then only documents with query labels are considered).
      * Throws vespalib::IllegalArgumentException if not.
      */
     static const tensor::ITensorAttribute& validate(const attribute::IAttributeVector& attr,
-                                                    const vespalib::eval::Value&       query_tensor);
+                                                    const vespalib::eval::Value&       query_tensor,
+                                                    double                             score_threshold);
 
     uint32_t get_target_hits() const noexcept { return _target_hits; }
     double get_score_threshold() const noexcept { return _score_threshold; }
+    bool uses_postings() const noexcept { return _posting_store != nullptr; }
 
     double sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {

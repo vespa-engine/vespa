@@ -25,6 +25,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/test/attribute_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributeblueprint_test");
@@ -59,6 +60,7 @@ using search::queryeval::SimpleResult;
 using search::queryeval::SparseTensorWandBlueprint;
 using std::string;
 using std::vector;
+using vespalib::Issue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
@@ -369,12 +371,13 @@ TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_nearest_neighbor_te
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), dense_x_3); // tensor types are not same size
 }
 
-Blueprint::UP make_sparse_tensor_wand_blueprint(AttributeVector::SP attr, const TensorSpec* query_tensor) {
+Blueprint::UP make_sparse_tensor_wand_blueprint(AttributeVector::SP attr, const TensorSpec* query_tensor,
+                                                double score_threshold = 1.5) {
     BlueprintFactoryFixture f(std::move(attr));
     if (query_tensor != nullptr) {
         f.request_ctx.set_query_tensor("query_tensor", *query_tensor);
     }
-    query::SimpleSparseTensorWandTerm term("query_tensor", f.attr_name, 0, Weight(0), 7, 1.5);
+    query::SimpleSparseTensorWandTerm term("query_tensor", f.attr_name, 0, Weight(0), 7, score_threshold);
     return f.create_blueprint(term);
 }
 
@@ -399,6 +402,49 @@ TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_sparse_tensor_wand_
     EXPECT_TRUE(is_empty(make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), nullptr)));
     // tensor types differ
     EXPECT_TRUE(is_empty(make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), &sparse_y)));
+}
+
+struct MyIssues : Issue::Handler {
+    std::vector<std::string> list;
+    Issue::Binding           capture;
+    MyIssues() : list(), capture(Issue::listen(*this)) {}
+    ~MyIssues() override;
+    void handle(const Issue& issue) override { list.push_back(issue.message()); }
+};
+MyIssues::~MyIssues() = default;
+
+AttributeVector::SP make_tensor_attribute_with_label_postings(const std::string& name,
+                                                              const std::string& tensor_spec) {
+    Config cfg(BasicType::TENSOR, CollectionType::SINGLE, true);
+    cfg.setTensorType(ValueType::from_spec(tensor_spec));
+    cfg.set_tensor_label_postings(true);
+    return AttributeFactory::createAttribute(name, cfg);
+}
+
+TEST(AttributeBlueprintTest, sparse_tensor_wand_uses_label_postings_when_available) {
+    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", "a"}}, 3);
+    auto result = make_sparse_tensor_wand_blueprint(make_tensor_attribute_with_label_postings(field, "tensor(x{})"),
+                                                    &sparse_x, 0.0);
+    const auto& wand = downcast<const SparseTensorWandBlueprint>(*result);
+    EXPECT_TRUE(wand.uses_postings());
+    result = make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), &sparse_x, 0.0);
+    EXPECT_FALSE(downcast<const SparseTensorWandBlueprint>(*result).uses_postings());
+}
+
+TEST(AttributeBlueprintTest, negative_sparse_tensor_wand_score_threshold_with_label_postings_gives_empty_blueprint) {
+    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", "a"}}, 3);
+    MyIssues   issues;
+    auto result = make_sparse_tensor_wand_blueprint(make_tensor_attribute_with_label_postings(field, "tensor(x{})"),
+                                                    &sparse_x, -1.0);
+    EXPECT_TRUE(dynamic_cast<EmptyBlueprint*>(result.get()) != nullptr);
+    ASSERT_EQ(1u, issues.list.size());
+    EXPECT_EQ("SparseTensorWandTerm(field, query_tensor): Score threshold (-1) must not be negative for attribute "
+              "with label posting lists. Returning empty blueprint",
+              issues.list[0]);
+    // negative threshold is fine without label postings
+    result = make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), &sparse_x, -1.0);
+    EXPECT_TRUE(dynamic_cast<SparseTensorWandBlueprint*>(result.get()) != nullptr);
+    EXPECT_EQ(1u, issues.list.size());
 }
 
 TEST(AttributeBlueprintTest, attribute_field_blueprint_creates_exact_filter_search) {
