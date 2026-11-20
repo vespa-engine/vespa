@@ -26,7 +26,10 @@ public:
 
     virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocidWithFloatWeightIterator>& dst) const = 0;
     virtual DocidWithFloatWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
-    // Returns the min and max weight in the given posting list
+    // Returns the min and max weight in the given posting list.
+    // NOTE: This reads the current (non-frozen) posting list, and is thus only safe to call
+    // from the attribute writer thread. Query threads must instead use getAggregated() on a
+    // (frozen) iterator returned by create().
     virtual vespalib::btree::FloatMinMaxAggregated
     get_weight_range(vespalib::datastore::EntryRef posting_idx) const = 0;
 };

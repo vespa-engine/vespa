@@ -72,6 +72,7 @@ struct ConvertCells {
 
 } // namespace
 
+// Reads the non-frozen posting list; only safe in the attribute writer thread (see interface).
 vespalib::btree::FloatMinMaxAggregated
 DirectTensorPostingAttribute::PostingStoreAdapter::get_weight_range(EntryRef posting_idx) const {
     return _posting_store.getAggregated(posting_idx);
