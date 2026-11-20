@@ -161,8 +161,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.sidecarProvider = sidecarProvider;
         this.additionalContent = additionalContent;
 
-        boolean isBootstrap = getProperties() != null && getProperties().isBootstrap();
-        var builder = new ProvisionContext.Builder(!isBootstrap);
+        var builder = new ProvisionContext.Builder();
         builder.setLogger(new ProvisionDeployLogger(deployLogger));
         var validation = builder.validationOverrides();
         if (properties != null) validation.setWarnOnly(warnOnlyOnValidationFailure(properties, zone));

@@ -72,16 +72,16 @@ public class ClusterInfoTest {
                             """;
 
         var requestedInUsEast1 = requestedIn("default", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInUsWest1 = requestedIn("default", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInEuWest1 = requestedIn("default", "eu-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     /** A high default deadline only will cause no resources to be set aside for BCP. */
@@ -112,12 +112,12 @@ public class ClusterInfoTest {
                             """;
 
         var requestedInUsEast1 = requestedIn("default", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInUsWest1 = requestedIn("default", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     /** This implicitly creates one BCP group (which gives the same result as above). */
@@ -148,12 +148,12 @@ public class ClusterInfoTest {
                             """;
 
         var requestedInUsEast1 = requestedIn("default", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInUsWest1 = requestedIn("default", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     @Test
@@ -189,20 +189,20 @@ public class ClusterInfoTest {
                             """;
 
         var requestedInI1UsEast1 = requestedIn("i1", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInI1UsWest1 = requestedIn("i1", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInI2UsEast1 = requestedIn("i2", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
         var requestedInI2UsWest1 = requestedIn("i2", "eu-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     @Test
@@ -229,9 +229,9 @@ public class ClusterInfoTest {
 
         Cloud gcp = Cloud.builder().name(CloudName.GCP).account(CloudAccount.from("vespaz")).allowEnclave(true).build();
         CloudAccount account = CloudAccount.from("gcp:foobar");
-        assertEquals(Duration.ofHours(24), requestedIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
-        assertEquals(Duration.ZERO, requestedIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
-        assertEquals(Duration.ZERO, requestedIn(CloudAccount.unspecified(), gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).clusterInfo().hostTTL());
+        assertEquals(Duration.ofHours(24), requestedIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().hostTTL());
+        assertEquals(Duration.ZERO, requestedIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().hostTTL());
+        assertEquals(Duration.ZERO, requestedIn(CloudAccount.unspecified(), gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).capacity().clusterInfo().hostTTL());
     }
 
     private Map<ClusterSpec.Id, ClusterSpec> requestedIn(String instance, String region, String servicesXml, String deploymentXml) throws Exception {
