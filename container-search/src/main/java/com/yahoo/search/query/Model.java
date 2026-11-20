@@ -55,6 +55,7 @@ public class Model implements Cloneable {
     public static final String LOCALE = "locale";
     public static final String ENCODING = "encoding";
     public static final String SOURCES = "sources";
+    public static final String EXCLUDED_SOURCE_PREFIX = "-";
     public static final String SEARCH_GROUP = "searchGroup";
     public static final String SEARCH_PATH = "searchPath";
     public static final String RESTRICT = "restrict";
@@ -94,6 +95,7 @@ public class Model implements Cloneable {
     private QueryType type = QueryType.from(Query.Type.WEAKAND);
     private Query parent;
     private Set<String> sources = new LinkedHashSet<>();
+    private Set<String> excludedSources = new LinkedHashSet<>();
     private Set<String> restrict = new LinkedHashSet<>();
     private Integer searchGroup;
     private String searchPath;
@@ -379,6 +381,9 @@ public class Model implements Cloneable {
         if ( ! Objects.equals(other.searchGroup, this.searchGroup)) return false;
         if ( ! Objects.equals(other.searchPath, this.searchPath)) return false;
         if ( ! Objects.equals(other.sources, this.sources)) return false;
+        if ( ! Objects.equals(other.excludedSources, this.excludedSources)) {
+            return false;
+        }
         if ( ! Objects.equals(other.restrict, this.restrict)) return false;
         if ( ! Objects.equals(other.defaultIndex, this.defaultIndex)) return false;
         if ( ! Objects.equals(other.type, this.type)) return false;
@@ -393,7 +398,7 @@ public class Model implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(this.getClass(), encoding, filter, language, getQueryTree(),
-                            sources, restrict, defaultIndex, type, searchGroup, searchPath);
+                            sources, excludedSources, restrict, defaultIndex, type, searchGroup, searchPath);
     }
 
     @Override
@@ -404,6 +409,8 @@ public class Model implements Cloneable {
                 clone.queryTree = this.queryTree.clone();
             if (sources != null)
                 clone.sources = new LinkedHashSet<>(this.sources);
+            if (excludedSources != null)
+                clone.excludedSources = new LinkedHashSet<>(this.excludedSources);
             if (restrict != null)
                 clone.restrict = new LinkedHashSet<>(this.restrict);
             return clone;
@@ -427,19 +434,51 @@ public class Model implements Cloneable {
         this.parent = Objects.requireNonNull(parent, "A query models parent cannot be null");
     }
 
-    /** Sets the set of sources this query will search from a comma-separated string of source names */
+    /**
+     * Sets the set of sources this query will search from a comma-separated string of source names.
+     * A name prefixed by '-' is instead added to the set of <i>excluded</i> sources, see {@link #getExcludedSources()}.
+     * Both sets are replaced by this call.
+     *
+     * @throws IllegalInputException if an entry consists of '-' with no source name after it
+     */
     public void setSources(String sourceString) {
-        setFromString(sourceString, sources);
+        sources.clear();
+        excludedSources.clear();
+        for (String item : sourceString.split(",")) {
+            item = item.trim();
+            if (item.startsWith(EXCLUDED_SOURCE_PREFIX)) {
+                String excluded = item.substring(EXCLUDED_SOURCE_PREFIX.length()).trim();
+                if (excluded.isEmpty()) {
+                    throw new IllegalInputException("Invalid entry '" + item + "' in sources: " +
+                                                    "'" + EXCLUDED_SOURCE_PREFIX + "' must be followed by a source name");
+                }
+                excludedSources.add(excluded);
+            } else {
+                sources.add(item);
+            }
+        }
     }
 
     /**
      * Returns the set of sources this query will search.
      * This set can be modified to change the set of sources. If all sources are to be searched, this returns
-     * an empty set
+     * an empty set. Sources in this set which are also in {@link #getExcludedSources()} will not be searched.
      *
      * @return the set of sources to search, never null
      */
     public Set<String> getSources() { return sources; }
+
+    /**
+     * Returns the set of sources this query will <i>not</i> search, regardless of what {@link #getSources()}
+     * or the YQL sources clause selects. This set can be modified to change the set of excluded sources.
+     * It is populated from entries prefixed by '-' in {@link #setSources(String)}. An entry may name a cluster,
+     * a source, a schema, or a schema within a cluster as 'cluster.schema'.
+     * A YQL query selecting from all sources does not affect it, while a source named explicitly in YQL
+     * is removed from it, as the YQL selection takes precedence.
+     *
+     * @return the set of sources to exclude, never null
+     */
+    public Set<String> getExcludedSources() { return excludedSources; }
 
     /**
      * Sets the set of types (document type or search definition names) this query will search from a
