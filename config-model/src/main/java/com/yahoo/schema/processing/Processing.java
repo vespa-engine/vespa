@@ -96,6 +96,7 @@ public class Processing {
                 RankingExpressionTypeResolver::new,
                 SingleValueOnlyAttributeValidator::new,
                 PagedAttributeValidator::new,
+                LabelPostingsValidator::new,
                 // These should be last:
                 IndexingValidation::new,
                 IndexingValues::new,
