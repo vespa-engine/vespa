@@ -98,7 +98,7 @@ struct CalcDotProduct {
 };
 
 /**
- * Document tensor access by reference to a value (fast-search attributes and streaming search).
+ * Document tensor access by reference to a value (fast-rank attributes and streaming search).
  */
 class TensorRefAccess {
     const ITensorAttribute& _attr;
@@ -133,7 +133,7 @@ public:
 };
 
 /**
- * Scores documents by evaluating the dot product with an interpreted function (fast-search attributes).
+ * Scores documents by evaluating the dot product with an interpreted function (fast-rank attributes).
  */
 class InterpretedScorer {
     TensorRefAccess                   _doc_access;
@@ -281,15 +281,14 @@ std::unique_ptr<SearchIterator> SparseTensorWandSearch::create(bool strict, fef:
         return create_with_scorer<DirectScorer<TensorRefAccess>>(strict, tfmd, match_params, readonly_scores_heap,
                                                                  attr_tensor, dot_product);
     }
-    return create_with_scorer<DirectScorer<SerializedTensorRefAccess>>(strict, tfmd, match_params,
-                                                                       readonly_scores_heap, attr_tensor, dot_product);
+    return create_with_scorer<DirectScorer<SerializedTensorRefAccess>>(
+        strict, tfmd, match_params, readonly_scores_heap, attr_tensor, dot_product);
 }
 
-std::unique_ptr<SearchIterator> SparseTensorWandSearch::create(bool strict, fef::TermFieldMatchData& tfmd,
-                                                               const ITensorAttribute&    attr_tensor,
-                                                               const InterpretedFunction& dot_product,
-                                                               const Value& query_tensor, const MatchParams& match_params,
-                                                               bool readonly_scores_heap) {
+std::unique_ptr<SearchIterator>
+SparseTensorWandSearch::create(bool strict, fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr_tensor,
+                               const InterpretedFunction& dot_product, const Value& query_tensor,
+                               const MatchParams& match_params, bool readonly_scores_heap) {
     return create_with_scorer<InterpretedScorer>(strict, tfmd, match_params, readonly_scores_heap, attr_tensor,
                                                  dot_product, query_tensor);
 }
