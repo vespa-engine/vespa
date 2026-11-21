@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
-import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.serializeApplicationModel;
 import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
@@ -72,7 +72,7 @@ public class MetricsV2Handler extends HttpHandlerBase {
 
             Node localNode = new Node(nodeInfoConfig.role(), nodeInfoConfig.hostname(), 0, "");
             Map<Node, List<MetricsPacket>> metricsByNode = Map.of(localNode, metrics);
-            return new MetricsJsonResponse(OK, toGenericApplicationModel(metricsByNode)::serialize);
+            return new MetricsJsonResponse(OK, out -> serializeApplicationModel(metricsByNode, out));
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());

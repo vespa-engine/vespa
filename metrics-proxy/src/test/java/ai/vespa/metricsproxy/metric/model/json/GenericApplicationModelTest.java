@@ -6,8 +6,10 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +19,7 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -91,6 +94,32 @@ public class GenericApplicationModelTest {
 
         // Visual inspection
         System.out.println(objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(nodeModel));
+    }
+
+    @Test
+    public void application_model_is_serialized_node_by_node_to_the_same_json() {
+        var metricsByNode = new LinkedHashMap<Node, List<MetricsPacket>>();
+        metricsByNode.put(new Node("role0", "host0", 0, "path"),
+                          List.of(createMetricsPacket("node", 1.5, true),
+                                  createMetricsPacket("searchnode", 4, false),
+                                  createMetricsPacket("searchnode", 12345678901234.5, false),
+                                  createMetricsPacket("container", 0.000123, false)));
+        metricsByNode.put(new Node("role1", "host1", 0, "path"),
+                          List.of(new MetricsPacket.Builder(toServiceId("distributor"))
+                                          .timestamp(Instant.ofEpochSecond(1234L))
+                                          .statusCode(StatusCode.DOWN.ordinal())
+                                          .statusMessage("down for a reason")
+                                          .build()));
+        metricsByNode.put(new Node("role2", "host2", 0, "path"), List.of());
+
+        assertEquals(GenericJsonUtil.toGenericApplicationModel(metricsByNode).serialize(), serializeNodeByNode(metricsByNode));
+        assertEquals(GenericJsonUtil.toGenericApplicationModel(Map.of()).serialize(), serializeNodeByNode(Map.of()));
+    }
+
+    private static String serializeNodeByNode(Map<Node, List<MetricsPacket>> metricsByNode) {
+        var out = new ByteArrayOutputStream();
+        GenericJsonUtil.serializeApplicationModel(metricsByNode, out);
+        return out.toString(UTF_8);
     }
 
     private MetricsPacket createMetricsPacket(String service, Number metricsValue, boolean isNode) {

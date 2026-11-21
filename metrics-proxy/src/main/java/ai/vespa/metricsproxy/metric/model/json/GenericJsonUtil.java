@@ -5,9 +5,11 @@ import ai.vespa.metricsproxy.http.application.Node;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +34,20 @@ public class GenericJsonUtil {
     private static final Logger log = Logger.getLogger(GenericJsonUtil.class.getName());
 
     private GenericJsonUtil() {
+    }
+
+    /** Writes the same json as toGenericApplicationModel(metricsByNode).serialize(out), building one node's model at a time. */
+    public static void serializeApplicationModel(Map<Node, List<MetricsPacket>> metricsByNode, OutputStream out) {
+        try (JsonGenerator generator = objectMapper().createGenerator(out)) {
+            generator.writeStartObject();
+            generator.writeArrayFieldStart("nodes");
+            for (var entry : metricsByNode.entrySet())
+                objectMapper().writeValue(generator, toGenericJsonModel(entry.getValue(), entry.getKey()));
+            generator.writeEndArray();
+            generator.writeEndObject();
+        } catch (IOException e) {
+            throw new JsonRenderingException("Could not render application nodes. Check the log for details.", e);
+        }
     }
 
     public static GenericApplicationModel toGenericApplicationModel(Map<Node, List<MetricsPacket>> metricsByNode) {
