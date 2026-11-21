@@ -106,20 +106,19 @@ public class HuggingFaceEmbedderTest {
     public void testEmbedder() {
         var context = new Embedder.Context("schema.indexing");
         String input = "This is a test";
+        // The model is int8-quantized, so its output depends on which kernels ONNX Runtime selects
+        // for the CPU (differences up to ~0.03 seen between x86 and Apple silicon); use a loose tolerance.
         Tensor expected = Tensor.from("tensor<float>(x[8]):[-0.666, 0.335, 0.227, 0.0919, -0.069, 0.323, 0.422, 0.270]");
         Tensor result = embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
         for(int i = 0; i < 8; i++) {
-            assertEquals(expected.get(TensorAddress.of(i)), result.get(TensorAddress.of(i)), 1e-2);
+            assertEquals(expected.get(TensorAddress.of(i)), result.get(TensorAddress.of(i)), 5e-2);
         }
         // Thresholding on the above gives [0, 1, 1, 1, 0, 1, 1, 1] which is packed into 119 (int8)
         Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[1])")));
         assertEquals("tensor<int8>(x[1]):[119]", binarizedResult.toString());
 
-        binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
-        assertEquals("tensor<int8>(x[2]):[119, 44]", binarizedResult.toAbbreviatedString());
-
-        binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[48])")));
-        assertTrue(binarizedResult.toAbbreviatedString().startsWith("tensor<int8>(x[48]):[119, 44"));
+        assertBinarizationMatchesFloat(embedder, input, context, 2);
+        assertBinarizationMatchesFloat(embedder, input, context, 48);
 
         assertThrows(IllegalArgumentException.class, () -> {
             // throws because the target tensor type is not compatible with the model output
@@ -127,7 +126,8 @@ public class HuggingFaceEmbedderTest {
             embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[49])")));
         });
         Tensor float16Result = embedder.embed(input, context, TensorType.fromSpec(("tensor<bfloat16>(x[1])")));
-        assertEquals(-0.666, float16Result.sum().asDouble(),1e-3);
+        // bfloat16 has 8 bits of mantissa precision
+        assertEquals(result.get(TensorAddress.of(0)), float16Result.sum().asDouble(), 1e-2);
     }
 
     @Test
@@ -138,8 +138,10 @@ public class HuggingFaceEmbedderTest {
         assertEquals(1.0, result.multiply(result).sum().asDouble(), 1e-3);
         result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[16])")));
         assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-3);
-        Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
-        assertEquals("tensor<int8>(x[2]):[119, 44]", binarizedResult.toAbbreviatedString());
+        // Normalization must not change the signs, so the binarized result is the same as without it
+        Tensor binarizedResult = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
+        assertEquals(embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])"))), binarizedResult);
+        assertBinarizationMatchesFloat(normalizedEmbedder, input, context, 2);
     }
 
     @Test
@@ -169,7 +171,8 @@ public class HuggingFaceEmbedderTest {
         result = getNormalizePrefixdEmbedder().embed(input, context, TensorType.fromSpec(("tensor<float>(x[16])")));
         assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-3);
         Tensor binarizedResult = getNormalizePrefixdEmbedder().embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
-        assertEquals("tensor<int8>(x[2]):[125, 44]", binarizedResult.toAbbreviatedString());
+        // Some of the first 16 dimensions are close to zero for this input, so their signs are hardware dependent
+        assertBinarizationMatchesFloat(getNormalizePrefixdEmbedder(), input, context, 2);
 
         var queryContext = new Embedder.Context("query(qt)");
         Tensor queryResult = getNormalizePrefixdEmbedder().embed(input, queryContext, TensorType.fromSpec(("tensor<float>(x[8])")));
@@ -179,6 +182,18 @@ public class HuggingFaceEmbedderTest {
         Tensor binarizedResultQuery = getNormalizePrefixdEmbedder().embed(input, queryContext, TensorType.fromSpec(("tensor<int8>(x[2])")));
         assertNotEquals(binarizedResult.toAbbreviatedString(), binarizedResultQuery.toAbbreviatedString());
         assertEquals("tensor<int8>(x[2]):[119, -116]", binarizedResultQuery.toAbbreviatedString());
+        assertBinarizationMatchesFloat(getNormalizePrefixdEmbedder(), input, queryContext, 2);
+    }
+
+    /**
+     * Asserts that embedding into tensor&lt;int8&gt;(x[packedSize]) gives the same result as
+     * thresholding and packing the tensor&lt;float&gt;(x[8 * packedSize]) embedding of the same input.
+     * This holds regardless of the hardware dependent numeric output of the model.
+     */
+    private static void assertBinarizationMatchesFloat(HuggingFaceEmbedder embedder, String input, Embedder.Context context, int packedSize) {
+        Tensor floats = embedder.embed(input, context, TensorType.fromSpec("tensor<float>(x[" + (8 * packedSize) + "])"));
+        Tensor binarized = embedder.embed(input, context, TensorType.fromSpec("tensor<int8>(x[" + packedSize + "])"));
+        assertEquals(Tensors.packBits(floats), binarized);
     }
 
     @Test
