@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
-import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.serializeApplicationModel;
 import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
@@ -75,7 +75,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
             ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
             var metricsByNode =  metricsRetriever.getMetrics(consumer);
 
-            return new MetricsJsonResponse(OK, toGenericApplicationModel(metricsByNode)::serialize);
+            return new MetricsJsonResponse(OK, out -> serializeApplicationModel(metricsByNode, out));
 
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when retrieving metrics:", e);
