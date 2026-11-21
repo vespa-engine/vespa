@@ -20,6 +20,7 @@ struct ChangeBase {
         APPEND,
         REMOVE,
         ASSIGN_ELEMENT,
+        REMOVE_ELEMENT,
         INCREASEWEIGHT,
         MULWEIGHT,
         DIVWEIGHT,
@@ -91,6 +92,7 @@ template <typename T> struct ChangeTemplate : public ChangeBase {
     using DataType = T;
 
     ChangeTemplate() : ChangeBase() {}
+    ChangeTemplate(Type type, uint32_t d) : ChangeTemplate(type, d, {}) {}
     ChangeTemplate(Type type, uint32_t d, const T& v, int32_t w = 1) : ChangeBase(type, d, w), _data(v) {}
 
     T _data;

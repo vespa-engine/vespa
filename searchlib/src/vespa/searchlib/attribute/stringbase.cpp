@@ -268,5 +268,6 @@ template bool AttributeVector::remove(StringAttribute::ChangeVector& changes, Do
                                       int32_t w);
 template bool AttributeVector::assign_element(StringAttribute::ChangeVector& changes, DocId doc, uint32_t index,
                                               const StringChangeData& v);
+template bool AttributeVector::remove_element(StringAttribute::ChangeVector& changes, DocId doc, uint32_t index);
 
 } // namespace search
