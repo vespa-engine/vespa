@@ -72,6 +72,15 @@ public interface FeedClient extends Closeable {
     /** Initiates graceful shutdown. See {@link #close(boolean)}. */
     default void close() { close(true); }
 
+    /**
+     * Initiates shutdown without waiting. Implementations predating this optional capability
+     * may throw UnsupportedOperationException. Cancellation of an observer never aborts shutdown.
+     */
+    default ShutdownHandle closeAsync(boolean graceful) { throw new UnsupportedOperationException("Shutdown observation is unsupported"); }
+
+    /** Returns a read-only shutdown observation without initiating shutdown. */
+    default ShutdownHandle termination() { throw new UnsupportedOperationException("Shutdown observation is unsupported"); }
+
     /** Controls what to retry, and how many times. */
     interface RetryStrategy {
 

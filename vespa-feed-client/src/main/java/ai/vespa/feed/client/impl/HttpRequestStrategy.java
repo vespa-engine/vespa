@@ -11,6 +11,12 @@ import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
@@ -26,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Logger;
 
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.CLOSED;
@@ -37,7 +44,6 @@ import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
-import static java.util.logging.Level.WARNING;
 
 /**
  * Controls request execution and retries.
@@ -65,10 +71,15 @@ class HttpRequestStrategy implements RequestStrategy {
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
     private final AtomicLong inflight = new AtomicLong(0);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final CompletableFuture<Void> destruction = new CompletableFuture<>();
     private final AtomicLong delayedCount = new AtomicLong(0);
+    private final Thread dispatcher;
+    private final Duration terminationTimeout;
+    private volatile Thread resultThread;
     private final ExecutorService resultExecutor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "feed-client-result-executor");
         thread.setDaemon(true);
+        resultThread = thread;
         return thread;
     });
     // TODO jonmv: remove if this has no effect
@@ -76,15 +87,31 @@ class HttpRequestStrategy implements RequestStrategy {
     private final AtomicBoolean reset = new AtomicBoolean(false);
 
     HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
-        this.throttler = new DynamicThrottler(builder);
-        this.resettableCluster = new ResettableCluster(clusterFactory);
+        this(builder, clusterFactory, new DynamicThrottler(builder));
+    }
+
+    HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, Throttler throttler) throws IOException {
+        this(builder, clusterFactory, throttler, Duration.ofMinutes(1));
+    }
+
+    HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, Throttler throttler,
+                        Duration terminationTimeout) throws IOException {
+        this.terminationTimeout = terminationTimeout;
+        this.throttler = throttler;
+        this.resettableCluster = new ResettableCluster(clusterFactory, terminationTimeout);
         this.cluster = builder.benchmark ? new BenchmarkingCluster(resettableCluster, throttler, System::nanoTime) : resettableCluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
 
-        Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
+        dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);
         dispatcher.start();
+    }
+
+    @Override
+    public boolean isProgressThread() {
+        Thread current = Thread.currentThread();
+        return current == dispatcher || current == resultThread;
     }
 
     @Override
@@ -125,6 +152,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     private boolean poll() {
+        if (destroyed.get()) return false;
         Runnable task = queue.poll();
         if (task == null) return false;
         delayedCount.decrementAndGet();
@@ -207,12 +235,14 @@ class HttpRequestStrategy implements RequestStrategy {
                            ") on attempt " + attempt + " at " + request);
     }
 
-    private void acquireSlot() {
+    private boolean acquireSlot() {
         try {
-            while (inflight.get() >= throttler.targetInflight())
+            while (!destroyed.get() && inflight.get() >= throttler.targetInflight())
                 Thread.sleep(1);
 
+            if (destroyed.get()) return false;
             inflight.incrementAndGet();
+            return true;
         }
         catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -223,10 +253,13 @@ class HttpRequestStrategy implements RequestStrategy {
         inflight.decrementAndGet();
     }
 
-    public void await() {
+    public void await() { await(() -> true); }
+
+    @Override
+    public void await(BooleanSupplier draining) {
         try {
-            while (inflight.get() > 0) Thread.sleep(10);
-            resettableCluster.sync();
+            while (draining.getAsBoolean() && inflight.get() > 0) Thread.sleep(10);
+            if (draining.getAsBoolean()) resettableCluster.sync();
         }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -275,7 +308,11 @@ class HttpRequestStrategy implements RequestStrategy {
         CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
         RetriableFuture<HttpResponse> previous = inflightById.put(documentId, result);
         if (previous == null) {
-            acquireSlot();
+            if (!acquireSlot()) {
+                inflightById.remove(documentId, result);
+                result.complete();
+                return result;
+            }
             offer(request, vessel);
             throttler.sent(inflight.get(), result);
         }
@@ -321,18 +358,44 @@ class HttpRequestStrategy implements RequestStrategy {
     @Override
     public void destroy() {
         if (destroyed.compareAndSet(false, true)) {
-            inflightById.values().forEach(RetriableFuture::complete);
-            cluster.close();
-            resultExecutor.shutdown();
-            try {
-                if ( ! resultExecutor.awaitTermination(1, TimeUnit.MINUTES))
-                    log.log(WARNING, "Failed processing results within 1 minute");
-            }
+            Throwable failure = null;
+            try { inflightById.values().forEach(RetriableFuture::complete); }
+            catch (Throwable t) { failure = t; }
+            try { cluster.close(); }
+            catch (Throwable t) { failure = retainFailure(failure, t); }
+            try { resultExecutor.shutdown(); }
+            catch (Throwable t) { failure = retainFailure(failure, t); }
+            failure = awaitTermination(resultExecutor, terminationTimeout, "result processing", failure);
+            if (failure == null) destruction.complete(null);
+            else destruction.completeExceptionally(failure);
+        }
+        destruction.join();
+        if (Thread.currentThread() != dispatcher) {
+            try { dispatcher.join(); }
             catch (InterruptedException e) {
-                log.log(WARNING, "Interrupted waiting for results to be processed");
                 Thread.currentThread().interrupt();
+                throw new FeedException("Interrupted waiting for dispatcher termination", e);
             }
         }
+    }
+
+    private static Throwable retainFailure(Throwable first, Throwable next) {
+        if (first == null) return next;
+        if (first != next) first.addSuppressed(next);
+        return first;
+    }
+
+    static Throwable awaitTermination(ExecutorService executor, Duration timeout, String name, Throwable failure) {
+        try {
+            if (!executor.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS))
+                return retainFailure(failure, new FeedException("Timed out waiting for " + name + " executor termination"));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return retainFailure(failure, new FeedException("Interrupted waiting for " + name + " executor termination", e));
+        } catch (Throwable t) {
+            return retainFailure(failure, t);
+        }
+        return failure;
     }
 
     /**
@@ -343,12 +406,17 @@ class HttpRequestStrategy implements RequestStrategy {
     private static class ResettableCluster implements Cluster {
 
         private final Object monitor = new Object();
+        private final Duration terminationTimeout;
         private final ClusterFactory clusterFactory;
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
         private AtomicLong inflight = new AtomicLong(0);
         private Cluster delegate;
+        private final Set<Cluster> retired = Collections.newSetFromMap(new IdentityHashMap<>());
+        private boolean closed;
+        private Throwable retirementFailure;
 
-        ResettableCluster(ClusterFactory clusterFactory) throws IOException {
+        ResettableCluster(ClusterFactory clusterFactory, Duration terminationTimeout) throws IOException {
+            this.terminationTimeout = terminationTimeout;
             this.clusterFactory = clusterFactory;
             this.delegate = clusterFactory.create();
         }
@@ -356,36 +424,48 @@ class HttpRequestStrategy implements RequestStrategy {
         @Override
         public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
             synchronized (monitor) {
+                if (closed) {
+                    vessel.completeExceptionally(new FeedException("Cluster is closed"));
+                    return;
+                }
                 AtomicLong usedCounter = inflight;
                 usedCounter.incrementAndGet();
                 Cluster usedCluster = delegate;
                 usedCluster.dispatch(request, vessel);
-                vessel.whenCompleteAsync((__, ___) -> {
-                                             synchronized (monitor) {
-                                                 if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate) {
-                                                     log.log(INFO, "Closing old HTTP client");
-                                                     usedCluster.close();
-                                                 }
-                                             }
-                                         },
-                                         executor);
+                vessel.whenComplete((__, ___) -> {
+                    synchronized (monitor) {
+                        // After shutdown, accounting must not depend on a stopped executor.
+                        if (closed) usedCounter.decrementAndGet();
+                        else executor.execute(() -> retireIfIdle(usedCluster, usedCounter, true));
+                    }
+                });
             }
         }
 
         @Override
         public void close() {
+            Throwable failure = null;
+            List<Cluster> toClose;
             synchronized (monitor) {
-                delegate.close();
-                executor.shutdown();
-                try {
-                    if ( ! executor.awaitTermination(1, TimeUnit.MINUTES))
-                        log.log(WARNING, "Failed shutting down HTTP client within 1 minute");
-                }
-                catch (InterruptedException e) {
-                    log.log(WARNING, "Interrupted waiting for HTTP client to shut down");
-                    Thread.currentThread().interrupt();
-                }
+                closed = true;
+                toClose = new ArrayList<>(retired);
+                retired.clear();
+                toClose.add(delegate);
+                try { executor.shutdown(); }
+                catch (Throwable t) { failure = t; }
             }
+            // Transport close may await callbacks. Never hold their accounting monitor here.
+            for (Cluster cluster : toClose) {
+                try { cluster.close(); }
+                catch (Throwable t) { failure = retainFailure(failure, t); }
+            }
+            failure = awaitTermination(executor, terminationTimeout, "reset accounting", failure);
+            synchronized (monitor) {
+                if (retirementFailure != null) failure = retainFailure(failure, retirementFailure);
+            }
+            if (failure instanceof RuntimeException) throw (RuntimeException) failure;
+            if (failure instanceof Error) throw (Error) failure;
+            if (failure != null) throw new FeedException("Reset accounting cleanup failed", failure);
         }
 
         private void sync() throws InterruptedException {
@@ -409,11 +489,32 @@ class HttpRequestStrategy implements RequestStrategy {
 
         @Override public void resetStats() { delegate.resetStats(); }
 
+        private void retireIfIdle(Cluster cluster, AtomicLong counter, boolean completed) {
+            synchronized (monitor) {
+                long remaining = completed ? counter.decrementAndGet() : counter.get();
+                if (remaining != 0 || cluster == delegate || !retired.remove(cluster)) return;
+            }
+            try {
+                log.log(INFO, "Closing old HTTP client");
+                cluster.close();
+            } catch (Throwable t) {
+                synchronized (monitor) { retirementFailure = retainFailure(retirementFailure, t); }
+            }
+        }
+
         void reset() throws IOException {
             synchronized (monitor) {
+                if (closed) return;
                 log.log(INFO, "Replacing underlying HTTP client to attempt recovery");
+                Cluster previous = delegate;
+                AtomicLong previousInflight = inflight;
                 delegate = clusterFactory.create();
                 inflight = new AtomicLong(0);
+                retired.remove(delegate);
+                if (previous != delegate) {
+                    retired.add(previous);
+                    executor.execute(() -> retireIfIdle(previous, previousInflight, false));
+                }
             }
         }
 
