@@ -9,7 +9,7 @@ import com.yahoo.tensor.TensorType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -159,15 +159,27 @@ public final class OnnxPadder implements OnnxEvaluator {
     public List<Integer> buckets() { return Arrays.stream(buckets).boxed().toList(); }
 
     @Override
-    public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
+    public Tensor evaluate(Map<String, Tensor> inputs, String output) {
         var paddingInfo = paddingInfoFor(inputs);
-        return unpad(output, evaluator.evaluate(pad(inputs, paddingInfo), output, timeout), paddingInfo);
+        return unpad(output, evaluator.evaluate(pad(inputs, paddingInfo), output), paddingInfo);
     }
 
     @Override
-    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
         var paddingInfo = paddingInfoFor(inputs);
-        return unpad(evaluator.evaluate(pad(inputs, paddingInfo), timeout), paddingInfo);
+        return unpad(evaluator.evaluate(pad(inputs, paddingInfo)), paddingInfo);
+    }
+
+    @Override
+    public Tensor evaluate(Map<String, Tensor> inputs, String output, Optional<Instant> deadline) {
+        var paddingInfo = paddingInfoFor(inputs);
+        return unpad(output, evaluator.evaluate(pad(inputs, paddingInfo), output, deadline), paddingInfo);
+    }
+
+    @Override
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
+        var paddingInfo = paddingInfoFor(inputs);
+        return unpad(evaluator.evaluate(pad(inputs, paddingInfo), deadline), paddingInfo);
     }
 
     @Override public Map<String, IdAndType> getInputs() { return evaluator.getInputs(); }
@@ -188,14 +200,15 @@ public final class OnnxPadder implements OnnxEvaluator {
         var paddingInfo = new PaddingInfo(length, largestBucket());
         Map<String, Tensor> unpaddedOutputs, paddedOutputs;
         try {
-            unpaddedOutputs = evaluator.evaluate(sample);
+            // The sample is not part of a request, so it has no deadline
+            unpaddedOutputs = evaluator.evaluate(sample, Optional.empty());
             // Do not unpad an output whose unbound second dimension is not the sequence length
             outputNamesToUnpad = unpaddedOutputs.entrySet().stream()
                                              .filter(output -> outputNamesToUnpad.contains(output.getKey()))
                                              .filter(output -> ((IndexedTensor) output.getValue()).shape()[1] == length)
                                              .map(Map.Entry::getKey)
                                              .collect(Collectors.toUnmodifiableSet());
-            paddedOutputs = unpad(evaluator.evaluate(pad(sample, paddingInfo)), paddingInfo);
+            paddedOutputs = unpad(evaluator.evaluate(pad(sample, paddingInfo), Optional.empty()), paddingInfo);
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Not padding inputs of " + modelName + " to " + this + ": could not evaluate " +
                                    "a sample to verify that padding does not change its output", e);

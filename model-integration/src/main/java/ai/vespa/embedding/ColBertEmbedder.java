@@ -235,7 +235,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         var inputs = Map.of(inputIdsName,
                             inputIdsTensor.expand("d0"),
                             attentionMaskName, attentionMaskTensor.expand("d0"));
-        Map<String, Tensor> outputs = evaluator.evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context));
+        Map<String, Tensor> outputs = evaluator.evaluate(inputs, OnnxEmbedderDeadline.deadlineOrThrow(context));
         runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
         // Number of token-rows to emit downstream. For queries with
         // attendToExpansionTokens=false, drop the [MASK] expansion positions so

@@ -98,6 +98,9 @@ public class FutureResult extends FutureTask<Result> {
     }
     
     private ErrorMessage createExecutionError(ExecutionException e) {
+        // A timeout is not a failure of a searcher, so it needs no stack trace in the log
+        if (e.getCause() instanceof com.yahoo.language.process.TimeoutException)
+            return ErrorMessage.createTimeout("Timed out in '" + execution + "': " + Exceptions.toMessageString(e.getCause()));
         log.log(Level.WARNING,"Exception in " + execution + " of " + query, e.getCause());
         return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " +
                                                         Exceptions.toMessageString(e.getCause()), e.getCause());

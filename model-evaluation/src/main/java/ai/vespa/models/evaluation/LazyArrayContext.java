@@ -9,23 +9,16 @@ import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
-import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import static com.yahoo.searchlib.rankingexpression.Reference.RANKING_EXPRESSION_WRAPPER;
 
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An array context supporting functions invocations implemented as lazy values.
@@ -36,6 +29,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     private final ExpressionFunction function;
     private final IndexedBindings indexedBindings;
+    private Optional<Instant> deadline = Optional.empty();
 
     private LazyArrayContext(ExpressionFunction function, IndexedBindings indexedBindings) {
         this.function = function;
@@ -146,6 +140,12 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     public Value defaultValue() {
         return indexedBindings.missingValue;
     }
+
+    /** Sets the time by which ONNX models in this context must be evaluated. */
+    void setDeadline(Instant deadline) { this.deadline = Optional.of(deadline); }
+
+    /** Returns the deadline of this, or empty if this has no deadline. */
+    Optional<Instant> deadline() { return deadline; }
 
     /**
      * Creates a copy of this context suitable for evaluating against the same ranking expression

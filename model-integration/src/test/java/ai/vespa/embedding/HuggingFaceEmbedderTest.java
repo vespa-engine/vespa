@@ -24,7 +24,6 @@ import com.yahoo.tensor.Tensors;
 import org.junit.Test;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -369,8 +368,8 @@ public class HuggingFaceEmbedderTest {
         var inputs = Map.of("input_ids", tokens, "attention_mask", tokens, "token_type_ids", tokens);
         var outputs = Map.of("last_hidden_state", outputType);
         return new OnnxEvaluator() {
-            @Override public Tensor evaluate(Map<String, Tensor> in, String output, Duration timeout) { throw new UnsupportedOperationException(); }
-            @Override public Map<String, Tensor> evaluate(Map<String, Tensor> in, Duration timeout) { throw new UnsupportedOperationException(); }
+            @Override public Tensor evaluate(Map<String, Tensor> in, String output, Optional<Instant> deadline) { throw new UnsupportedOperationException(); }
+            @Override public Map<String, Tensor> evaluate(Map<String, Tensor> in, Optional<Instant> deadline) { throw new UnsupportedOperationException(); }
             @Override public Map<String, IdAndType> getInputs() { throw new UnsupportedOperationException(); }
             @Override public Map<String, IdAndType> getOutputs() { throw new UnsupportedOperationException(); }
             @Override public Map<String, TensorType> getInputInfo() { return inputs; }

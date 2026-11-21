@@ -11,6 +11,7 @@ import com.yahoo.text.JSON;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
@@ -63,6 +64,10 @@ class HandlerTester {
 
     HandlerTester(ModelsEvaluator models) {
         this.handler = new ModelsEvaluationHandler(models, Executors.newSingleThreadExecutor());
+    }
+
+    Duration handlerTimeout() {
+        return handler.getTimeout();
     }
 
     void assertResponse(String url, int expectedCode) {

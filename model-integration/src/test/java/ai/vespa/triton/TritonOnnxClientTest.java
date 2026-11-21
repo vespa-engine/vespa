@@ -12,9 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -102,7 +103,7 @@ class TritonOnnxClientTest {
                     "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[1]):[0.0]"));
 
             var ex = assertThrows(TimeoutException.class,
-                    () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Duration.ZERO));
+                    () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Optional.of(Instant.now())));
             assertTrue(ex.getMessage().contains("deadline exceeded") || ex.getMessage().contains("Request deadline"),
                     "unexpected message: " + ex.getMessage());
         }
@@ -124,7 +125,7 @@ class TritonOnnxClientTest {
 
             try {
                 assertThrows(TimeoutException.class,
-                        () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Duration.ofMillis(200)));
+                        () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Optional.of(Instant.now().plusMillis(200))));
             } finally {
                 dockerClient.unpauseContainerCmd(tritonContainer.getContainerId()).exec();
             }

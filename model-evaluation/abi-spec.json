@@ -11,6 +11,7 @@
       "public ai.vespa.models.evaluation.FunctionEvaluator bind(java.lang.String, java.lang.String)",
       "public ai.vespa.models.evaluation.FunctionEvaluator setMissingValue(com.yahoo.tensor.Tensor)",
       "public ai.vespa.models.evaluation.FunctionEvaluator setMissingValue(double)",
+      "public ai.vespa.models.evaluation.FunctionEvaluator setDeadline(java.time.Instant)",
       "public com.yahoo.tensor.Tensor evaluate()",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction function()",
       "public ai.vespa.models.evaluation.LazyArrayContext context()"

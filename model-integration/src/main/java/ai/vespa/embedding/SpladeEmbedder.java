@@ -135,7 +135,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
                                             attentionMaskName, attentionMask.expand("d0"),
                                             tokenTypeIdsName, tokenTypeIds.expand("d0"));
         IndexedTensor output = (IndexedTensor) evaluator
-                .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
+                .evaluate(inputs, OnnxEmbedderDeadline.deadlineOrThrow(context))
                 .get(outputName);
         Tensor spladeTensor = useCustomReduce
                 ? sparsifyCustomReduce(output, tensorType)

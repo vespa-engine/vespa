@@ -27,11 +27,14 @@ import io.grpc.stub.AbstractStub;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -314,35 +317,43 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     public Map<String, Tensor> evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs) {
-        return evaluate(modelName, modelMetadata, inputs, Set.of(), null);
+        return evaluate(modelName, modelMetadata, inputs, Set.of(), Optional.empty());
     }
 
     public Map<String, Tensor> evaluate(
-            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Duration timeout) {
-        return evaluate(modelName, modelMetadata, inputs, Set.of(), timeout);
+            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Optional<Instant> deadline) {
+        return evaluate(modelName, modelMetadata, inputs, Set.of(), deadline);
     }
 
     public Tensor evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, String outputName) {
-        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName), null).get(outputName);
+        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName), Optional.empty()).get(outputName);
     }
 
     public Tensor evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, String outputName,
-            Duration timeout) {
-        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName), timeout).get(outputName);
+            Optional<Instant> deadline) {
+        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName), deadline).get(outputName);
     }
 
     public Map<String, Tensor> evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames) {
-        return evaluate(modelName, modelMetadata, inputs, outputNames, null);
+        return evaluate(modelName, modelMetadata, inputs, outputNames, Optional.empty());
     }
 
+    /**
+     * Evaluates the given outputs, or all outputs if none are given.
+     *
+     * @param deadline the deadline of the evaluation, or empty to use {@link TritonConfig#timeout()}
+     * @throws TimeoutException if the deadline passes before Triton responds
+     */
     public Map<String, Tensor> evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames,
-            Duration timeout) {
-        Duration effectiveTimeout = timeout != null ? timeout : defaultTimeout;
-        if (effectiveTimeout.toMillis() <= 0) {
+            Optional<Instant> deadline) {
+        Duration timeout = Objects.requireNonNull(deadline, "deadline")
+                .map(instant -> Duration.between(Instant.now(), instant))
+                .orElse(defaultTimeout);
+        if (timeout.toMillis() <= 0) {
             throw new TimeoutException(
                     "Request deadline exceeded before Triton ONNX evaluation of model " + modelName);
         }
@@ -357,7 +368,7 @@ public class TritonOnnxClient implements AutoCloseable {
                         .setName(name)
                         .build()));
 
-        var stub = grpcInferenceStub.withDeadlineAfter(effectiveTimeout.toMillis(), MILLISECONDS);
+        var stub = grpcInferenceStub.withDeadlineAfter(timeout.toMillis(), MILLISECONDS);
         var response = invokeGrpc(stub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
 
         Map<String, Tensor> outputs = new HashMap<>();

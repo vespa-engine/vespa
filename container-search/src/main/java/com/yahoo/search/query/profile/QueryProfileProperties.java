@@ -8,6 +8,7 @@ import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.protect.Validator;
+import com.yahoo.search.Query;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.DimensionalValue;
@@ -17,10 +18,12 @@ import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.properties.IllegalAssignmentException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Properties backed by a query profile.
@@ -38,6 +41,9 @@ public class QueryProfileProperties extends Properties {
     private final Map<String, Embedder> embedders;
     private final ZoneInfo zoneInfo;
     private final Map<String, String> zoneContext;
+
+    /** The query which owns this, or null if none */
+    private Query query = null;
 
     // Note: The priority order is: values has precedence over references
 
@@ -187,7 +193,8 @@ public class QueryProfileProperties extends Properties {
 
             if (fieldDescription != null) {
                 if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedders, context, this);
+                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedders, context, this,
+                                                                  queryDeadline());
                     var convertedValue = fieldDescription.getType().convertFrom(value, conversionContext);
                     if (convertedValue == null
                         && fieldDescription.getType() instanceof QueryProfileFieldType
@@ -364,6 +371,17 @@ public class QueryProfileProperties extends Properties {
             unaliasedName = unaliasedName.set(i, unaliasedLocalName);
         }
         return unaliasedName;
+    }
+
+    @Override
+    public void setParentQuery(Query query) {
+        this.query = query;
+        super.setParentQuery(query);
+    }
+
+    /** Returns the time by which the query which owns this must complete, or empty if this has no query */
+    private Optional<Instant> queryDeadline() {
+        return query == null ? Optional.empty() : Optional.of(Instant.ofEpochMilli(query.getStartTime() + query.getTimeout()));
     }
 
     @Override

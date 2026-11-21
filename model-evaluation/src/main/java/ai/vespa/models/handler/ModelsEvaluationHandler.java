@@ -9,6 +9,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -22,6 +23,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
 
@@ -80,6 +84,8 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
             return listModelInformation(request, model, function);
 
+        } catch (TimeoutException e) {
+            return new ErrorResponse(504, Exceptions.toMessageString(e));
         } catch (IllegalArgumentException e) {
             return new ErrorResponse(404, Exceptions.toMessageString(e));
         } catch (IllegalStateException e) { // On missing bindings
@@ -87,8 +93,14 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         }
     }
 
+    private Instant deadlineOf(HttpRequest request) {
+        Long timeLeft = request.getJDiscRequest().timeRemaining(TimeUnit.MILLISECONDS);
+        return Instant.now().plus(timeLeft != null ? Duration.ofMillis(timeLeft) : getTimeout());
+    }
+
     private HttpResponse evaluateModel(HttpRequest request, Model model, String[] function)  {
         FunctionEvaluator evaluator = model.evaluatorOf(function);
+        evaluator.setDeadline(deadlineOf(request));
 
         property(request, missingValueKey).ifPresent(missingValue -> evaluator.setMissingValue(Tensor.from(missingValue)));
 

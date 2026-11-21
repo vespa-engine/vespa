@@ -9,10 +9,12 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,11 +28,18 @@ public class GlobalPhaseRerankHitsImplTest {
 
         double baseValue;
         List<Tensor> values = new ArrayList<>();
+        Instant deadline = null;
         EvalSum(double baseValue) { this.baseValue = baseValue; }
 
         @Override
         public Evaluator bind(String name, Tensor value) {
             values.add(value);
+            return this;
+        }
+
+        @Override
+        public Evaluator setDeadline(Instant deadline) {
+            this.deadline = deadline;
             return this;
         }
 
@@ -60,6 +69,9 @@ public class GlobalPhaseRerankHitsImplTest {
             values.add(value);
             return this;
         }
+
+        @Override
+        public Evaluator setDeadline(Instant deadline) { return this; }
 
         @Override
         public double evaluateScore() {
@@ -233,6 +245,27 @@ public class GlobalPhaseRerankHitsImplTest {
         for (var hit: result.hits()) {
             assertNull(hit.getField("matchfeatures"));
         }
+    }
+
+    @Test
+    void evaluatorsGetTheDeadlineOfTheQuery() {
+        var evaluators = new ArrayList<EvalSum>();
+        Supplier<Evaluator> evalSource = () -> {
+            var evaluator = new EvalSum(0.0);
+            evaluators.add(evaluator);
+            return evaluator;
+        };
+        var setup = setup()
+                .eval(new FunEvalSpec(evalSource, List.of(), List.of()))
+                .addNormalizer(makeNormalizer("normalizer", List.of(0.0, 0.0), new FunEvalSpec(evalSource, List.of(), List.of())))
+                .build();
+        var query = makeQuery(List.of());
+        query.setTimeout(1234);
+        var result = makeResult(query, List.of(hit("a", 2), hit("b", 1)));
+        GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
+        assertEquals(4, evaluators.size(), "one main and one normalizer evaluator per hit");
+        for (var evaluator : evaluators)
+            assertEquals(Instant.ofEpochMilli(query.getStartTime() + 1234), evaluator.deadline);
     }
 
     @Test

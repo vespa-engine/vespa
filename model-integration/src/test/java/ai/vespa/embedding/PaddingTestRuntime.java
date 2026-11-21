@@ -11,10 +11,11 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Wraps the embedded runtime's evaluators in an OnnxPadder, as the Triton runtime does, over a recording of what
@@ -76,15 +77,15 @@ class PaddingTestRuntime implements OnnxRuntime {
         }
 
         @Override
-        public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
+        public Tensor evaluate(Map<String, Tensor> inputs, String output, Optional<Instant> deadline) {
             record(inputs);
-            return evaluator.evaluate(inputs, output, timeout);
+            return evaluator.evaluate(inputs, output, deadline);
         }
 
         @Override
-        public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
+        public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
             record(inputs);
-            return evaluator.evaluate(inputs, timeout);
+            return evaluator.evaluate(inputs, deadline);
         }
 
         @Override public Map<String, IdAndType> getInputs() { return evaluator.getInputs(); }

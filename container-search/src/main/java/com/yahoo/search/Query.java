@@ -366,16 +366,44 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         init(requestMap, queryProfile, embedders, zoneInfo, schemaInfo);
     }
 
+    /**
+     * Returns the timeout that the request or the query profile sets, or null if neither does.
+     * As for every parameter with an alias, the timeout of the request is matched without regard to case.
+     * It replaces the timeout of the query profile only where the query profile allows that.
+     */
+    private static Object timeoutOf(Map<String, String> requestMap, CompiledQueryProfile queryProfile,
+                                    Properties queryProfileProperties) {
+        if (queryProfile == null || queryProfile.isOverridable(TIMEOUT, requestMap)) {
+            for (var entry : requestMap.entrySet())
+                if (entry.getKey().equalsIgnoreCase(TIMEOUT.toString())) return entry.getValue();
+        }
+        return queryProfileProperties == null ? null : queryProfileProperties.get(TIMEOUT, requestMap);
+    }
+
     private void init(Map<String, String> requestMap,
                       CompiledQueryProfile queryProfile,
                       Map<String, Embedder> embedders,
                       ZoneInfo zoneInfo,
                       SchemaInfo schemaInfo) {
         startTime = httpRequest.creationTime(TimeUnit.MILLISECONDS);
+        Properties queryProfileProperties = queryProfile == null ? null
+                                                                 : new QueryProfileProperties(queryProfile, embedders, zoneInfo);
+        // Conversions of the request properties below must complete by the deadline of this query.
+        // That deadline depends on the timeout, so the timeout is set first.
+        Object timeout = timeoutOf(requestMap, queryProfile, queryProfileProperties);
+        if (timeout != null) {
+            try {
+                setTimeout(timeout.toString());
+            }
+            catch (IllegalArgumentException e) {
+                // The timeout is set again below, which reports it as invalid
+            }
+        }
         if (queryProfile != null) {
             // Move all request parameters to the query profile
-            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders, zoneInfo);
             properties().chain(queryProfileProperties);
+            // Converting the request properties below needs the deadline of this query
+            properties().setParentQuery(this);
             setPropertiesFromRequestMap(requestMap, properties(), true);
 
             // Create the full chain

@@ -3,9 +3,11 @@ package ai.vespa.models.handler;
 
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import ai.vespa.models.evaluation.DeadlineRecordingRuntime;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -15,9 +17,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 public class OnnxEvaluationHandlerTest {
@@ -121,8 +126,42 @@ public class OnnxEvaluationHandlerTest {
         handler.assertResponse(url, properties, 200, expected);
     }
 
-    @SuppressWarnings("deprecation")
+    @Test
+    public void testEvaluationGetsTheDeadlineOfTheRequest() {
+        var runtime = new DeadlineRecordingRuntime(OnnxRuntime.testInstance());
+        var handler = new HandlerTester(createModels(runtime));
+        Map<String, String> properties = new HashMap<>();
+        properties.put("input1", "tensor<float>(d0[1]):[2]");
+        properties.put("input2", "tensor<float>(d0[1]):[3]");
+        String url = "http://localhost/model-evaluation/v1/add_mul/output1/eval";
+        var before = Instant.now();
+        handler.assertResponse(url, properties, 200, Tensor.from("tensor<float>(d0[1]):[6]"));
+        var after = Instant.now();
+        assertEquals(1, runtime.deadlines.size());
+        var deadline = runtime.deadlines.get(0).orElseThrow();
+        assertTrue("A request without a timeout gets the timeout of the handler: " + deadline,
+                   ! deadline.isAfter(after.plus(handler.handlerTimeout())) &&
+                   deadline.isAfter(before.plus(handler.handlerTimeout()).minusSeconds(10)));
+    }
+
+    @Test
+    public void testEvaluationThatRunsOutOfTimeReturnsGatewayTimeout() {
+        var runtime = new DeadlineRecordingRuntime(OnnxRuntime.testInstance());
+        runtime.failure = new TimeoutException("Evaluation ran out of time");
+        var handler = new HandlerTester(createModels(runtime));
+        Map<String, String> properties = new HashMap<>();
+        properties.put("input1", "tensor<float>(d0[1]):[2]");
+        properties.put("input2", "tensor<float>(d0[1]):[3]");
+        String url = "http://localhost/model-evaluation/v1/add_mul/output1/eval";
+        handler.assertResponse(url, properties, 504, "{\"error\":\"Evaluation ran out of time\"}");
+    }
+
     static private ModelsEvaluator createModels() {
+        return createModels(OnnxRuntime.testInstance());
+    }
+
+    @SuppressWarnings("deprecation")
+    static private ModelsEvaluator createModels(OnnxRuntime runtime) {
         RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
         RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));
         RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId("ranking-expressions.cfg"));
@@ -134,7 +173,7 @@ public class OnnxEvaluationHandlerTest {
         }
         FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
 
-        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer);
+        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, runtime);
     }
 
     private static String fileConfigId(String filename) {

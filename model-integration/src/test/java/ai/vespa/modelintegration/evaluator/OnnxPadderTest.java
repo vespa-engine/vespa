@@ -6,7 +6,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -211,6 +211,24 @@ class OnnxPadderTest {
         var padded = evaluator.inputs.get(1);
         assertEquals(64, ((IndexedTensor) padded.get("attention_mask")).shape()[1], "Padded to the largest bucket");
         assertEquals(4, padded.get("attention_mask").sum().asDouble(), "The mask is zero for the padding");
+        assertEquals(0, evaluator.callsWithoutDeadline, "The sample is evaluated with an empty deadline");
+    }
+
+    @Test
+    void eachOverloadIsForwardedToTheSameOverload() {
+        var evaluator = new FakeEvaluator(0);
+        var padded = padded(evaluator, 8);
+        padded.evaluate(inputs(3));
+        padded.evaluate(inputs(3), "logits");
+        assertEquals(2, evaluator.callsWithoutDeadline);
+        assertEquals(List.of(), evaluator.deadlines);
+
+        var first = Optional.of(Instant.ofEpochSecond(100));
+        var second = Optional.of(Instant.ofEpochSecond(200));
+        padded.evaluate(inputs(3), first);
+        padded.evaluate(inputs(3), "logits", second);
+        assertEquals(2, evaluator.callsWithoutDeadline);
+        assertEquals(List.of(first, second), evaluator.deadlines);
     }
 
     @Test
@@ -296,6 +314,7 @@ class OnnxPadderTest {
         var padded = OnnxPadder.of(OnnxPadderOptions.of(List.of(buckets)), evaluator, "model");
         assertTrue(padded instanceof OnnxPadder);
         evaluator.inputs.clear();
+        evaluator.deadlines.clear();
         return padded;
     }
 
@@ -339,6 +358,10 @@ class OnnxPadderTest {
         boolean sequenceFirstOutput = false;
         boolean closed = false;
         Optional<OnnxPoolingOptions> runtimePooling = Optional.empty();
+        /** The deadline of each call of an overload with a deadline */
+        final List<Optional<Instant>> deadlines = new ArrayList<>();
+        /** The number of calls of the overloads without a deadline */
+        int callsWithoutDeadline = 0;
 
         /** Outputs 1 for each real token, multiplied by 1 + change when padded: a relative difference of change. */
         FakeEvaluator(double change) {
@@ -374,12 +397,30 @@ class OnnxPadderTest {
         }
 
         @Override
-        public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
-            return evaluate(inputs, timeout).get(output);
+        public Tensor evaluate(Map<String, Tensor> inputs, String output) {
+            callsWithoutDeadline++;
+            return outputs(inputs).get(output);
         }
 
         @Override
-        public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
+        public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+            callsWithoutDeadline++;
+            return outputs(inputs);
+        }
+
+        @Override
+        public Tensor evaluate(Map<String, Tensor> inputs, String output, Optional<Instant> deadline) {
+            deadlines.add(deadline);
+            return outputs(inputs).get(output);
+        }
+
+        @Override
+        public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
+            deadlines.add(deadline);
+            return outputs(inputs);
+        }
+
+        private Map<String, Tensor> outputs(Map<String, Tensor> inputs) {
             this.inputs.add(inputs);
             if (failure != null) throw failure;
             var mask = inputs.containsKey("attention_mask") ? (IndexedTensor) inputs.get("attention_mask")

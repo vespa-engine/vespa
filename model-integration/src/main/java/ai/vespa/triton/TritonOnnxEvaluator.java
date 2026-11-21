@@ -7,10 +7,13 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +25,9 @@ import java.util.logging.Logger;
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
+
+    // Shared by all evaluators, so that a model gets one warning however many evaluators it has
+    static final Set<String> modelsWarnedAboutMissingDeadline = ConcurrentHashMap.newKeySet();
 
     private final String modelName;
     private final ResourceReference modelReference;
@@ -57,14 +63,27 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     }
 
     @Override
-    public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
-        return evaluate(inputs, timeout).get(output);
+    public Tensor evaluate(Map<String, Tensor> inputs, String output) {
+        warnOnceAboutMissingDeadline();
+        return evaluate(inputs, output, Optional.empty());
     }
 
     @Override
-    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+        warnOnceAboutMissingDeadline();
+        return evaluate(inputs, Optional.empty());
+    }
+
+    @Override
+    public Tensor evaluate(Map<String, Tensor> inputs, String output, Optional<Instant> deadline) {
+        return evaluate(inputs, deadline).get(output);
+    }
+
+    @Override
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
+        Objects.requireNonNull(deadline, "deadline");
         try {
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
         } catch (TritonOnnxClient.TritonException e) {
             if (!isExplicitControl) {
                 throw e;
@@ -76,7 +95,13 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     e);
             tritonClient.loadUntilModelReady(modelName);
             modelMetadata = tritonClient.getModelMetadata(modelName);
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
+        }
+    }
+
+    private void warnOnceAboutMissingDeadline() {
+        if (modelsWarnedAboutMissingDeadline.add(modelName)) {
+            log.warning("ONNX model " + modelName + " is evaluated without a deadline");
         }
     }
 
