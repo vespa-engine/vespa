@@ -87,6 +87,7 @@ vespa_define_module(
     src/tests/attribute/guard
     src/tests/attribute/imported_attribute_vector
     src/tests/attribute/imported_search_context
+    src/tests/attribute/map_lookup_sort_blob_writer
     src/tests/attribute/multi_term_or_filter_search
     src/tests/attribute/multi_value_mapping
     src/tests/attribute/multi_value_read_view
