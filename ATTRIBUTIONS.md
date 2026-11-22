@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-20
+Last updated: 2026-11-22
 
 ---
 
@@ -591,6 +591,12 @@ Last updated: 2026-11-20
 
 ---
 
+## gpt-4o-mini generic — Proprietary
+
+- Homepage: <https://www.openai.com>
+
+---
+
 ## hasbin 1.2.3 — MIT
 
 - Homepage: <https://github.com/springernature/hasbin>
@@ -603,6 +609,13 @@ Last updated: 2026-11-20
 
 - Homepage: <http://rubyworks.github.com/hashery>
 - Copyright 2010 Rubyworks
+
+---
+
+## hast-util-to-html 9.0.7 — MIT
+
+- Homepage: <https://github.com/syntax-tree/hast-util-to-html#readme>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
@@ -1206,10 +1219,10 @@ Last updated: 2026-11-20
 
 ---
 
-## stringify-entities 4.0.4 — MIT
+## stringify-entities 4.0.5 — MIT
 
 - Homepage: <https://github.com/wooorm/stringify-entities#readme>
-- Copyright 2015 Titus Wormer <mailto:tituswormer@gmail.com>
+- Copyright Titus Wormer <mailto:tituswormer@gmail.com>
 
 ---
 
@@ -1217,6 +1230,12 @@ Last updated: 2026-11-20
 
 - Homepage: <https://github.com/tj/terminal-table>
 - Copyright 2008-2017 TJ Holowaychuk <tj@vision
+
+---
+
+## text-embedding-ada-002 002 — Proprietary
+
+- Homepage: <https://www.openai.com>
 
 ---
 
