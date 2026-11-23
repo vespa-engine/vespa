@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "vespa/searchcore/proton/common/doc_type_and_subdb_name.h"
+
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 
@@ -9,6 +11,8 @@ struct IThreadService;
 }
 
 namespace proton {
+
+class DocTypeAndSubDbName;
 
 /**
  * This class implements the IFlushTarget interface to proxy a summary manager.
@@ -33,7 +37,8 @@ public:
     [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 
 protected:
-    SummaryGCTarget(const std::string&, vespalib::Executor& summaryService, IDocumentStore& docStore);
+    SummaryGCTarget(const std::string& name, vespalib::Executor& summaryService, IDocumentStore& docStore,
+                    std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in);
 
 private:
     virtual size_t getBloat(const IDocumentStore& docStore) const = 0;
@@ -43,6 +48,9 @@ private:
     vespalib::Executor& _summaryService;
     IDocumentStore&     _docStore;
     FlushStats          _lastStats;
+
+protected:
+    const std::shared_ptr<const DocTypeAndSubDbName> _doc_type_and_subdb_name;
 };
 
 /**
@@ -54,7 +62,8 @@ private:
     void create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial, TaskPromise task_promise) override;
 
 public:
-    SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore);
+    SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore,
+                              std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in);
 };
 
 /**
@@ -67,7 +76,8 @@ private:
     void create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial, TaskPromise task_promise) override;
 
 public:
-    SummaryCompactSpreadTarget(vespalib::Executor& summaryService, IDocumentStore& docStore);
+    SummaryCompactSpreadTarget(vespalib::Executor& summaryService, IDocumentStore& docStore,
+                               std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in);
 };
 
 } // namespace proton

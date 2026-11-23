@@ -6,20 +6,24 @@
 
 namespace proton {
 
+class DocTypeAndSubDbName;
+
 /**
  * This class implements the IFlushTarget interface to proxy a summary manager.
  */
 class SummaryFlushTarget : public searchcorespi::LeafFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
-    search::IDocumentStore& _docStore;
-    vespalib::Executor&     _summaryService;
-    FlushStats              _lastStats;
+    search::IDocumentStore&                          _docStore;
+    vespalib::Executor&                              _summaryService;
+    FlushStats                                       _lastStats;
+    const std::shared_ptr<const DocTypeAndSubDbName> _doc_type_and_subdb_name;
 
     void internal_init_flush(SerialNum currentSerial, TaskPromise task_promise);
 
 public:
-    SummaryFlushTarget(search::IDocumentStore& docStore, vespalib::Executor& summaryService);
+    SummaryFlushTarget(search::IDocumentStore& docStore, vespalib::Executor& summaryService,
+                       std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in);
 
     MemoryGain getApproxMemoryGain() const override;
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }

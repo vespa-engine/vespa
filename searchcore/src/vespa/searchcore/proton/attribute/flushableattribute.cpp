@@ -86,6 +86,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute& fattr, SerialNum syncTo
          {vespa_opentelemetry::span_attribute_names::subdb, fattr._doc_type_and_subdb_name->subdb_name()},
          {vespa_opentelemetry::span_attribute_names::attribute, attr.getName()},
          {vespa_opentelemetry::span_attribute_names::serial, std::to_string(syncToken)}});
+    auto scope = tracer->WithActiveSpan(_span);
     attr.commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     // Called by attribute field writer executor
     _flushFile = _writer->getSnapshotDir(_syncToken) + "/" + attr.getName();

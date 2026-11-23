@@ -808,7 +808,7 @@ std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searc
     }
     span->AddEvent("Done init flush");
     return makeLambdaFlushTask(
-        [this, myargs = std::move(args), tracer, span(std::move(span))]() mutable {
+        [this, myargs = std::move(args), tracer(std::move(tracer)), span(std::move(span))]() mutable {
             span->AddEvent("Starting background flush");
             auto scope = tracer->WithActiveSpan(span);
             doFlush(std::move(myargs));
