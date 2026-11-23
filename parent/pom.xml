@@ -1158,6 +1158,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-connector-basic</artifactId>
+                <version>${maven-resolver.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
                 <artifactId>maven-resolver-impl</artifactId>
                 <version>${maven-resolver.vespa.version}</version>
             </dependency>
@@ -1169,6 +1174,16 @@
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
                 <artifactId>maven-resolver-spi</artifactId>
+                <version>${maven-resolver.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-apache</artifactId>
+                <version>${maven-resolver.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-file</artifactId>
                 <version>${maven-resolver.vespa.version}</version>
             </dependency>
             <dependency>
