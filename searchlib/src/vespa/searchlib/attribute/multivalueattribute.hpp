@@ -100,7 +100,7 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                 tombstones.clear();
                 continue;
             } else if (current->_type == ChangeBase::REMOVE_ELEMENT) {
-                cull_tombstones(tombstones, new_values);
+                cull_values(tombstones, new_values);
                 uint32_t index = current->element_index();
                 if (index < new_values.size()) {
                     new_values.erase(new_values.begin() + index);
@@ -121,7 +121,7 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                         multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
                 }
             } else if (current->_type == ChangeBase::ASSIGN_ELEMENT) {
-                cull_tombstones(tombstones, new_values);
+                cull_values(tombstones, new_values);
                 uint32_t index = current->element_index();
                 if (index < new_values.size()) {
                     if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
@@ -136,14 +136,14 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                 tombstones[data] = new_values.size();
             }
         }
-        cull_tombstones(tombstones, new_values);
+        cull_values(tombstones, new_values);
         this->checkSetMaxValueCount(new_values.size());
         docValues.emplace_back(doc, std::move(new_values));
     }
 }
 
 template <typename B, typename M>
-void MultiValueAttribute<B, M>::cull_tombstones(auto& tombstones, ValueVector& new_values) {
+void MultiValueAttribute<B, M>::cull_values(auto& tombstones, ValueVector& new_values) {
     // Optimize for the case where nothing was explicitly removed.
     if (!tombstones.empty()) {
         ValueVector culled;
