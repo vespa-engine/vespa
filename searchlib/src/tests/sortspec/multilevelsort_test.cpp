@@ -36,6 +36,7 @@ using AttributePtr = AttributeVector::SP;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::common::sortspec::ParsedSortSpec;
 
 class MultilevelSortTest : public ::testing::Test {
 public:
@@ -698,7 +699,7 @@ struct MapSortFixture {
     AttributePtr             other;
     search::AttributeManager mgr;
 
-    explicit MapSortFixture(BasicType key_type = BasicType::STRING,
+    explicit MapSortFixture(BasicType      key_type = BasicType::STRING,
                             CollectionType key_collection = CollectionType::ARRAY, bool register_keys = true)
         : keys(make_map_test_attribute("m.key", key_type, key_collection)),
           values(make_map_test_attribute("m.value", BasicType::INT64, CollectionType::ARRAY)),
@@ -846,8 +847,8 @@ public:
 };
 
 class RecordingAttributeManager : public IAttributeManager {
-    std::map<std::string, AttributeVector::SP>  _attributes;
-    mutable std::mutex                           _lock;
+    std::map<std::string, AttributeVector::SP>       _attributes;
+    mutable std::mutex                               _lock;
     mutable std::vector<std::shared_ptr<GuardEvent>> _events;
 
 public:
@@ -858,8 +859,8 @@ public:
     }
     AttributeGuard::UP getAttribute(std::string_view) const override { return std::make_unique<AttributeGuard>(); }
     void asyncForAttribute(std::string_view, std::unique_ptr<search::attribute::IAttributeFunctor>) const override {}
-    std::unique_ptr<search::attribute::AttributeReadGuard>
-    getAttributeReadGuard(std::string_view name, bool stable_enum) const override {
+    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name,
+                                                                                 bool stable_enum) const override {
         auto event = std::make_shared<GuardEvent>();
         event->name = std::string(name);
         event->stable_enum = stable_enum;
@@ -867,7 +868,7 @@ public:
             std::lock_guard guard(_lock);
             _events.push_back(event);
         }
-        auto found = _attributes.find(std::string(name));
+        auto                                       found = _attributes.find(std::string(name));
         const search::attribute::IAttributeVector* attr =
             (found == _attributes.end()) ? nullptr : found->second.get();
         return std::make_unique<RecordingReadGuard>(attr, std::move(event));
@@ -894,10 +895,9 @@ TEST(SortTest, map_sort_enum_guards_are_taken_and_released_on_the_setup_thread) 
     mgr.add(AttributeFactory::createAttribute("m.value", Config(BasicType::INT64, CollectionType::ARRAY)));
     const auto setup_thread = std::this_thread::get_id();
     {
-        search::AttributeContext         ctx(mgr);
-        search::uca::UcaConverterFactory uca;
+        search::AttributeContext ctx(mgr);
         ctx.enableMultiThreadSafe();
-        FastS_SortSpec::prefetch_enum_guards(ctx, "+m{\"k\"} -other", uca);
+        FastS_SortSpec::prefetch_enum_guards(ctx, ParsedSortSpec("+m{\"k\"} -other"));
 
         auto lookup = [&ctx] {
             ctx.getAttributeStableEnum("m.key");

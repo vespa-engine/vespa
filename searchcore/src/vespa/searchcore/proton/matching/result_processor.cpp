@@ -11,11 +11,13 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.result_processor");
 
 using search::attribute::IAttributeContext;
+using search::common::sortspec::ParsedSortSpec;
 using search::grouping::GroupingContext;
 using search::grouping::GroupingSession;
 using search::grouping::SessionId;
@@ -29,12 +31,12 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
 ResultProcessor::Result::~Result() = default;
 
 ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac,
-                            const std::string& ss, INumericSortValueProvider* sort_value_provider)
+                            const ParsedSortSpec* ss, INumericSortValueProvider* sort_value_provider)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
       sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory),
       _feature_binding_failed(false) {
-    if (!ss.empty() && sortSpec.Init(ss, ac)) {
+    if (ss != nullptr && sortSpec.Init(*ss, ac)) {
         if (sortSpec.bind_numeric_provider(sort_value_provider)) {
             sorter = &sortSpec;
         } else {
@@ -74,13 +76,21 @@ ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::I
       _sessionMgr(sessionMgr),
       _groupingContext(groupingContext),
       _groupingSession(),
-      _sortSpec(sortSpec),
+      _sortSpec(),
       _offset(offset),
       _hits(hits),
       _wasMerged(false),
       _sort_feature_failed(false) {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
+    }
+    if (!sortSpec.empty()) {
+        try {
+            _sortSpec.emplace(sortSpec);
+        } catch (const std::exception&) {
+            vespalib::Issue::report("Failed parsing sortspec: %s", sortSpec.c_str());
+            _sortSpec.emplace();
+        }
     }
 }
 
@@ -94,20 +104,17 @@ void ResultProcessor::prepareThreadContextCreation(size_t num_threads) {
         _groupingSession->prepareThreadContextCreation(num_threads);
     }
     // One match thread runs Init here and can take the key guard itself. More than one must
-    // take it before dispatch. Parsing only needs the map names, so the converter is unused.
-    if (num_threads > 1 && _sortSpec.find('{') != std::string::npos) {
-        struct NoOpConverterFactory : search::common::ConverterFactory {
-            search::common::BlobConverter::UP create(std::string_view, std::string_view) const override { return {}; }
-        };
-        NoOpConverterFactory factory;
-        FastS_SortSpec::prefetch_enum_guards(_attrContext, _sortSpec, factory);
+    // take it before dispatch.
+    if (num_threads > 1 && _sortSpec.has_value()) {
+        FastS_SortSpec::prefetch_enum_guards(_attrContext, *_sortSpec);
     }
 }
 
 std::unique_ptr<ResultProcessor::Context>
 ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id, uint32_t distributionKey,
                                      INumericSortValueProvider* sort_value_provider) {
-    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec, sort_value_provider);
+    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec ? &*_sortSpec : nullptr,
+                                       sort_value_provider);
     if (sort->feature_binding_failed()) {
         note_sort_feature_failure();
     }

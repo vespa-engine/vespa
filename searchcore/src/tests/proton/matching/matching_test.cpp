@@ -72,6 +72,7 @@ using namespace search::queryeval;
 using namespace search;
 
 using search::attribute::test::MockAttributeContext;
+using search::common::sortspec::ParsedSortSpec;
 using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
 using search::fef::indexproperties::hitcollector::HeapSize;
 using search::fef::indexproperties::hitcollector::SecondPhaseRankScoreDropLimit;
@@ -2588,7 +2589,8 @@ struct FakeSortValueProvider : INumericSortValueProvider {
 TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
     MockAttributeContext  ac;
     FakeSortValueProvider provider({"by_a1"});
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", &provider);
+    ParsedSortSpec        spec("-feature(by_a1)");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, &provider);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_TRUE(sort.hasSortData());
 }
@@ -2596,28 +2598,32 @@ TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
 TEST(SortBindingTest, feature_sort_binding_fails_when_a_value_is_unavailable) {
     MockAttributeContext  ac;
     FakeSortValueProvider provider({"by_a1"});
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1) +feature(gone)", &provider);
+    ParsedSortSpec        spec("-feature(by_a1) +feature(gone)");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, &provider);
     EXPECT_TRUE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
 }
 
 TEST(SortBindingTest, feature_sort_binding_fails_without_a_provider) {
     MockAttributeContext  ac;
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", nullptr);
+    ParsedSortSpec        spec("-feature(by_a1)");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_TRUE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
 }
 
 TEST(SortBindingTest, sort_without_features_needs_no_provider) {
     MockAttributeContext  ac;
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+[rank]", nullptr);
+    ParsedSortSpec        spec("+[rank]");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_TRUE(sort.hasSortData());
 }
 
 TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
     MockAttributeContext  ac;
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+no_such_attribute", nullptr);
+    ParsedSortSpec        spec("+no_such_attribute");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
 }

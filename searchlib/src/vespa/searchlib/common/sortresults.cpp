@@ -26,6 +26,7 @@ using search::attribute::make_map_lookup_sort_blob_writer;
 using search::attribute::make_sort_blob_writer;
 using search::common::FieldSortSpec;
 using search::common::SortSpec;
+using search::common::sortspec::ParsedSortSpec;
 using vespalib::alloc::Alloc;
 using namespace vespalib;
 
@@ -175,8 +176,8 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
         return false;
     }
 
-    uint32_t                type = ASC_VECTOR;
-    const IAttributeVector* vector(nullptr);
+    uint32_t                                            type = ASC_VECTOR;
+    const IAttributeVector*                             vector(nullptr);
     std::unique_ptr<search::attribute::ISortBlobWriter> sort_blob_writer;
 
     if (field_sort_spec._map_key.has_value()) {
@@ -419,34 +420,36 @@ FastS_SortSpec::~FastS_SortSpec() {
     freeSortData();
 }
 
-void FastS_SortSpec::prefetch_enum_guards(IAttributeContext& attr_ctx, std::string_view sort_spec,
-                                         const search::common::ConverterFactory& uca_factory) {
-    if (sort_spec.empty()) {
-        return;
-    }
-    try {
-        search::common::SortSpec spec(std::string(sort_spec), uca_factory);
-        for (const auto& field : spec) {
-            if (field._map_key.has_value()) {
-                attr_ctx.getAttributeStableEnum(field._field + ".key");
-                attr_ctx.getAttribute(field._field + ".value");
-            }
+void FastS_SortSpec::prefetch_enum_guards(IAttributeContext& attr_ctx, const ParsedSortSpec& sort_spec) {
+    for (const auto& field : sort_spec) {
+        if (field._map_key.has_value()) {
+            attr_ctx.getAttributeStableEnum(field._field_or_name + ".key");
+            attr_ctx.getAttribute(field._field_or_name + ".value");
         }
-    } catch (const std::runtime_error&) {
-        // Init reports a bad spec. No map attribute was resolved.
     }
 }
 
 bool FastS_SortSpec::Init(const std::string& sortStr, IAttributeContext& vecMan) {
     LOG(spam, "sortStr = %s", sortStr.c_str());
+    ParsedSortSpec parsed;
+    try {
+        parsed = ParsedSortSpec(sortStr);
+    } catch (const std::exception&) {
+        Issue::report("Failed parsing sortspec: %s", sortStr.c_str());
+        return true;
+    }
+    return Init(parsed, vecMan);
+}
+
+bool FastS_SortSpec::Init(const ParsedSortSpec& parsed, IAttributeContext& vecMan) {
     bool retval(true);
     try {
-        _sortSpec = SortSpec(sortStr, _ucaFactory);
+        _sortSpec = SortSpec(parsed, _ucaFactory);
         for (auto it(_sortSpec.begin()); retval && (it != _sortSpec.end()); it++) {
             retval = Add(vecMan, *it);
         }
     } catch (const std::exception& e) {
-        Issue::report("Failed parsing sortspec: %s", sortStr.c_str());
+        Issue::report("Failed parsing sortspec: %s", parsed.getSpec().c_str());
         return retval;
     }
 

@@ -22,6 +22,7 @@ using vespalib::Array;
 using namespace search::common;
 using namespace search::uca;
 using search::common::sortspec::MissingPolicy;
+using search::common::sortspec::ParsedSortSpec;
 using search::common::sortspec::SortOrder;
 using vespalib::ConstBufferRef;
 using FieldSortSpecVector = std::vector<FieldSortSpec>;
@@ -295,12 +296,17 @@ TEST(SortTest, sortspec_missing) {
     EXPECT_EQ(FieldSortSpecVector({{"foo", desc, {}, miss_def, "", true}, {"name", desc, {}, miss_def, ""}}),
               SortSpec("-feature(foo) -name", ucaFactory).get_field_sort_specs());
     VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(foo-bar)", ucaFactory), std::runtime_error,
-                           "Illegal feature name 'foo-bar' for sorting");
-    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(foo$)", ucaFactory), std::runtime_error,
-                           "Illegal feature name 'foo$' for sorting");
+                           "Expected ')', got '-'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(foo$)", ucaFactory), std::runtime_error, "Expected ')', got '$'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature()", ucaFactory), std::runtime_error, "Missing feature name");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(1foo)", ucaFactory), std::runtime_error, "Missing feature name");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("-missing(feature(foo),first)", ucaFactory), std::runtime_error,
                            "Cannot use missing() with feature(...) sorting");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("-FeAtUrE(foo)", ucaFactory), std::runtime_error, "Unknown func FeAtUrE");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+missing(missing(x,first),last)", ucaFactory), std::runtime_error,
+                           "Cannot nest missing() inside missing()");
+    EXPECT_EQ(FieldSortSpecVector({{"missing", asc, {}, miss_first, ""}}),
+              SortSpec("+missing(missing,first)", ucaFactory).get_field_sort_specs());
     EXPECT_FALSE(SortSpec("+missing(title,as,\"feature(foo)\")", ucaFactory)[0]._is_rank_feature);
 }
 
@@ -356,8 +362,9 @@ TEST(SortTest, sortspec_map_key) {
               SortSpec("+missing(uca(m{\"k\"},en_US,PRIMARY),first)", ucaFactory).get_field_sort_specs());
     EXPECT_EQ(FieldSortSpecVector({map_field("m", desc, {}, miss_def, "", "k"), {"name", asc, {}, miss_def, ""}}),
               SortSpec("-m{\"k\"} +name", ucaFactory).get_field_sort_specs());
-    EXPECT_EQ(FieldSortSpecVector({map_field("m", asc, {}, miss_def, "", "k"), {"foo", desc, {}, miss_def, "", true}}),
-              SortSpec("+m{\"k\"} -feature(foo)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(
+        FieldSortSpecVector({map_field("m", asc, {}, miss_def, "", "k"), {"foo", desc, {}, miss_def, "", true}}),
+        SortSpec("+m{\"k\"} -feature(foo)", ucaFactory).get_field_sort_specs());
 
     // Braces in an unquoted missing value are not a map key.
     EXPECT_EQ(FieldSortSpecVector({{"title", asc, {}, miss_as, "a{b}"}, {"name", desc, {}, miss_def, ""}}),
@@ -373,6 +380,79 @@ TEST(SortTest, sortspec_map_key) {
     VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(m{\"k\"})", ucaFactory), std::runtime_error, "Expected ')'");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("+uca{\"k\"}(title)", ucaFactory), std::runtime_error,
                            "Map key is not allowed on sort function 'uca'");
+}
+
+TEST(SortTest, sortspec_dotted_field_names) {
+    UcaConverterFactory ucaFactory;
+    auto                lowercase = std::make_shared<LowercaseConverter>();
+    constexpr auto      asc = SortOrder::ASCENDING;
+    constexpr auto      desc = SortOrder::DESCENDING;
+    constexpr auto      miss_def = MissingPolicy::DEFAULT;
+    constexpr auto      miss_last = MissingPolicy::LAST;
+
+    EXPECT_EQ(FieldSortSpecVector({{"person.name", asc, {}, miss_def, ""}, {"a.b", desc, lowercase, miss_def, ""}}),
+              SortSpec("+person.name -lowercase(a.b)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"a.b_2.c", asc, {}, miss_def, ""}}),
+              SortSpec("+a.b_2.c", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"s.x", asc, {}, miss_last, ""}}),
+              SortSpec("+missing(s.x,last)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"a.b", desc, ucaFactory.create("en_US", ""), miss_def, ""}}),
+              SortSpec("-uca(a.b,en_US)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({map_field("s.m", asc, {}, miss_def, "", "k")}),
+              SortSpec("+s.m{\"k\"}", ucaFactory).get_field_sort_specs());
+
+    // Each part after a '.' must be an identifier.
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a.", ucaFactory), std::runtime_error, "Expected '+' or '-', got '.'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a..b", ucaFactory), std::runtime_error, "Expected '+' or '-', got '.'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a.1b", ucaFactory), std::runtime_error, "Expected '+' or '-', got '.'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+.a", ucaFactory), std::runtime_error, "Missing name in sort spec");
+    VESPA_EXPECT_EXCEPTION(ParsedSortSpec spec(""), std::runtime_error, "Sort spec has no levels");
+    VESPA_EXPECT_EXCEPTION(ParsedSortSpec spec("   "), std::runtime_error, "Sort spec has no levels");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+lowercase()", ucaFactory), std::runtime_error,
+                           "Missing name in sort spec at: [+lowercase(][)]");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+lowercase(.a)", ucaFactory), std::runtime_error,
+                           "Missing name in sort spec");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+uca(,nn_no)", ucaFactory), std::runtime_error,
+                           "Missing name in sort spec at: [+uca(][,nn_no)]");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+uca({\"k\"},nn_no)", ucaFactory), std::runtime_error,
+                           "Missing name in sort spec");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+{\"k\"}", ucaFactory), std::runtime_error, "Missing name in sort spec");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(a.b)", ucaFactory), std::runtime_error, "Expected ')', got '.'");
+}
+
+TEST(SortTest, parsed_sortspec_needs_no_converter_factory) {
+    using sortspec::ConverterKind;
+    ParsedSortSpec parsed("-uca(m{\"k\"},nn_no,PRIMARY) +lowercase(name) +missing(feature,as,x) -feature(foo)");
+    ASSERT_EQ(4u, parsed.size());
+    EXPECT_EQ("m", parsed[0]._field_or_name);
+    EXPECT_EQ(SortOrder::DESCENDING, parsed[0]._sort_order);
+    EXPECT_EQ(ConverterKind::UCA, parsed[0]._converter_kind);
+    EXPECT_EQ("nn_no", parsed[0]._uca_locale);
+    EXPECT_EQ("PRIMARY", parsed[0]._uca_strength);
+    EXPECT_EQ(std::optional<std::string>("k"), parsed[0]._map_key);
+    EXPECT_EQ("name", parsed[1]._field_or_name);
+    EXPECT_EQ(ConverterKind::LOWERCASE, parsed[1]._converter_kind);
+    EXPECT_EQ("feature", parsed[2]._field_or_name);
+    EXPECT_EQ(ConverterKind::NONE, parsed[2]._converter_kind);
+    EXPECT_EQ(MissingPolicy::AS, parsed[2]._missing_policy);
+    EXPECT_EQ("x", parsed[2]._missing_value);
+    EXPECT_FALSE(parsed[2].is_rank_feature());
+    EXPECT_EQ("foo", parsed[3]._field_or_name);
+    EXPECT_TRUE(parsed[3].is_rank_feature());
+
+    // The uca strength is checked by the parser; the locale is left to ICU.
+    VESPA_EXPECT_EXCEPTION(ParsedSortSpec spec("-uca(name,nn_no,NTERTIARY)"), std::runtime_error,
+                           "Illegal uca collation strength : NTERTIARY");
+    VESPA_EXPECT_EXCEPTION(ParsedSortSpec spec("-uca(name,nn_no,primary)"), std::runtime_error,
+                           "Illegal uca collation strength : primary");
+    EXPECT_EQ("", ParsedSortSpec("-uca(name,nn_no)")[0]._uca_strength);
+    EXPECT_EQ("finnes_ikke", ParsedSortSpec("-uca(name,finnes_ikke,IDENTICAL)")[0]._uca_locale);
+    UcaConverterFactory ucaFactory;
+
+    // Building a SortSpec from a parsed spec gives the same levels as parsing directly.
+    const std::string spec = "-uca(m{\"k\"},nn_no,PRIMARY) +missing(lowercase(name),first)";
+    EXPECT_EQ(SortSpec(spec, ucaFactory).get_field_sort_specs(),
+              SortSpec(ParsedSortSpec(spec), ucaFactory).get_field_sort_specs());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
-#include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/common/sortspec.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -45,6 +44,7 @@ using search::LidUsageStats;
 using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::attribute::IAttributeContext;
+using search::common::sortspec::ParsedSortSpec;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::RankSetup;
@@ -112,10 +112,6 @@ SearchReply::UP handleGroupingSession(SessionManager& sessionMgr, GroupingContex
     return reply;
 }
 
-struct DummyConverterFactory : search::common::ConverterFactory {
-    search::common::BlobConverter::UP create(std::string_view, std::string_view) const override { return {}; }
-};
-
 struct SelectedSortFeatures {
     bool                     parse_failed = false;
     std::vector<std::string> public_names;
@@ -127,24 +123,24 @@ SelectedSortFeatures select_sort_features(const std::string& sort_spec, const Ra
         return selected;
     }
     try {
-        DummyConverterFactory    dummy;
-        search::common::SortSpec spec(sort_spec, dummy);
+        ParsedSortSpec spec(sort_spec);
         for (const auto& field : spec) {
-            if (!field._is_rank_feature) {
+            if (!field.is_rank_feature()) {
                 continue;
             }
-            if (std::find(selected.public_names.begin(), selected.public_names.end(), field._field) !=
+            if (std::find(selected.public_names.begin(), selected.public_names.end(), field._field_or_name) !=
                 selected.public_names.end())
             {
                 continue;
             }
-            if (!rank_setup.has_sort_feature(field._field)) {
-                Issue::report("sort spec: rank feature '%s' is not an allowed sort feature", field._field.c_str());
+            if (!rank_setup.has_sort_feature(field._field_or_name)) {
+                Issue::report("sort spec: rank feature '%s' is not an allowed sort feature",
+                              field._field_or_name.c_str());
                 selected.parse_failed = true;
                 selected.public_names.clear();
                 return selected;
             }
-            selected.public_names.push_back(field._field);
+            selected.public_names.push_back(field._field_or_name);
         }
     } catch (const std::exception& e) {
         Issue::report("Failed parsing sortspec '%s': %s", sort_spec.c_str(), e.what());

@@ -151,10 +151,11 @@ public:
         return {(const char*)(&_binarySortData[0] + _sortDataArray[i]._idx), _sortDataArray[i]._len};
     }
     bool Init(const std::string& sortSpec, search::attribute::IAttributeContext& vecMan);
+    bool Init(const search::common::sortspec::ParsedSortSpec& sortSpec, search::attribute::IAttributeContext& vecMan);
     // Takes the m.key enum guard on this thread. A shared lock is released by the thread that
     // took it, so match workers must only look that guard up.
-    static void prefetch_enum_guards(search::attribute::IAttributeContext& attr_ctx, std::string_view sort_spec,
-                                     const search::common::ConverterFactory& uca_factory);
+    static void prefetch_enum_guards(search::attribute::IAttributeContext&           attr_ctx,
+                                     const search::common::sortspec::ParsedSortSpec& sort_spec);
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
     void copySortData(uint32_t offset, uint32_t n, uint32_t* idx, char* buf);

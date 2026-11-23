@@ -13,8 +13,13 @@
 
 namespace search::common {
 
+using sortspec::ConverterKind;
+using sortspec::LevelType;
 using sortspec::MissingPolicy;
+using sortspec::ParsedSortSpec;
+using sortspec::ParsedSortSpecLevel;
 using sortspec::SortOrder;
+
 using vespalib::ConstBufferRef;
 using vespalib::make_string;
 
@@ -37,6 +42,41 @@ ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef& src) const {
     }
     return {_buffer.data(), _buffer.size()};
 }
+
+namespace sortspec {
+
+ParsedSortSpecLevel::ParsedSortSpecLevel(std::string_view field, SortOrder sort_order) noexcept
+    : ParsedSortSpecLevel(LevelType::ATTRIBUTE, field, sort_order) {
+}
+
+ParsedSortSpecLevel::ParsedSortSpecLevel(LevelType level_type, std::string_view field, SortOrder sort_order) noexcept
+    : _field_or_name(field),
+      _sort_order(sort_order),
+      _level_type(level_type),
+      _missing_policy(MissingPolicy::DEFAULT),
+      _converter_kind(ConverterKind::NONE),
+      _uca_locale(),
+      _uca_strength(),
+      _missing_value(),
+      _map_key() {
+}
+
+ParsedSortSpecLevel::ParsedSortSpecLevel(const ParsedSortSpecLevel&) = default;
+ParsedSortSpecLevel::ParsedSortSpecLevel(ParsedSortSpecLevel&&) noexcept = default;
+ParsedSortSpecLevel& ParsedSortSpecLevel::operator=(const ParsedSortSpecLevel&) = default;
+ParsedSortSpecLevel& ParsedSortSpecLevel::operator=(ParsedSortSpecLevel&&) noexcept = default;
+ParsedSortSpecLevel::~ParsedSortSpecLevel() = default;
+
+ParsedSortSpec::ParsedSortSpec() : _spec(), _field_sort_specs() {
+}
+
+ParsedSortSpec::ParsedSortSpec(const ParsedSortSpec&) = default;
+ParsedSortSpec::ParsedSortSpec(ParsedSortSpec&&) noexcept = default;
+ParsedSortSpec& ParsedSortSpec::operator=(const ParsedSortSpec&) = default;
+ParsedSortSpec& ParsedSortSpec::operator=(ParsedSortSpec&&) noexcept = default;
+ParsedSortSpec::~ParsedSortSpec() = default;
+
+} // namespace sortspec
 
 FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending,
                              std::shared_ptr<BlobConverter> converter) noexcept
@@ -64,13 +104,6 @@ SortSpec::SortSpec() : _spec(), _field_sort_specs() {
 namespace {
 
 std::string_view delimiters(",()\\\" ");
-std::string_view field_delimiters(",()\\\" {"); // delimiters plus '{'
-
-// A field name, optionally followed by a quoted map key: m{"k"}.
-struct FieldRef {
-    std::string_view           name;
-    std::optional<std::string> map_key;
-};
 
 class Tokenizer {
     std::string_view            _spec;
@@ -97,7 +130,49 @@ public:
     void expect_char(char expected);
     char expect_chars(char expected1, char expected2);
     std::string dequote_string();
-    FieldRef field_reference();
+
+    static bool is_identifier_first(char c) noexcept {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
+    }
+    static bool is_identifier_rest(char c) noexcept { return is_identifier_first(c) || (c >= '0' && c <= '9'); }
+
+    // Reads an identifier: a letter or '_', then letters, digits or '_'. Returns an
+    // empty name, and consumes nothing, if the next char cannot start an identifier.
+    std::string_view name() {
+        auto old_pos = _pos;
+        if (is_identifier_first(peek())) {
+            step();
+            while (is_identifier_rest(peek())) {
+                step();
+            }
+        }
+        return _spec.substr(old_pos, _pos - old_pos);
+    }
+
+    // Reads a dotted name: identifiers separated by '.', such as a struct field
+    // "person.name". A '.' is consumed only when an identifier follows it. Returns an
+    // empty name, and consumes nothing, if the next char cannot start an identifier.
+    std::string_view dotted_name() {
+        auto old_pos = _pos;
+        while (!name().empty()) {
+            if (peek() != '.' || _pos + 1 >= _spec.size() || !is_identifier_first(_spec[_pos + 1])) {
+                break;
+            }
+            step();
+        }
+        return _spec.substr(old_pos, _pos - old_pos);
+    }
+
+    std::string_view bracketed() {
+        auto old_pos = _pos;
+        while (char c = peek()) {
+            step();
+            if (c == ']') {
+                break;
+            }
+        }
+        return _spec.substr(old_pos, _pos - old_pos);
+    }
 };
 
 std::string_view Tokenizer::token() {
@@ -144,26 +219,6 @@ char Tokenizer::expect_chars(char expected1, char expected2) {
     }
     step();
     return act;
-}
-
-FieldRef Tokenizer::field_reference() {
-    auto old_pos = _pos;
-    // '{' ends a field name only. An unquoted missing value may contain braces, and
-    // containers of every version send those unquoted, so '{' is not a general delimiter.
-    _pos = _spec.find_first_of(field_delimiters, _pos);
-    if (_pos == std::string_view::npos) {
-        _pos = _spec.size();
-    }
-    FieldRef field{_spec.substr(old_pos, _pos - old_pos), std::nullopt};
-    if (valid() && peek() == '{') {
-        if (field.name.empty()) {
-            throw std::runtime_error(make_string("Expected a field name before '{' at %s", spec().c_str()));
-        }
-        step();
-        field.map_key = dequote_string();
-        expect_char('}');
-    }
-    return field;
 }
 
 std::string Tokenizer::dequote_string() {
@@ -216,102 +271,163 @@ std::string decode_missing_value(Tokenizer& tokenizer) {
     }
 }
 
-void decode_missing(Tokenizer& tokenizer, MissingPolicy& missing_policy, std::string& missing_value) {
-    tokenizer.expect_char(',');
-    missing_policy = decode_missing_policy(tokenizer);
-    if (missing_policy == MissingPolicy::AS) {
-        tokenizer.expect_char(',');
-        missing_value = decode_missing_value(tokenizer);
-    }
-    tokenizer.expect_char(')');
+// An empty strength means PRIMARY. Case matters, as in UcaConverter.
+bool is_uca_strength(std::string_view strength) noexcept {
+    return strength.empty() || strength == "PRIMARY" || strength == "SECONDARY" || strength == "TERTIARY" ||
+           strength == "QUATERNARY" || strength == "IDENTICAL";
 }
 
-bool is_schema_identifier(std::string_view name) {
+ParsedSortSpecLevel parseBrackets(Tokenizer& tokenizer, SortOrder sort_order) {
+    std::string_view name = tokenizer.bracketed();
+    if (name == "[rank]") {
+        return ParsedSortSpecLevel(LevelType::RANK, name, sort_order);
+    }
+    if (name == "[docid]") {
+        return ParsedSortSpecLevel(LevelType::DOCID, name, sort_order);
+    }
+    throw std::runtime_error(make_string("Bad bracketed name in sort spec: %s", std::string(name).c_str()));
+}
+
+ParsedSortSpecLevel parseMissing(ParsedSortSpecLevel nested, Tokenizer& tokenizer) {
+    if (nested._level_type == LevelType::RANK_FEATURE) {
+        throw std::runtime_error("Cannot use missing() with feature(...) sorting");
+    }
+    tokenizer.expect_char(',');
+    nested._missing_policy = decode_missing_policy(tokenizer);
+    if (nested._missing_policy == MissingPolicy::AS) {
+        tokenizer.expect_char(',');
+        nested._missing_value = decode_missing_value(tokenizer);
+    }
+    tokenizer.expect_char(')');
+    return nested;
+}
+
+ParsedSortSpecLevel parseFeature(Tokenizer& tokenizer, SortOrder sort_order) {
+    std::string_view name = tokenizer.name();
     if (name.empty()) {
-        return false;
+        throw std::runtime_error(make_string("Missing feature name in sort spec at: %s", tokenizer.spec().c_str()));
     }
-    auto valid_first = [](char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; };
-    auto valid_rest = [&](char c) { return valid_first(c) || (c >= '0' && c <= '9'); };
-    if (!valid_first(name.front())) {
-        return false;
+    tokenizer.expect_char(')');
+    return ParsedSortSpecLevel{LevelType::RANK_FEATURE, name, sort_order};
+}
+
+// Parses the map key after the '{' of m{"k"}. The key must be quoted.
+void parseMapKey(ParsedSortSpecLevel& level, Tokenizer& tokenizer) {
+    tokenizer.step();
+    level._map_key = tokenizer.dequote_string();
+    tokenizer.expect_char('}');
+}
+
+// A field name, optionally followed by a quoted map key: m{"k"}. The name must not be empty.
+ParsedSortSpecLevel parseFieldRef(Tokenizer& tokenizer, SortOrder sort_order) {
+    ParsedSortSpecLevel result{tokenizer.dotted_name(), sort_order};
+    if (result._field_or_name.empty()) {
+        throw std::runtime_error(make_string("Missing name in sort spec at: %s", tokenizer.spec().c_str()));
     }
-    for (size_t i = 1; i < name.size(); ++i) {
-        if (!valid_rest(name[i])) {
-            return false;
+    if (tokenizer.peek() == '{') {
+        parseMapKey(result, tokenizer);
+    }
+    return result;
+}
+
+ParsedSortSpecLevel parseLowercase(Tokenizer& tokenizer, SortOrder sort_order) {
+    ParsedSortSpecLevel result = parseFieldRef(tokenizer, sort_order);
+    result._converter_kind = ConverterKind::LOWERCASE;
+    tokenizer.expect_char(')');
+    return result;
+}
+
+ParsedSortSpecLevel parseUca(Tokenizer& tokenizer, SortOrder sort_order) {
+    ParsedSortSpecLevel result = parseFieldRef(tokenizer, sort_order);
+    result._converter_kind = ConverterKind::UCA;
+    tokenizer.expect_char(',');
+    result._uca_locale = tokenizer.token();
+    auto c = tokenizer.expect_chars(',', ')');
+    if (c == ',') {
+        result._uca_strength = tokenizer.token();
+        tokenizer.expect_char(')');
+    }
+    // Same check and message as UcaConverter, but at parse time.
+    if (!is_uca_strength(result._uca_strength)) {
+        throw std::runtime_error("Illegal uca collation strength : " + std::string(result._uca_strength));
+    }
+    return result;
+}
+
+// in_missing is set when parsing the argument of missing(...), which can't itself be missing(...).
+ParsedSortSpecLevel parseLevel(Tokenizer& tokenizer, SortOrder sort_order, bool in_missing) {
+    if (tokenizer.peek() == '[') {
+        return parseBrackets(tokenizer, sort_order);
+    }
+    ParsedSortSpecLevel level = parseFieldRef(tokenizer, sort_order);
+    const std::string&  name = level._field_or_name;
+    if (tokenizer.peek() != '(') {
+        return level;
+    }
+    // Without this, uca{"k"}(title) would parse as uca(title) and the key would be dropped.
+    if (level._map_key.has_value()) {
+        throw std::runtime_error(make_string("Map key is not allowed on sort function '%s'", name.c_str()));
+    }
+    tokenizer.step();
+    if (name == "missing") {
+        if (in_missing) {
+            throw std::runtime_error("Cannot nest missing() inside missing()");
         }
+        ParsedSortSpecLevel nested = parseLevel(tokenizer, sort_order, true);
+        return parseMissing(std::move(nested), tokenizer);
     }
-    return true;
+    if (name == "feature") {
+        return parseFeature(tokenizer, sort_order);
+    }
+    if (name == "lowercase") {
+        return parseLowercase(tokenizer, sort_order);
+    }
+    if (name == "uca") {
+        return parseUca(tokenizer, sort_order);
+    }
+    throw std::runtime_error("Unknown func " + name);
+}
+
+ParsedSortSpecLevel parseLevel(Tokenizer& tokenizer) {
+    auto order = decode_sort_order(tokenizer);
+    return parseLevel(tokenizer, order, false);
 }
 
 } // namespace
 
-SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory) : _spec(spec), _field_sort_specs() {
+ParsedSortSpec::ParsedSortSpec(const std::string& spec) : _spec(spec), _field_sort_specs() {
     Tokenizer tokenizer(_spec);
     while (tokenizer.skip_spaces()) {
-        auto                           order = decode_sort_order(tokenizer);
-        std::string_view               attr;
-        std::shared_ptr<BlobConverter> converter;
-        std::optional<std::string>     map_key;
-        auto                           func = tokenizer.field_reference();
-        bool                           in_missing = false;
-        bool                           is_rank_feature = false;
-        if (tokenizer.peek() == '(' && func.name == "missing" && !func.map_key.has_value()) {
-            in_missing = true;
-            tokenizer.step();
-            func = tokenizer.field_reference();
-        }
-        if (tokenizer.peek() == '(') {
-            // Without this, uca{"k"}(title) parses as uca(title) and the key is dropped.
-            if (func.map_key.has_value()) {
-                throw std::runtime_error(make_string("Map key is not allowed on sort function '%s'",
-                                                     std::string(func.name).c_str()));
-            }
-            tokenizer.step();
-            if (func.name == "feature") {
-                if (in_missing) {
-                    throw std::runtime_error("Cannot use missing() with feature(...) sorting");
-                }
-                attr = tokenizer.token();
-                tokenizer.expect_char(')');
-                if (!is_schema_identifier(attr)) {
-                    throw std::runtime_error(
-                        make_string("Illegal feature name '%s' for sorting", std::string(attr).c_str()));
-                }
-                is_rank_feature = true;
-            } else if (func.name == "uca") {
-                auto field = tokenizer.field_reference();
-                attr = field.name;
-                map_key = std::move(field.map_key);
-                tokenizer.expect_char(',');
-                auto             locale = tokenizer.token();
-                std::string_view strength;
-                auto             c = tokenizer.expect_chars(',', ')');
-                if (c == ',') {
-                    strength = tokenizer.token();
-                    tokenizer.expect_char(')');
-                }
-                converter = ucaFactory.create(locale, strength);
-            } else if (func.name == "lowercase") {
-                auto field = tokenizer.field_reference();
-                attr = field.name;
-                map_key = std::move(field.map_key);
-                tokenizer.expect_char(')');
-                converter = std::make_shared<LowercaseConverter>();
-            } else {
-                throw std::runtime_error("Unknown func " + std::string(func.name));
-            }
-        } else {
-            attr = func.name;
-            map_key = std::move(func.map_key);
-        }
-        std::string   missing_value;
-        MissingPolicy missing_policy = MissingPolicy::DEFAULT;
-        if (in_missing) {
-            decode_missing(tokenizer, missing_policy, missing_value);
-        }
-        _field_sort_specs.emplace_back(attr, order, std::move(converter), missing_policy, std::move(missing_value),
-                                       is_rank_feature, std::move(map_key));
+        _field_sort_specs.push_back(parseLevel(tokenizer));
     }
+    if (_field_sort_specs.empty()) {
+        throw std::runtime_error("Sort spec has no levels");
+    }
+}
+
+SortSpec::SortSpec(const ParsedSortSpec& parsed, const ConverterFactory& ucaFactory)
+    : _spec(parsed.getSpec()), _field_sort_specs() {
+    _field_sort_specs.reserve(parsed.size());
+    for (const auto& field : parsed) {
+        std::shared_ptr<BlobConverter> converter;
+        switch (field._converter_kind) {
+        case ConverterKind::NONE:
+            break;
+        case ConverterKind::LOWERCASE:
+            converter = std::make_shared<LowercaseConverter>();
+            break;
+        case ConverterKind::UCA:
+            converter = ucaFactory.create(field._uca_locale, field._uca_strength);
+            break;
+        }
+        _field_sort_specs.emplace_back(field._field_or_name, field._sort_order, std::move(converter),
+                                       field._missing_policy, field._missing_value,
+                                       field._level_type == LevelType::RANK_FEATURE, field._map_key);
+    }
+}
+
+SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory)
+    : SortSpec(ParsedSortSpec(spec), ucaFactory) {
 }
 
 SortSpec::~SortSpec() = default;
