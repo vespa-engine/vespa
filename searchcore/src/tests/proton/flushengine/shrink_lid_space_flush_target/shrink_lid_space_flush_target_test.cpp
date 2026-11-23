@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
@@ -37,6 +38,11 @@ public:
     void setCanFree(size_t canFree) { _canFree = canFree; }
 };
 
+class MyShrinkLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget {
+    using ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget;
+    std::string_view trace_span_name() const noexcept override { return "shrink dummy lid space"; }
+};
+
 class ShrinkLidSpaceFlushTargetTest : public ::testing::Test {
 protected:
     std::shared_ptr<MyLidSpace>                _lidSpace;
@@ -48,9 +54,9 @@ protected:
 ShrinkLidSpaceFlushTargetTest::ShrinkLidSpaceFlushTargetTest()
     : ::testing::Test(),
       _lidSpace(std::make_shared<MyLidSpace>()),
-      _ft(std::make_shared<ShrinkLidSpaceFlushTarget>("name", IFlushTarget::Type::GC,
-                                                      IFlushTarget::Component::ATTRIBUTE, 10, vespalib::system_time(),
-                                                      _lidSpace)) {
+      _ft(std::make_shared<MyShrinkLidSpaceFlushTarget>(
+          "name", IFlushTarget::Type::GC, IFlushTarget::Component::ATTRIBUTE,
+          DocTypeAndSubDbName::create("test", "0.ready"), 10, vespalib::system_time(), _lidSpace)) {
 }
 
 ShrinkLidSpaceFlushTargetTest::~ShrinkLidSpaceFlushTargetTest() = default;

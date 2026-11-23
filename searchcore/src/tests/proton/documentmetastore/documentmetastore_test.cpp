@@ -8,10 +8,11 @@
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
+#include <vespa/searchcore/proton/common/doc_type_and_subdb_name.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoresaver.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchcore/proton/documentmetastore/shrink_document_meta_store_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/search_context.h>
@@ -1878,10 +1879,8 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works) {
     DummyFileHeaderContext fileHeaderContext;
     DummyTlsSyncer         dummyTlsSyncer;
     HwInfo                 hwInfo;
-    using Type = IFlushTarget::Type;
-    using Component = IFlushTarget::Component;
-    IFlushTarget::SP ft(std::make_shared<ShrinkLidSpaceFlushTarget>(
-        "documentmetastore.shrink", Type::GC, Component::ATTRIBUTE, 0, IFlushTarget::Time(), dms));
+    IFlushTarget::SP       ft(std::make_shared<ShrinkDocumentMetaStoreLidSpaceFlushTarget>(
+        DocTypeAndSubDbName::create("test", "0.ready"), 0, IFlushTarget::Time(), dms));
     populate(10, *dms);
 
     uint32_t shrinkTarget = 5;

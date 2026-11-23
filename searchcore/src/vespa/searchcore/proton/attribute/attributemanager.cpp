@@ -69,17 +69,15 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector& attr) {
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
-std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP&        attr,
-                                                         vespalib::ISequencedTaskExecutor& executor,
-                                                         AttributeDiskLayout&              diskLayout) {
-    using Type = IFlushTarget::Type;
-    using Component = IFlushTarget::Component;
-
+std::shared_ptr<ShrinkLidSpaceFlushTarget>
+allocShrinker(const AttributeVector::SP& attr, vespalib::ISequencedTaskExecutor& executor,
+              AttributeDiskLayout&                              diskLayout,
+              const std::shared_ptr<const DocTypeAndSubDbName>& doc_type_and_subdb_name) {
     const std::string& name = attr->getName();
     auto               dir = diskLayout.createAttributeDir(name);
     search::SerialNum  shrinkSerialNum = estimateShrinkSerialNum(*attr);
     return std::make_shared<ShrinkAttributeLidSpaceFlushTarget>(
-        name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, attr, executor,
+        doc_type_and_subdb_name, name, shrinkSerialNum, attr, executor,
         executor.getExecutorIdFromName(attr->getNamePrefix()));
 }
 } // namespace
@@ -118,7 +116,8 @@ AttributeVector::SP AttributeManager::internalAddAttribute(AttributeSpec&& spec,
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
-        auto shrinker = allocShrinker(result.getAttribute(), _attributeFieldWriter, *_diskLayout);
+        auto shrinker =
+            allocShrinker(result.getAttribute(), _attributeFieldWriter, *_diskLayout, _doc_type_and_subdb_name);
         addAttribute(AttributeWrap::normalAttribute(result.getAttribute()), shrinker);
     }
     return result.getAttribute();
@@ -308,7 +307,7 @@ void AttributeManager::addInitializedAttributes(const std::vector<AttributeIniti
             attr->setCreateSerialNum(serial_num);
         }
         attr->setInterlock(_interlock);
-        auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout);
+        auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout, _doc_type_and_subdb_name);
         addAttribute(AttributeWrap::normalAttribute(std::move(attr)), shrinker);
     }
 }

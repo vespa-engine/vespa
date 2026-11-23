@@ -48,8 +48,9 @@ void SummaryManagerInitializer::run() {
     vespalib::Timer timer;
     EventLogger::loadDocumentStoreStart(document_type_and_subdb_name);
     MemoryUsageLogger::log("start load document store", document_type_and_subdb_name);
-    *_result = std::make_shared<SummaryManager>(_shared_executor, _storeCfg, _grow, _baseDir, _tuneFile,
-                                                _fileHeaderContext, _tlSyncer, _bucketizer, _document_id_provider);
+    *_result = std::make_shared<SummaryManager>(_shared_executor, _storeCfg, _grow, _baseDir,
+                                                _doc_type_and_subdb_name, _tuneFile, _fileHeaderContext, _tlSyncer,
+                                                _bucketizer, _document_id_provider);
     EventLogger::loadDocumentStoreComplete(document_type_and_subdb_name, timer.elapsed());
     MemoryUsageLogger::log("finish load document store", document_type_and_subdb_name);
     span->End();

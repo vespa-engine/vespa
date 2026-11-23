@@ -15,17 +15,20 @@ class ShrinkAttributeLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget {
     using ICompactableLidSpace = search::common::ICompactableLidSpace;
     using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
 
+    const std::string&                 _attribute_name; // string owned by target
     ISequencedTaskExecutor&            _executor;
     ISequencedTaskExecutor::ExecutorId _executor_id;
 
 public:
-    ShrinkAttributeLidSpaceFlushTarget(const std::string& name, Type type, Component component,
-                                       SerialNum flushedSerialNum, std::shared_ptr<ICompactableLidSpace> target,
-                                       ISequencedTaskExecutor&            executor,
+    ShrinkAttributeLidSpaceFlushTarget(std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
+                                       const std::string& attribute_name_in, SerialNum flushedSerialNum,
+                                       std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor& executor,
                                        ISequencedTaskExecutor::ExecutorId executor_id);
     ~ShrinkAttributeLidSpaceFlushTarget() override;
     void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
                     TaskPromise task_promise) override;
+    [[nodiscard]] std::string_view trace_span_name() const noexcept override;
+    [[nodiscard]] std::string_view attribute_name() const noexcept override;
 };
 
 } // namespace proton

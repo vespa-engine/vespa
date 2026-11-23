@@ -20,7 +20,7 @@
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchcore/proton/documentmetastore/shrink_document_meta_store_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
@@ -261,11 +261,8 @@ void StoreOnlyDocSubDB::setupDocumentMetaStore(const DocumentMetaStoreInitialize
     _dms = dms;
     _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(
         dms, _tlsSyncer, baseDir, _doc_type_and_subdb_name, dmsResult.tuneFile(), _fileHeaderContext, _hwInfo);
-    using Type = IFlushTarget::Type;
-    using Component = IFlushTarget::Component;
-    _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>(
-        "documentmetastore.shrink", Type::GC, Component::ATTRIBUTE, _flushedDocumentMetaStoreSerialNum,
-        _dmsFlushTarget->getLastFlushTime(), dms);
+    _dmsShrinkTarget = std::make_shared<ShrinkDocumentMetaStoreLidSpaceFlushTarget>(
+        _doc_type_and_subdb_name, _flushedDocumentMetaStoreSerialNum, _dmsFlushTarget->getLastFlushTime(), dms);
     _lastConfiguredCompactionStrategy = dms->getConfig().getCompactionStrategy();
 }
 
