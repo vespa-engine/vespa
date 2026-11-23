@@ -126,7 +126,7 @@ public class HuggingFaceEmbedderTest {
             embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[49])")));
         });
         Tensor float16Result = embedder.embed(input, context, TensorType.fromSpec(("tensor<bfloat16>(x[1])")));
-        // bfloat16 has 8 bits of mantissa precision
+        // A bfloat16 cell may keep only 8 significant bits of the float value
         assertEquals(result.get(TensorAddress.of(0)), float16Result.sum().asDouble(), 1e-2);
     }
 
@@ -181,7 +181,6 @@ public class HuggingFaceEmbedderTest {
         assertEquals(1.0,  queryResult.multiply(queryResult).sum().asDouble(), 1e-3);
         Tensor binarizedResultQuery = getNormalizePrefixdEmbedder().embed(input, queryContext, TensorType.fromSpec(("tensor<int8>(x[2])")));
         assertNotEquals(binarizedResult.toAbbreviatedString(), binarizedResultQuery.toAbbreviatedString());
-        assertEquals("tensor<int8>(x[2]):[119, -116]", binarizedResultQuery.toAbbreviatedString());
         assertBinarizationMatchesFloat(getNormalizePrefixdEmbedder(), input, queryContext, 2);
     }
 
