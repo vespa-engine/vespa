@@ -143,8 +143,7 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
 }
 
 template <typename B, typename M>
-template <typename T>
-void MultiValueAttribute<B, M>::cull_tombstones(T& tombstones, ValueVector& new_values) {
+void MultiValueAttribute<B, M>::cull_tombstones(auto& tombstones, ValueVector& new_values) {
     // Optimize for the case where nothing was explicitly removed.
     if (!tombstones.empty()) {
         ValueVector culled;
