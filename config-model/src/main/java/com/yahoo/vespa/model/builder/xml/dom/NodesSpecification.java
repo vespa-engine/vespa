@@ -346,16 +346,6 @@ public class NodesSpecification {
         return this;
     }
 
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
-                                                          ClusterSpec.Type clusterType,
-                                                          ClusterSpec.Id clusterId,
-                                                          DeployState deployState,
-                                                          boolean stateful,
-                                                          ClusterInfo clusterInfo) {
-        return setClusterSpecFrom(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of())
-                .provision(hostSystem, deployState);
-    }
-
     /** Allocates hosts. The cluster spec must have been set first. */
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, DeployState deployState) {
         if (cluster == null)

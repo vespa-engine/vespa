@@ -195,7 +195,7 @@ public class StorageGroup {
         /** Returns the cluster to allocate hosts to for this content cluster: present if and only if hosted. */
         public Optional<ClusterSpec> collectAllocationRequests() {
             try {
-                return collectRootGroup(true).nodesSpecification().map(NodesSpecification::cluster);
+                return collectRootGroup(true).clusterSpec();
             }
             catch (IllegalArgumentException e) {
                 // Same message as in build(), see ContentCluster.toString()
@@ -226,9 +226,10 @@ public class StorageGroup {
 
             if (deployState.isHosted()) {
                 var clusterId = ClusterSpec.Id.from(ContentCluster.getClusterId(clusterElement));
-                NodesSpecification nodesSpecification = hostedNodesSpecification(nodes)
-                        .setClusterSpecFrom(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build());
-                groupBuilder.setNodesSpecification(nodesSpecification);
+                ClusterSpec clusterSpec = hostedNodesSpecification(nodes)
+                        .setClusterSpecFrom(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build())
+                        .cluster();
+                groupBuilder.setClusterSpec(clusterSpec);
             }
 
             return groupBuilder;
@@ -297,8 +298,8 @@ public class StorageGroup {
             private final List<GroupBuilder> subGroups;
             private final List<XmlNodeBuilder> nodeBuilders;
 
-            /** The nodes specification for this group, if any. Only present in hosted deployments for the root group. */
-            private Optional<NodesSpecification> nodesSpecification = Optional.empty();
+            /** The cluster to allocate hosts to. Only present in hosted deployments for the root group. */
+            private Optional<ClusterSpec> clusterSpec = Optional.empty();
 
             private GroupBuilder(StorageGroup storageGroup, List<GroupBuilder> subGroups, List<XmlNodeBuilder> nodeBuilders) {
                 this.storageGroup = storageGroup;
@@ -341,9 +342,8 @@ public class StorageGroup {
             public StorageGroup build(DeployState deployState, ContentCluster owner) {
                 if ( ! deployState.isHosted()) return buildNonHosted(deployState, owner, Optional.empty());
 
-                Map<HostResource, ClusterMembership> hostMapping = nodesSpecification
-                        .orElseThrow(() -> new IllegalStateException("Unable to build hosted storage group without a nodes specification"))
-                        .provision(owner.getRoot().hostSystem(), deployState);
+                ClusterSpec cluster = clusterSpec.orElseThrow(() -> new IllegalStateException("Unable to build hosted storage group without a cluster spec"));
+                Map<HostResource, ClusterMembership> hostMapping = owner.getRoot().hostSystem().allocateHosts(cluster, deployState);
                 Map<Integer, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
                 if (hostGroups.size() > 1) {
                     // create subgroups as returned from allocation
@@ -375,10 +375,10 @@ public class StorageGroup {
                 return hostsPerGroup;
             }
 
-            public Optional<NodesSpecification> nodesSpecification() { return nodesSpecification; }
+            public Optional<ClusterSpec> clusterSpec() { return clusterSpec; }
 
-            public void setNodesSpecification(NodesSpecification nodesSpecification) {
-                this.nodesSpecification = Optional.of(nodesSpecification);
+            public void setClusterSpec(ClusterSpec clusterSpec) {
+                this.clusterSpec = Optional.of(clusterSpec);
             }
         }
 
