@@ -122,7 +122,7 @@ SkipMinFeature::UP SkipMinFeature::create(const uint8_t* min_feature, const uint
 PredicateSearch::PredicateSearch(const uint8_t* minFeatureVector, const IntervalRange* interval_range_vector,
                                  IntervalRange max_interval_range, std::span<uint8_t> kV,
                                  vector<PredicatePostingList::UP>    posting_lists,
-                                 const fef::TermFieldMatchDataArray& tfmda, PostingListFactory recreate_posting_lists)
+                                 const fef::TermFieldMatchDataArray& tfmda)
     : _skip(SkipMinFeature::create(minFeatureVector, kV.data(), kV.size())),
       _skip_offset(0),
       _posting_lists(std::move(posting_lists)),
@@ -137,17 +137,8 @@ PredicateSearch::PredicateSearch(const uint8_t* minFeatureVector, const Interval
       _min_feature_vector(minFeatureVector),
       _interval_range_vector(interval_range_vector),
       _kv(kV),
-      _recreate_posting_lists(std::move(recreate_posting_lists)),
-      _used(false) {
-    reset_posting_lists();
-}
+      _posting_lists_at(0) {
 
-void PredicateSearch::reset_posting_lists() {
-    _sorted_indexes.resize(_posting_lists.size());
-    _sorted_indexes_merge_buffer.resize(_posting_lists.size());
-    _doc_ids.resize(_posting_lists.size());
-    _intervals.resize(_posting_lists.size());
-    _subqueries.resize(_posting_lists.size());
     for (size_t i = 0; i < _posting_lists.size(); ++i) {
         _sorted_indexes[i] = i;
         _doc_ids[i] = _posting_lists[i]->getDocId();
@@ -155,12 +146,22 @@ void PredicateSearch::reset_posting_lists() {
     }
 }
 
+void PredicateSearch::rewind_posting_lists() {
+    // Exhausted lists were dropped from the sorted indexes, which are restored to all lists.
+    _sorted_indexes.resize(_posting_lists.size());
+    _sorted_indexes_merge_buffer.resize(_posting_lists.size());
+    for (size_t i = 0; i < _posting_lists.size(); ++i) {
+        _posting_lists[i]->reset();
+        _sorted_indexes[i] = i;
+        _doc_ids[i] = _posting_lists[i]->getDocId();
+    }
+    _posting_lists_at = 0;
+}
+
 void PredicateSearch::initRange(uint32_t begin_id, uint32_t end_id) {
     SearchIterator::initRange(begin_id, end_id);
-    if (_used && _recreate_posting_lists) {
-        _posting_lists = _recreate_posting_lists();
-        reset_posting_lists();
-        _used = false;
+    if (begin_id <= _posting_lists_at) {
+        rewind_posting_lists();
     }
     // Start the skipper just before the range instead of scanning from docid 0. It works in 32-doc chunks, and may
     // skip its first doc (docid 0 when unoffset), so it starts on a chunk boundary strictly below begin_id.
@@ -192,6 +193,7 @@ template <typename CompareType> void sort_indexes(uint16_t* indexes, size_t size
 } // namespace
 
 void PredicateSearch::advanceAllTo(uint32_t doc_id) {
+    _posting_lists_at = doc_id;
     size_t i = 0;
     size_t completed_count = 0;
     for (; i < _sorted_indexes.size() && _doc_ids[_sorted_indexes[i]] < doc_id; ++i) {
@@ -258,6 +260,7 @@ void restoreSortedOrder(size_t first, size_t last, vector<uint16_t>& indexes, co
 } // namespace
 
 bool PredicateSearch::evaluateHit(uint32_t doc_id, uint32_t k) {
+    _posting_lists_at = doc_id; // consumes the intervals at doc_id
     size_t candidates = sortIntervals(doc_id, k);
 
     size_t interval_end = _interval_range_vector[doc_id];
@@ -318,7 +321,6 @@ void PredicateSearch::skipMinFeature(uint32_t doc_id_in) {
 }
 
 void PredicateSearch::doSeek(uint32_t doc_id) {
-    _used = true;
     skipMinFeature(doc_id);
     while (!_sorted_indexes.empty() && !isAtEnd()) {
         uint32_t doc_id_0 = _doc_ids[_sorted_indexes[0]];

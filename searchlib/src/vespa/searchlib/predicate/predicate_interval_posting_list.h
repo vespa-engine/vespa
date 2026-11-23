@@ -14,6 +14,7 @@ namespace search::predicate {
  */
 template <typename Iterator> class PredicateIntervalPostingList : public PredicatePostingList {
     const PredicateIntervalStore& _interval_store;
+    const Iterator                _start;
     Iterator                      _iterator;
     const Interval*               _current_interval;
     uint32_t                      _interval_count;
@@ -34,12 +35,18 @@ public:
     VESPA_DLL_LOCAL uint32_t getInterval() const override {
         return _current_interval ? _current_interval->interval : 0;
     }
+    void reset() override {
+        _iterator = _start;
+        _current_interval = nullptr;
+        _interval_count = 0;
+        setDocId(0);
+    }
 };
 
 template <typename Iterator>
 PredicateIntervalPostingList<Iterator>::PredicateIntervalPostingList(const PredicateIntervalStore& interval_store,
                                                                      Iterator                      it)
-    : _interval_store(interval_store), _iterator(it), _current_interval(nullptr), _interval_count(0) {
+    : _interval_store(interval_store), _start(it), _iterator(it), _current_interval(nullptr), _interval_count(0) {
 }
 
 template <typename Iterator> bool PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {

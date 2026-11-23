@@ -13,6 +13,9 @@
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+#include <algorithm>
+#include <iterator>
+
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_blueprint_test");
 
@@ -243,6 +246,60 @@ TEST_F(PredicateBlueprintTest, require_that_blueprint_can_set_up_search_with_sub
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_FALSE(it->seek(doc_id));
+}
+
+TEST_F(PredicateBlueprintTest, require_that_search_can_rewind_to_an_earlier_range) {
+    // One kind of posting list per doc: interval, bounds, z-star compressed and zero constraint.
+    PredicateTreeAnnotations interval_annotations(1);
+    interval_annotations.interval_map[PredicateHash::hash64("key=value")] = std::vector<Interval>{{interval}};
+    PredicateTreeAnnotations bounds_annotations(1);
+    bounds_annotations.bounds_map[PredicateHash::hash64("range_key=40")] =
+        std::vector<IntervalWithBounds>{{interval, 0x40000005}}; // [40..44]
+    PredicateTreeAnnotations zstar_annotations(1);
+    zstar_annotations.interval_map[Constants::z_star_compressed_hash] = std::vector<Interval>{{0xfffe0000}};
+    std::vector<uint32_t> expected;
+    for (uint32_t id = 2; id < 100; id += 3) {
+        switch (id % 4) {
+        case 0:
+            indexDocument(id, interval_annotations);
+            break;
+        case 1:
+            indexDocument(id, bounds_annotations);
+            break;
+        case 2:
+            indexDocument(id, zstar_annotations);
+            break;
+        default:
+            indexEmptyDocument(id);
+        }
+        expected.push_back(id);
+    }
+
+    PredicateBlueprint blueprint(field, guard(), query);
+    blueprint.basic_plan(true, 100);
+    blueprint.fetchPostings(ExecuteInfo::FULL);
+    TermFieldMatchDataArray tfmda;
+    SearchIterator::UP      it = blueprint.createLeafSearch(tfmda);
+    auto                    hits_in_range = [&](uint32_t begin, uint32_t end) {
+        std::vector<uint32_t> hits;
+        it->initRange(begin, end);
+        for (uint32_t id = it->seekFirst(begin); id < end; id = it->seekNext(id + 1)) {
+            hits.push_back(id);
+        }
+        return hits;
+    };
+    auto expected_in_range = [&](uint32_t begin, uint32_t end) {
+        std::vector<uint32_t> hits;
+        std::copy_if(expected.begin(), expected.end(), std::back_inserter(hits),
+                     [&](uint32_t id) { return begin <= id && id < end; });
+        return hits;
+    };
+    EXPECT_EQ(expected, hits_in_range(1, 100));
+    for (uint32_t begin = 90; begin > 1; begin -= 10) { // every range rewinds
+        EXPECT_EQ(expected_in_range(begin, begin + 10), hits_in_range(begin, begin + 10));
+    }
+    EXPECT_EQ(expected_in_range(40, 70), hits_in_range(40, 70)); // forward
+    EXPECT_EQ(expected_in_range(70, 100), hits_in_range(70, 100));
 }
 
 } // namespace

@@ -79,10 +79,10 @@ struct SimpleIndexConfig {
 template <typename Posting, typename Key, typename DocId> class PostingVectorIterator {
     using PostingVector = vespalib::TypeStableVectorBase<Posting>;
 
-    const Posting* const _vector;
-    const size_t         _size;
-    size_t               _pos;
-    Posting              _data;
+    const Posting* _vector;
+    size_t         _size;
+    size_t         _pos;
+    Posting        _data;
 
 public:
     // Handle both move and copy construction

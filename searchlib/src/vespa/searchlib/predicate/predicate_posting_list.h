@@ -37,6 +37,11 @@ public:
      */
     virtual bool nextInterval() = 0;
 
+    /*
+     * Moves back to where the posting list was when created, so it can be iterated again.
+     */
+    virtual void reset() = 0;
+
     uint32_t getDocId() const { return _docId; }
     VESPA_DLL_LOCAL virtual uint32_t getInterval() const = 0;
 

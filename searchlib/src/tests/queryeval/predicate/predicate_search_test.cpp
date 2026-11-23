@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/predicate_search.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/arraysize.h>
 
@@ -60,6 +61,11 @@ public:
         return false;
     }
     uint32_t getInterval() const override { return _interval; }
+    void reset() override {
+        _index = 0;
+        _interval = 0;
+        setDocId(0);
+    }
 };
 
 MyPostingList::~MyPostingList() = default;
@@ -353,15 +359,12 @@ TEST(PredicateSearchTest, require_that_ranges_can_start_anywhere_and_rewind) {
     for (uint32_t doc : docs) {
         entries.emplace_back(doc, 0x0001ffff);
     }
-    MF   mf(110, 0);
-    CV   cv(110, 1);
-    IR   ir(110, 0xffff);
-    auto factory = [&entries]() {
-        vector<PredicatePostingList::UP> posting_lists;
-        posting_lists.emplace_back(std::make_unique<MyPostingList>(entries));
-        return posting_lists;
-    };
-    PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, factory(), tfmda, factory);
+    MF                               mf(110, 0);
+    CV                               cv(110, 1);
+    IR                               ir(110, 0xffff);
+    vector<PredicatePostingList::UP> posting_lists;
+    posting_lists.emplace_back(std::make_unique<MyPostingList>(entries));
+    PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, std::move(posting_lists), tfmda);
     EXPECT_EQ(docs, hits_in_range(search, 1, 110));
     EXPECT_EQ((std::vector<uint32_t>{32, 33, 63, 64}), hits_in_range(search, 32, 65));
     EXPECT_EQ((std::vector<uint32_t>{2, 31}), hits_in_range(search, 1, 32)); // rewinds
@@ -370,6 +373,69 @@ TEST(PredicateSearchTest, require_that_ranges_can_start_anywhere_and_rewind) {
     EXPECT_EQ((std::vector<uint32_t>{65, 100}), hits_in_range(search, 65, 110));
     EXPECT_EQ((std::vector<uint32_t>{}), hits_in_range(search, 101, 110));
     EXPECT_EQ(docs, hits_in_range(search, 1, 110)); // rewinds
+}
+
+TEST(PredicateSearchTest, require_that_rewind_restores_exhausted_posting_lists_and_subqueries) {
+    MyPostingList plists[] = {
+        {{10, 0x0001ffff}, {40, 0x0001ffff}},
+        {{10, 0x0001ffff}, {40, 0x00010001}, {40, 0x0002ffff}, {70, 0x0001ffff}, {100, 0x0001ffff}}};
+    auto posting_lists = make_posting_lists_vector(plists);
+    posting_lists[0]->setSubquery(0x1);
+    posting_lists[1]->setSubquery(0x2);
+    TermFieldMatchDataArray array;
+    TermFieldMatchData      data;
+    array.add(&data);
+    MF              mf(110, 0);
+    CV              cv(110, 1);
+    IR              ir(110, 0xffff);
+    PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, std::move(posting_lists), array);
+    using Hits = std::vector<pair<uint32_t, uint64_t>>;
+    auto hits_in_range = [&](uint32_t begin, uint32_t end) {
+        Hits hits;
+        search.initRange(begin, end);
+        for (uint32_t doc_id = search.seekFirst(begin); doc_id < end; doc_id = search.seekNext(doc_id + 1)) {
+            search.unpack(doc_id);
+            hits.emplace_back(doc_id, data.getSubqueries());
+        }
+        return hits;
+    };
+    const Hits all{{10, 0x3}, {40, 0x3}, {70, 0x2}, {100, 0x2}};
+    EXPECT_EQ(all, hits_in_range(1, 110));                         // the first list runs out at 40
+    EXPECT_EQ((Hits{{10, 0x3}, {40, 0x3}}), hits_in_range(1, 41)); // rewinds, and ends right after evaluating 40
+    EXPECT_EQ((Hits{{40, 0x3}}), hits_in_range(40, 50));           // rewinds, as the intervals at 40 are used up
+    EXPECT_EQ((Hits{{70, 0x2}, {100, 0x2}}), hits_in_range(41, 110));
+    EXPECT_EQ(all, hits_in_range(1, 110)); // rewinds
+}
+
+class Verifier : public search::test::SearchIteratorVerifier {
+    // Two posting lists taking every other expected hit, so one runs out first.
+    vector<pair<uint32_t, uint32_t>> _entries[2];
+    MF                               _mf;
+    mutable CV                       _cv;
+    IR                               _ir;
+
+public:
+    Verifier() : _mf(getDocIdLimit(), 0), _cv(getDocIdLimit(), 1), _ir(getDocIdLimit(), 0xffff) {
+        const auto& docs = getExpectedDocIds();
+        for (size_t i = 0; i < docs.size(); ++i) {
+            _entries[i % 2].emplace_back(docs[i], 0x0001ffff);
+        }
+    }
+    ~Verifier() override;
+    SearchIterator::UP create(bool) const override {
+        vector<PredicatePostingList::UP> posting_lists;
+        for (const auto& entries : _entries) {
+            posting_lists.emplace_back(std::make_unique<MyPostingList>(entries));
+        }
+        return std::make_unique<PredicateSearch>(&_mf[0], &_ir[0], 0xffff, _cv, std::move(posting_lists), tfmda);
+    }
+};
+
+Verifier::~Verifier() = default;
+
+TEST(PredicateSearchTest, require_that_search_iterator_verifier_passes) {
+    Verifier verifier;
+    verifier.verify();
 }
 
 } // namespace
