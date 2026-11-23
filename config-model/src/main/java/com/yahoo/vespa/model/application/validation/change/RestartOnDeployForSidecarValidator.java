@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 /**
@@ -131,9 +132,17 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             changes.add(Text.format("command: %s -> %s", from.command(), to.command()));
         }
 
+        if (!from.shmSizeMiB().equals(to.shmSizeMiB())) {
+            changes.add(Text.format("shmSizeMiB: %s -> %s", describeShmSize(from.shmSizeMiB()), describeShmSize(to.shmSizeMiB())));
+        }
+
         // Skipping livenessProbe diff since it doesn't affect sidecar functionality from sidecar client perspective.
 
         return String.join(", ", changes);
+    }
+
+    private static String describeShmSize(OptionalInt sizeMiB) {
+        return sizeMiB.isPresent() ? String.valueOf(sizeMiB.getAsInt()) : "default";
     }
 
     private void addRestartAction(ChangeContext context, ApplicationContainerCluster cluster, String message) {

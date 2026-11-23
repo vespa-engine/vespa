@@ -120,6 +120,19 @@ public class RestartOnDeployForSidecarValidatorTest {
     }
 
     @Test
+    void restart_when_sidecar_shm_size_changed() {
+        var current = modelWithSidecars(List.of(SIDECAR_1));
+        var next = modelWithSidecars(List.of(SIDECAR_1.toBuilder().shmSizeMiB(1024).build()));
+        var result = validate(current, next);
+
+        assertEquals(1, result.size());
+        assertRestartActionProperties(
+                result.get(0),
+                "Need to restart services in cluster 'feed' due to changed sidecars: 'triton' ("
+                        + "shmSizeMiB: default -> 1024)");
+    }
+
+    @Test
     void no_restart_when_sidecars_unchanged() {
         var current = modelWithSidecars(List.of(SIDECAR_1));
         var next = modelWithSidecars(List.of(SIDECAR_1));

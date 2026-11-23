@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Sidecar container configuration.
@@ -19,6 +20,7 @@ import java.util.Optional;
  * @param command Command to run in the sidecar container where the first element is the executable and the rest are arguments.
  * @param livenessProbe Health check to determine if the sidecar container is running correctly.
  * @param hasImageMirror Whether a mirrored copy of the image exists in a private registry.
+ * @param shmSizeMiB Size of /dev/shm in the sidecar container in MiB, or empty for the container runtime's default.
  *
  * @author glebashnik
  */
@@ -31,7 +33,8 @@ public record SidecarSpec(
         Map<String, String> envs,
         List<String> command,
         Optional<SidecarProbe> livenessProbe,
-        boolean hasImageMirror) {
+        boolean hasImageMirror,
+        OptionalInt shmSizeMiB) {
 
     public SidecarSpec {
         if (id < 0 || id > 99) { // This limit is due to hostname length restrictions.
@@ -42,6 +45,23 @@ public record SidecarSpec(
         Objects.requireNonNull(volumeMounts);
         Objects.requireNonNull(envs);
         Objects.requireNonNull(command);
+        Objects.requireNonNull(shmSizeMiB);
+        if (shmSizeMiB.isPresent() && shmSizeMiB.getAsInt() <= 0) {
+            throw new IllegalArgumentException("Sidecar /dev/shm size must be positive, was " + shmSizeMiB.getAsInt() + " MiB");
+        }
+    }
+
+    public SidecarSpec(
+            long id,
+            String name,
+            DockerImage image,
+            SidecarResources resources,
+            List<String> volumeMounts,
+            Map<String, String> envs,
+            List<String> command,
+            Optional<SidecarProbe> livenessProbe,
+            boolean hasImageMirror) {
+        this(id, name, image, resources, volumeMounts, envs, command, livenessProbe, hasImageMirror, OptionalInt.empty());
     }
 
     public SidecarSpec(
@@ -89,6 +109,7 @@ public record SidecarSpec(
         private List<String> command = List.of();
         private Optional<SidecarProbe> livenessProbe = Optional.empty();
         private boolean hasImageMirror = false;
+        private OptionalInt shmSizeMiB = OptionalInt.empty();
 
         public Builder() {}
 
@@ -102,6 +123,7 @@ public record SidecarSpec(
             this.command = spec.command;
             this.livenessProbe = spec.livenessProbe;
             this.hasImageMirror = spec.hasImageMirror;
+            this.shmSizeMiB = spec.shmSizeMiB;
         }
 
         public Builder id(long id) {
@@ -169,9 +191,14 @@ public record SidecarSpec(
             return this;
         }
 
+        public Builder shmSizeMiB(int shmSizeMiB) {
+            this.shmSizeMiB = OptionalInt.of(shmSizeMiB);
+            return this;
+        }
+
         public SidecarSpec build() {
             return new SidecarSpec(
-                    id, name, image, resources, volumeMounts, envs, command, livenessProbe, hasImageMirror);
+                    id, name, image, resources, volumeMounts, envs, command, livenessProbe, hasImageMirror, shmSizeMiB);
         }
     }
 }
