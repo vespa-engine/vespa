@@ -85,8 +85,6 @@
 %global _vespa_icu_excludes |icu(data|i18n|io|test|tu|uc)
 %endif
 
-%define go_version 1.24.2
-
 %if 0%{?el8} || 0%{?el9}
 %global _use_mvn_wrapper 1
 %endif
@@ -399,12 +397,6 @@ source %{_devtoolset_enable} || true
 %if 0%{?_rhgit227_enable:1}
 source %{_rhgit227_enable} || true
 %endif
-
-# Use new go version
-PATH=$HOME/go/bin:$PATH
-go install golang.org/dl/go%{go_version}@latest
-go%{go_version} download
-PATH=$HOME/sdk/go%{go_version}/bin/:$PATH
 
 %if 0%{?_java_home:1}
 export JAVA_HOME=%{?_java_home}
