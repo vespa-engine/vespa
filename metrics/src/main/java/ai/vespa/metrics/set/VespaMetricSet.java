@@ -273,6 +273,7 @@ public class VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.STORED_DOCUMENT_COUNT.max());
         addMetric(metrics, ClusterControllerMetrics.STORED_DOCUMENT_BYTES.max());
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
+        addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_VERSION_REJECTED_COUNT.baseName());
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO.max());
         addMetric(metrics, ClusterControllerMetrics.BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count)); // TODO: Vespa 9: Remove last

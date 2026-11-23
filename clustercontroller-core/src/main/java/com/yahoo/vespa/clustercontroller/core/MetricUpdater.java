@@ -31,6 +31,7 @@ import static com.yahoo.vespa.clustercontroller.core.MetricNames.BUSY_TICK_TIME_
 import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO;
 import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_CONTROLLER;
 import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_STATE_CHANGE;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_STATE_VERSION_REJECTED;
 import static com.yahoo.vespa.clustercontroller.core.MetricNames.IDLE_TICK_TIME_MS;
 import static com.yahoo.vespa.clustercontroller.core.MetricNames.IS_MASTER;
 import static com.yahoo.vespa.clustercontroller.core.MetricNames.NODES_NOT_CONVERGED;
@@ -187,6 +188,11 @@ public class MetricUpdater {
     public void recordNewNodeEvent() {
         // TODO(hakonhall): Replace add() with a persistent aggregate metric.
         metricReporter.add(NODE_EVENT, 1);
+    }
+
+    public void recordClusterStateVersionRejected(NodeType nodeType) {
+        metricReporter.add(CLUSTER_STATE_VERSION_REJECTED, 1,
+                           createContext(Map.of(NODE_TYPE, nodeType.toString().toLowerCase(Locale.ROOT))));
     }
 
     public void updateRemoteTaskQueueSize(int size) {

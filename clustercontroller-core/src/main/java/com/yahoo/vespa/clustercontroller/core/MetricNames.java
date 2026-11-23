@@ -16,6 +16,7 @@ class MetricNames {
     static final String CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO = "cluster-buckets-out-of-sync-ratio";
     static final String CLUSTER_CONTROLLER = "cluster-controller";
     static final String CLUSTER_STATE_CHANGE = "cluster-state-change";
+    static final String CLUSTER_STATE_VERSION_REJECTED = "cluster-state-version-rejected";
     static final String IDLE_TICK_TIME_MS = "idle-tick-time-ms";
     static final String IS_MASTER = "is-master";
     static final String NODES_NOT_CONVERGED = "nodes-not-converged";

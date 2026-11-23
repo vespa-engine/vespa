@@ -13,6 +13,7 @@ public enum ClusterControllerMetrics implements VespaMetrics {
     STOPPING_COUNT("cluster-controller.stopping.count", Unit.NODE, "Number of content nodes currently stopping"),
     UP_COUNT("cluster-controller.up.count", Unit.NODE, "Number of content nodes up"),
     CLUSTER_STATE_CHANGE_COUNT("cluster-controller.cluster-state-change.count", Unit.NODE, "Number of nodes changing state"),
+    CLUSTER_STATE_VERSION_REJECTED_COUNT("cluster-controller.cluster-state-version-rejected.count", Unit.OPERATION, "Number of cluster state versions rejected by content nodes or distributors because they already have a higher version"),
     NODES_NOT_CONVERGED("cluster-controller.nodes-not-converged", Unit.NODE, "Number of nodes not converging to the latest cluster state version"),
     STORED_DOCUMENT_COUNT("cluster-controller.stored-document-count", Unit.DOCUMENT, "Total number of unique documents stored in the cluster"),
     STORED_DOCUMENT_BYTES("cluster-controller.stored-document-bytes", Unit.BYTE, "Combined byte size of all unique documents stored in the cluster (not including replication)"),

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.jrt.ErrorCode;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,7 +27,8 @@ public class SystemStateBroadcasterTest {
         FakeTimer timer = new FakeTimer();
         final Object monitor = new Object();
         FleetControllerContext context = mock(FleetControllerContext.class);
-        SystemStateBroadcaster broadcaster = new SystemStateBroadcaster(context, timer, monitor);
+        MetricUpdater metricUpdater = mock(MetricUpdater.class);
+        SystemStateBroadcaster broadcaster = new SystemStateBroadcaster(context, timer, monitor, metricUpdater);
         Communicator mockCommunicator = mock(Communicator.class);
         DatabaseHandler mockDatabaseHandler = mock(DatabaseHandler.class);
         FleetController mockFleetController = mock(FleetController.class);
@@ -184,6 +187,17 @@ public class SystemStateBroadcasterTest {
 
         var req =  new MockSetClusterStateRequest(nodeInfo, stateBundle.getVersion());
         req.setReply(new ClusterStateVersionSpecificRequest.Reply());
+        waiter.done(req);
+    }
+
+    private static void respondToSetClusterStateBundleWithError(NodeInfo nodeInfo,
+                                                                ClusterStateBundle stateBundle,
+                                                                int errorCode,
+                                                                Communicator.Waiter<SetClusterStateRequest> waiter) {
+        nodeInfo.setClusterStateVersionBundleSent(stateBundle);
+
+        var req =  new MockSetClusterStateRequest(nodeInfo, stateBundle.getVersion());
+        req.setReply(new ClusterStateVersionSpecificRequest.Reply(errorCode, "error"));
         waiter.done(req);
     }
 
@@ -360,6 +374,28 @@ public class SystemStateBroadcasterTest {
         f.simulateBroadcastTick(cf, 123);
 
         assertNull(f.broadcaster.getLastClusterStateBundleConverged());
+    }
+
+
+    // Type erasure of Waiter in mocked argument capture
+    @Test
+    @SuppressWarnings("unchecked")
+    void rejected_cluster_state_versions_are_counted_in_metric() {
+        var f = StateActivationFixture.withTwoPhaseEnabled();
+        var cf = f.cf;
+
+        f.expectSetSystemStateInvocationsToBothDistributors();
+        f.simulateBroadcastTick(cf, 123);
+
+        // Nodes reply METHOD_FAILED when rejecting a cluster state version; other errors must not be counted
+        respondToSetClusterStateBundleWithError(cf.cluster.getNodeInfo(Node.ofDistributor(0)), f.stateBundle,
+                                                ErrorCode.METHOD_FAILED, f.d0Waiter.getValue());
+        respondToSetClusterStateBundleWithError(cf.cluster.getNodeInfo(Node.ofDistributor(1)), f.stateBundle,
+                                                ErrorCode.TIMEOUT, f.d1Waiter.getValue());
+        f.simulateBroadcastTick(cf, 123);
+
+        verify(f.metricUpdater, times(1)).recordClusterStateVersionRejected(NodeType.DISTRIBUTOR);
+        verify(f.metricUpdater, never()).recordClusterStateVersionRejected(NodeType.STORAGE);
     }
 
 }

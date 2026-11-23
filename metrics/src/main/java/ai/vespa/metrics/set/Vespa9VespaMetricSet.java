@@ -215,6 +215,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO.max());
         addMetric(metrics, ClusterControllerMetrics.STORED_DOCUMENT_COUNT.max());
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
+        addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_VERSION_REJECTED_COUNT.baseName());
 
         addMetric(metrics, ClusterControllerMetrics.WORK_MS, EnumSet.of(sum, count));
 

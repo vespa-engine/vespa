@@ -27,6 +27,7 @@ public class SystemStateBroadcaster {
     private final Object monitor;
     private ClusterStateBundle clusterStateBundle;
     private final List<SetClusterStateRequest> setClusterStateReplies = new LinkedList<>();
+    private final MetricUpdater metricUpdater;
     private final List<ActivateClusterStateVersionRequest> activateClusterStateVersionReplies = new LinkedList<>();
 
     private final static long minTimeBetweenNodeErrorLogging = 10 * 60 * 1000;
@@ -41,8 +42,9 @@ public class SystemStateBroadcaster {
     private final SetClusterStateWaiter setClusterStateWaiter = new SetClusterStateWaiter();
     private final ActivateClusterStateVersionWaiter activateClusterStateVersionWaiter = new ActivateClusterStateVersionWaiter();
 
-    public SystemStateBroadcaster(FleetControllerContext context, Timer timer, Object monitor) {
+    public SystemStateBroadcaster(FleetControllerContext context, Timer timer, Object monitor, MetricUpdater metricUpdater) {
         this.context = context;
+        this.metricUpdater = metricUpdater;
         this.timer = timer;
         this.monitor = monitor;
     }
@@ -151,6 +153,10 @@ public class SystemStateBroadcaster {
 
             if (req.getReply().isError()) {
                 info.setClusterStateBundleVersionAcknowledged(version, false);
+                // Nodes reply with METHOD_FAILED iff they rejected the version due to already having a higher one
+                if (req.getReply().getReturnCode() == ErrorCode.METHOD_FAILED) {
+                    metricUpdater.recordClusterStateVersionRejected(info.getNode().getType());
+                }
                 if (req.getReply().getReturnCode() != Communicator.TRANSIENT_ERROR) {
                     if (info.getNewestSystemStateVersionSent() == version) {
                         boolean nodeOk = nodeReportsSelfAsAvailable(info);
