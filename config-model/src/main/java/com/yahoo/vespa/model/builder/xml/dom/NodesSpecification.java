@@ -295,8 +295,8 @@ public class NodesSpecification {
     public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     /**
-     * Returns whether this requires dedicated nodes.
-     * Otherwise the model encountering this request should reuse nodes requested for other purposes whenever possible.
+     * Returns whether this requires dedicated nodes,
+     * otherwise the model encountering this request should reuse nodes requested for other purposes whenever possible.
      */
     public boolean isDedicated() { return dedicated; }
 
@@ -326,7 +326,7 @@ public class NodesSpecification {
         return setClusterSpecFrom(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of());
     }
 
-    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}, and returns this. */
+    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}), and returns this. */
     public NodesSpecification setClusterSpecFrom(ClusterSpec.Type clusterType,
                                                  ClusterSpec.Id clusterId,
                                                  ZoneEndpoint zoneEndpoint,
@@ -342,6 +342,9 @@ public class NodesSpecification {
                              .sidecars(sidecars)
                              .availabilityZones(availabilityZones)
                              .profile(profile)
+                             .cloudAccount(cloudAccount)
+                             .cloudResourceTags(cloudResourceTags)
+                             .clusterInfo(clusterInfo)
                              .build();
         return this;
     }
