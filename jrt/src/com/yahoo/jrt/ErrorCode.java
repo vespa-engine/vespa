@@ -5,7 +5,7 @@ package com.yahoo.jrt;
 /**
  * This class contains the error codes defined by the RPC
  * protocol. The error code associated with a request is obtained
- * through the {@link Request#errorCode} method. Note that according to
+ * through the {@link Request#errorCode()} method. Note that according to
  * the RPC protocol, applications may define custom error codes with
  * values 65536 (0x10000) and greater.
  **/
