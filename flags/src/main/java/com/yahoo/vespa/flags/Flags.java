@@ -221,14 +221,6 @@ public class Flags {
         INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
-            "fail-when-configuring-indexed-map-of-array", true,
-            List.of("hmusum"), "2026-07-01", "2027-02-01",
-            "Whether to fail a deployment when an indexed map of array is used in a schema",
-            "Takes effect at redeployment",
-            INSTANCE_ID
-    );
-
     public static final UnboundStringFlag ALLOW_STRUCT_FIELD_INDEX = defineStringFlag(
             "allow-struct-field-index", "disallow",
             List.of("arnej"), "2026-10-30", "2027-12-01",
