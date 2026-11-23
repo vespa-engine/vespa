@@ -35,6 +35,19 @@ public final class ClusterSpec {
                         Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
                         List<SidecarSpec> sidecars, List<AzName> availabilityZones, Optional<String> profile,
                         CloudAccount cloudAccount, CloudResourceTags cloudResourceTags, ClusterInfo clusterInfo) {
+        Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
+        Objects.requireNonNull(cloudResourceTags, "cloudResourceTags cannot be null");
+        Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
+        // TODO: Remove when all readers and writers use the ClusterSpec fields instead of the Capacity ones.
+        // During the transition cloud account, tags and cluster info are kept in both this and its Capacity,
+        // so that readers of either see them regardless of which place the writer used.
+        // Non-empty values in Capacity take precedence since it is the current source of truth.
+        // The builder lets values set after the capacity override it, so in a builder the value set last wins.
+        if (capacity == null) capacity = Capacity.unspecified();
+        if ( ! capacity.cloudAccount().isUnspecified()) cloudAccount = capacity.cloudAccount();
+        if ( ! capacity.cloudResourceTags().isEmpty()) cloudResourceTags = capacity.cloudResourceTags();
+        if ( ! capacity.clusterInfo().isEmpty()) clusterInfo = capacity.clusterInfo();
+        capacity = capacity.with(cloudAccount, cloudResourceTags, clusterInfo);
         if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
             throw new IllegalArgumentException("dockerImageRepo is not allowed to have a tag");
         if (type.isContent() && !stateful)
@@ -185,6 +198,11 @@ public final class ClusterSpec {
         private CloudAccount cloudAccount = CloudAccount.unspecified();
         private CloudResourceTags cloudResourceTags = CloudResourceTags.empty();
         private ClusterInfo clusterInfo = ClusterInfo.empty();
+        // TODO: Remove when all readers and writers use the ClusterSpec fields instead of the Capacity ones.
+        // Whether the value was set after the capacity, in which case it overrides the one in the capacity.
+        private boolean cloudAccountOverridesCapacity = false;
+        private boolean cloudResourceTagsOverrideCapacity = false;
+        private boolean clusterInfoOverridesCapacity = false;
 
         private Builder(Type type, Id id, Capacity capacity, Version vespaVersion) {
             this.type = type;
@@ -195,13 +213,22 @@ public final class ClusterSpec {
         }
 
         public ClusterSpec build() {
+            Capacity capacity = this.capacity;
+            if (capacity != null && (cloudAccountOverridesCapacity || cloudResourceTagsOverrideCapacity || clusterInfoOverridesCapacity))
+                capacity = capacity.with(cloudAccountOverridesCapacity ? cloudAccount : capacity.cloudAccount(),
+                                         cloudResourceTagsOverrideCapacity ? cloudResourceTags : capacity.cloudResourceTags(),
+                                         clusterInfoOverridesCapacity ? clusterInfo : capacity.clusterInfo());
             return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                    stateful, sidecars, availabilityZones, profile,
                                    cloudAccount, cloudResourceTags, clusterInfo);
         }
 
+        /** Sets the capacity. Non-empty cloud account, tags and cluster info in it override those set earlier. */
         public Builder capacity(Capacity capacity) {
             this.capacity = capacity;
+            cloudAccountOverridesCapacity = false;
+            cloudResourceTagsOverrideCapacity = false;
+            clusterInfoOverridesCapacity = false;
             return this;
         }
 
@@ -255,18 +282,24 @@ public final class ClusterSpec {
             return this;
         }
 
+        /** Sets the cloud account, overriding any account in the capacity set earlier. */
         public Builder cloudAccount(CloudAccount cloudAccount) {
-            this.cloudAccount = cloudAccount;
+            this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
+            cloudAccountOverridesCapacity = true;
             return this;
         }
 
+        /** Sets the cloud resource tags, overriding any tags in the capacity set earlier. */
         public Builder cloudResourceTags(CloudResourceTags cloudResourceTags) {
-            this.cloudResourceTags = cloudResourceTags;
+            this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags, "cloudResourceTags cannot be null");
+            cloudResourceTagsOverrideCapacity = true;
             return this;
         }
 
+        /** Sets the cluster info, overriding any cluster info in the capacity set earlier. */
         public Builder clusterInfo(ClusterInfo clusterInfo) {
-            this.clusterInfo = clusterInfo;
+            this.clusterInfo = Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
+            clusterInfoOverridesCapacity = true;
             return this;
         }
 

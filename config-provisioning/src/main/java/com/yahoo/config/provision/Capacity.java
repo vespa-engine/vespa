@@ -113,6 +113,12 @@ public final class Capacity {
         return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, account, cloudResourceTags, clusterInfo);
     }
 
+    /** Returns this with the given cloud account, tags and cluster info, or this if they are unchanged. */
+    Capacity with(CloudAccount account, CloudResourceTags tags, ClusterInfo info) {
+        if (account.equals(cloudAccount) && tags.equals(cloudResourceTags) && info.equals(clusterInfo)) return this;
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, account, tags, info);
+    }
+
     public Capacity withCanFail(boolean canFail) {
         return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
     }

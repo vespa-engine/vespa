@@ -165,12 +165,18 @@ public class InMemoryProvisioner implements HostProvisioner {
         IntRange groupRange = IntRange.of(requested.minResources().groups(), requested.maxResources().groups());
         if (useMaxResources) {
             int groups = groupRange.fit(requested.maxResources().nodes() / requested.groupSize().to().orElse(1));
-            return prepare(cluster, requested.maxResources(),groups, requested.isRequired(), requested.canFail());
+            return prepare(cluster, requested.maxResources(),groups, requested.isRequired(), canFail(requested, context));
         }
         else {
             int groups = groupRange.fit(requested.minResources().nodes() / requested.groupSize().from().orElse(1));
-            return prepare(cluster, requested.minResources(), groups, requested.isRequired(), requested.canFail());
+            return prepare(cluster, requested.minResources(), groups, requested.isRequired(), canFail(requested, context));
         }
+    }
+
+    // TODO: Use only context.canFail() when all writers set it there.
+    // During the transition canFail may be set (to false) in either place, so it is only true if both agree.
+    private static boolean canFail(Capacity requested, ProvisionContext context) {
+        return requested.canFail() && context.canFail();
     }
 
     public List<HostSpec> prepare(ClusterSpec cluster, ClusterResources requested, int groups, boolean required, boolean canFail) {

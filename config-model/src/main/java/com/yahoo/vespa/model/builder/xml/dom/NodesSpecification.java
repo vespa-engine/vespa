@@ -10,6 +10,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterInfo;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -18,10 +19,13 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.HostSystem;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.ToDoubleFunction;
@@ -70,6 +74,8 @@ public class NodesSpecification {
     private final boolean specifiesNodeCount;
 
     private final String profile;
+
+    private ClusterSpec cluster;
 
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
@@ -313,15 +319,14 @@ public class NodesSpecification {
         return Optional.ofNullable(profile);
     }
 
-    /** Returns the cluster to allocate hosts to for this specification, with the default zone endpoint and no sidecars. */
     public ClusterSpec makeClusterSpec(ClusterSpec.Type clusterType,
-                                       ClusterSpec.Id clusterId,
-                                       boolean stateful,
-                                       ClusterInfo clusterInfo) {
+                                                 ClusterSpec.Id clusterId,
+                                                 boolean stateful,
+                                                 ClusterInfo clusterInfo) {
         return makeClusterSpec(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of());
     }
 
-    /** Returns the cluster to allocate hosts to for this specification. */
+    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}, and returns this. */
     public ClusterSpec makeClusterSpec(ClusterSpec.Type clusterType,
                                        ClusterSpec.Id clusterId,
                                        ZoneEndpoint zoneEndpoint,
@@ -337,7 +342,23 @@ public class NodesSpecification {
                           .sidecars(sidecars)
                           .availabilityZones(availabilityZones)
                           .profile(profile)
+                          .cloudAccount(cloudAccount)
+                          .cloudResourceTags(cloudResourceTags)
+                          .clusterInfo(clusterInfo)
                           .build();
+    }
+
+    /** Allocates hosts. The cluster spec must have been set first. */
+    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, DeployState deployState) {
+        if (cluster == null)
+            throw new IllegalStateException("provision() can only be called after setClusterSpecFrom()");
+        return hostSystem.allocateHosts(cluster(), deployState);
+    }
+
+    public ClusterSpec cluster() {
+        if (cluster == null)
+            throw new IllegalStateException("cluster() can only be accessed after calling setClusterSpecFrom()");
+        return cluster;
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
