@@ -479,7 +479,7 @@ void SearchVisitor::init(const Parameters& params) {
     if (_env) {
         _init_called = true;
 
-        if (hasSortSpec && !sortRef.empty()) {
+        if (hasSortSpec) {
             search::uca::UcaConverterFactory ucaFactory;
             _sortSpec = search::common::SortSpec(std::string(sortRef.data(), sortRef.size()), ucaFactory);
             LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());

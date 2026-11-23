@@ -11,7 +11,6 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
-#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.result_processor");
@@ -69,28 +68,20 @@ void ResultProcessor::GroupingSource::merge(Source& s) {
 
 ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
                                  SessionManager& sessionMgr, GroupingContext& groupingContext,
-                                 const std::string& sessionId, const std::string& sortSpec, size_t offset,
+                                 const std::string& sessionId, std::optional<ParsedSortSpec> sortSpec, size_t offset,
                                  size_t hits)
     : _attrContext(attrContext),
       _metaStore(metaStore),
       _sessionMgr(sessionMgr),
       _groupingContext(groupingContext),
       _groupingSession(),
-      _sortSpec(),
+      _sortSpec(std::move(sortSpec)),
       _offset(offset),
       _hits(hits),
       _wasMerged(false),
       _sort_feature_failed(false) {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
-    }
-    if (!sortSpec.empty()) {
-        try {
-            _sortSpec.emplace(sortSpec);
-        } catch (const std::exception&) {
-            vespalib::Issue::report("Failed parsing sortspec: %s", sortSpec.c_str());
-            _sortSpec.emplace();
-        }
     }
 }
 

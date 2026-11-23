@@ -8,6 +8,7 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 
@@ -76,6 +77,12 @@ ParsedSortSpec& ParsedSortSpec::operator=(const ParsedSortSpec&) = default;
 ParsedSortSpec& ParsedSortSpec::operator=(ParsedSortSpec&&) noexcept = default;
 ParsedSortSpec::~ParsedSortSpec() = default;
 
+bool ParsedSortSpec::using_rank() const noexcept {
+    return std::ranges::any_of(_field_sort_specs, [](const ParsedSortSpecLevel& level) noexcept {
+        return level._level_type == LevelType::RANK;
+    });
+}
+
 } // namespace sortspec
 
 FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending,
@@ -119,6 +126,12 @@ public:
         if (valid()) {
             ++_pos;
         }
+    }
+    std::string_view::size_type pos() const noexcept { return _pos; }
+    // The text from 'from' up to the next space, or to the end of the spec.
+    std::string_view word_at(std::string_view::size_type from) const noexcept {
+        auto end = _spec.find(' ', from);
+        return _spec.substr(from, (end == std::string_view::npos) ? std::string_view::npos : end - from);
     }
     bool skip_spaces() {
         while (valid() && _spec[_pos] == ' ') {
@@ -398,10 +411,14 @@ ParsedSortSpecLevel parseLevel(Tokenizer& tokenizer) {
 ParsedSortSpec::ParsedSortSpec(const std::string& spec) : _spec(spec), _field_sort_specs() {
     Tokenizer tokenizer(_spec);
     while (tokenizer.skip_spaces()) {
+        auto level_start = tokenizer.pos();
         _field_sort_specs.push_back(parseLevel(tokenizer));
-    }
-    if (_field_sort_specs.empty()) {
-        throw std::runtime_error("Sort spec has no levels");
+        // Levels are separated by spaces. Without this check, +a-b would parse as +a -b.
+        if (tokenizer.valid() && tokenizer.peek() != ' ') {
+            throw std::runtime_error(make_string("Unexpected '%s' after sort level in '%s'",
+                                                 std::string(tokenizer.word_at(tokenizer.pos())).c_str(),
+                                                 std::string(tokenizer.word_at(level_start)).c_str()));
+        }
     }
 }
 

@@ -402,12 +402,18 @@ TEST(SortTest, sortspec_dotted_field_names) {
               SortSpec("+s.m{\"k\"}", ucaFactory).get_field_sort_specs());
 
     // Each part after a '.' must be an identifier.
-    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a.", ucaFactory), std::runtime_error, "Expected '+' or '-', got '.'");
-    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a..b", ucaFactory), std::runtime_error, "Expected '+' or '-', got '.'");
-    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a.1b", ucaFactory), std::runtime_error, "Expected '+' or '-', got '.'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a.", ucaFactory), std::runtime_error,
+                           "Unexpected '.' after sort level in '+a.'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a..b", ucaFactory), std::runtime_error,
+                           "Unexpected '..b' after sort level in '+a..b'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a.1b", ucaFactory), std::runtime_error,
+                           "Unexpected '.1b' after sort level in '+a.1b'");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("+.a", ucaFactory), std::runtime_error, "Missing name in sort spec");
-    VESPA_EXPECT_EXCEPTION(ParsedSortSpec spec(""), std::runtime_error, "Sort spec has no levels");
-    VESPA_EXPECT_EXCEPTION(ParsedSortSpec spec("   "), std::runtime_error, "Sort spec has no levels");
+    // No levels is not a parse error; callers check for it.
+    EXPECT_TRUE(ParsedSortSpec("").empty());
+    EXPECT_TRUE(ParsedSortSpec("   ").empty());
+    EXPECT_TRUE(SortSpec("", ucaFactory).empty());
+    EXPECT_TRUE(SortSpec("   ", ucaFactory).empty());
     VESPA_EXPECT_EXCEPTION(SortSpec spec("+lowercase()", ucaFactory), std::runtime_error,
                            "Missing name in sort spec at: [+lowercase(][)]");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("+lowercase(.a)", ucaFactory), std::runtime_error,
@@ -418,6 +424,36 @@ TEST(SortTest, sortspec_dotted_field_names) {
                            "Missing name in sort spec");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("+{\"k\"}", ucaFactory), std::runtime_error, "Missing name in sort spec");
     VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(a.b)", ucaFactory), std::runtime_error, "Expected ')', got '.'");
+}
+
+TEST(SortTest, sortspec_levels_must_be_separated_by_spaces) {
+    search::uca::UcaConverterFactory ucaFactory;
+    // Each level must be followed by a space or the end of the spec, so a name with an
+    // illegal character is rejected instead of being split into several levels.
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+my-attr", ucaFactory), std::runtime_error,
+                           "Unexpected '-attr' after sort level in '+my-attr'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+x +a+b -c", ucaFactory), std::runtime_error,
+                           "Unexpected '+b' after sort level in '+a+b'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+m{\"k\"}+b", ucaFactory), std::runtime_error,
+                           "Unexpected '+b' after sort level in '+m{\"k\"}+b'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+lowercase(a)-b", ucaFactory), std::runtime_error,
+                           "Unexpected '-b' after sort level in '+lowercase(a)-b'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-[rank]+[docid]", ucaFactory), std::runtime_error,
+                           "Unexpected '+[docid]' after sort level in '-[rank]+[docid]'");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("+a$", ucaFactory), std::runtime_error,
+                           "Unexpected '$' after sort level in '+a$'");
+    EXPECT_EQ(2u, ParsedSortSpec("  +a   -b  ").size());
+}
+
+TEST(SortTest, parsed_sortspec_using_rank) {
+    EXPECT_FALSE(ParsedSortSpec().using_rank());
+    EXPECT_FALSE(ParsedSortSpec("+a -[docid]").using_rank());
+    EXPECT_FALSE(ParsedSortSpec("-feature(rank)").using_rank());
+    EXPECT_FALSE(ParsedSortSpec("+missing(t,as,\"[rank]\")").using_rank());
+    EXPECT_FALSE(ParsedSortSpec("+m{\"[rank]\"}").using_rank());
+    EXPECT_TRUE(ParsedSortSpec("-[rank]").using_rank());
+    EXPECT_TRUE(ParsedSortSpec("+a -[rank]").using_rank());
+    EXPECT_TRUE(ParsedSortSpec("+missing([rank],first)").using_rank());
 }
 
 TEST(SortTest, parsed_sortspec_needs_no_converter_factory) {

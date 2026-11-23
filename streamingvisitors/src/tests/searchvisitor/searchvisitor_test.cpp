@@ -405,6 +405,8 @@ TEST_F(SearchVisitorTest, sorting_works) {
                   {"Sorting by a map value is not supported in streaming search (field 'm{\"k\"}')"});
     check_sorting(*this, "+m{\"k\"} +id", {{4, 14.0}, {5, 15.0}, {7, 17.0}},
                   {"Sorting by a map value is not supported in streaming search (field 'm{\"k\"}')"});
+    // A spec with only spaces has no levels; the hits stay in rank order.
+    check_sorting(*this, "   ", {{7, 17.0}, {5, 15.0}, {4, 14.0}}, {});
 }
 
 } // namespace streaming

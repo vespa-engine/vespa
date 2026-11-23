@@ -91,14 +91,41 @@ size_t numThreads(size_t hits, size_t minHits) {
     return static_cast<size_t>(std::ceil(double(hits) / double(minHits)));
 }
 
+// The request's sort spec, parsed. Unset when the request does not sort (an empty
+// sort spec, or one with only spaces), or when the sort spec is malformed; then
+// parse_error holds the reason.
+struct RequestSortSpec {
+    std::optional<ParsedSortSpec> parsed;
+    std::string                   parse_error;
+
+    explicit RequestSortSpec(const std::string& sort_spec) : parsed(), parse_error() {
+        if (sort_spec.empty()) {
+            return;
+        }
+        try {
+            parsed.emplace(sort_spec);
+        } catch (const std::exception& e) {
+            parse_error = e.what();
+            return;
+        }
+        if (parsed->empty()) {
+            parsed.reset();
+        }
+    }
+    bool malformed() const noexcept { return !parse_error.empty(); }
+    // Rank scores are needed when the hits are ordered by rank: no sort spec, or a sort
+    // spec with a [rank] level. A malformed sort spec counts as needing them too.
+    bool needs_rank() const noexcept { return !parsed.has_value() || parsed->using_rank(); }
+};
+
 bool willNeedRanking(const SearchRequest& request, const GroupingContext& groupingContext,
-                     std::optional<search::feature_t> first_phase_rank_score_drop_limit, bool query_needs_ranking) {
+                     std::optional<search::feature_t> first_phase_rank_score_drop_limit, bool query_needs_ranking,
+                     const RequestSortSpec& sort_spec) {
     if (query_needs_ranking) {
         return true;
     }
     return (groupingContext.needRanking() || (request.maxhits != 0)) &&
-           (request.sortSpec.empty() || (request.sortSpec.find("[rank]") != std::string::npos) ||
-            first_phase_rank_score_drop_limit.has_value());
+           (sort_spec.needs_rank() || first_phase_rank_score_drop_limit.has_value());
 }
 
 SearchReply::UP handleGroupingSession(SessionManager& sessionMgr, GroupingContext& groupingContext,
@@ -117,35 +144,38 @@ struct SelectedSortFeatures {
     std::vector<std::string> public_names;
 };
 
-SelectedSortFeatures select_sort_features(const std::string& sort_spec, const RankSetup& rank_setup) {
+SelectedSortFeatures select_sort_features(const std::string& sort_spec_str, const RequestSortSpec& sort_spec,
+                                          const RankSetup& rank_setup) {
     SelectedSortFeatures selected;
-    if (sort_spec.find("feature(") == std::string::npos) {
+    if (sort_spec.malformed()) {
+        // A malformed spec that may sort by rank features fails the query. Others are
+        // left to ResultProcessor, which then installs a sorter with no levels.
+        if (sort_spec_str.find("feature(") != std::string::npos) {
+            Issue::report("Failed parsing sortspec '%s': %s", sort_spec_str.c_str(), sort_spec.parse_error.c_str());
+            selected.parse_failed = true;
+        }
         return selected;
     }
-    try {
-        ParsedSortSpec spec(sort_spec);
-        for (const auto& field : spec) {
-            if (!field.is_rank_feature()) {
-                continue;
-            }
-            if (std::find(selected.public_names.begin(), selected.public_names.end(), field._field_or_name) !=
-                selected.public_names.end())
-            {
-                continue;
-            }
-            if (!rank_setup.has_sort_feature(field._field_or_name)) {
-                Issue::report("sort spec: rank feature '%s' is not an allowed sort feature",
-                              field._field_or_name.c_str());
-                selected.parse_failed = true;
-                selected.public_names.clear();
-                return selected;
-            }
-            selected.public_names.push_back(field._field_or_name);
+    if (!sort_spec.parsed.has_value()) {
+        return selected;
+    }
+    for (const auto& field : *sort_spec.parsed) {
+        if (!field.is_rank_feature()) {
+            continue;
         }
-    } catch (const std::exception& e) {
-        Issue::report("Failed parsing sortspec '%s': %s", sort_spec.c_str(), e.what());
-        selected.parse_failed = true;
-        selected.public_names.clear();
+        if (std::find(selected.public_names.begin(), selected.public_names.end(), field._field_or_name) !=
+            selected.public_names.end())
+        {
+            continue;
+        }
+        if (!rank_setup.has_sort_feature(field._field_or_name)) {
+            Issue::report("sort spec: rank feature '%s' is not an allowed sort feature",
+                          field._field_or_name.c_str());
+            selected.parse_failed = true;
+            selected.public_names.clear();
+            return selected;
+        }
+        selected.public_names.push_back(field._field_or_name);
     }
     return selected;
 }
@@ -375,7 +405,8 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             return reply;
         }
 
-        auto selected_sort = select_sort_features(request.sortSpec, *_rankSetup);
+        RequestSortSpec request_sort_spec(request.sortSpec);
+        auto            selected_sort = select_sort_features(request.sortSpec, request_sort_spec, *_rankSetup);
         if (selected_sort.parse_failed) {
             return reply;
         }
@@ -392,7 +423,7 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
                            second_phase_rank_score_drop_limit, request.offset, request.maxhits,
                            !_rankSetup->getSecondPhaseRank().empty(),
                            willNeedRanking(request, groupingContext, first_phase_rank_score_drop_limit,
-                                           mtf->query().needs_ranking()));
+                                           mtf->query().needs_ranking(), request_sort_spec));
 
         const bool ordered_hits_needed = (params.hits != 0) || !groupingContext.empty();
         if (!selected_sort.public_names.empty() && ordered_hits_needed) {
@@ -408,11 +439,18 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             }
         }
 
-        std::string sort_spec = request.sortSpec;
         // With neither hits nor grouping there is nothing to order; suppress the
         // sort so the empty partial result does not advertise sort data.
-        if (!selected_sort.public_names.empty() && !ordered_hits_needed) {
-            sort_spec.clear();
+        std::optional<ParsedSortSpec> sort_spec;
+        if (selected_sort.public_names.empty() || ordered_hits_needed) {
+            if (request_sort_spec.malformed()) {
+                // An empty spec installs a sorter with no levels, as FastS_SortSpec::Init
+                // does for a bad spec.
+                Issue::report("Failed parsing sortspec: %s", request.sortSpec.c_str());
+                sort_spec.emplace();
+            } else {
+                sort_spec = std::move(request_sort_spec.parsed);
+            }
         }
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, sort_spec, params.offset,

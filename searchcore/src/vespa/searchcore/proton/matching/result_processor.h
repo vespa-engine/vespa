@@ -108,9 +108,11 @@ private:
     std::atomic<bool>                                       _sort_feature_failed;
 
 public:
+    // sortSpec is unset when the query does not sort. A sort spec that failed to parse
+    // is passed as an empty ParsedSortSpec.
     ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
                     SessionManager& sessionMgr, GroupingContext& groupingContext, const std::string& sessionId,
-                    const std::string& sortSpec, size_t offset, size_t hits);
+                    std::optional<search::common::sortspec::ParsedSortSpec> sortSpec, size_t offset, size_t hits);
     ~ResultProcessor();
 
     void prepareThreadContextCreation(size_t num_threads);

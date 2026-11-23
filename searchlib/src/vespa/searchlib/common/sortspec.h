@@ -63,8 +63,8 @@ class ParsedSortSpec {
 
 public:
     ParsedSortSpec();
-    // Throws std::runtime_error if the spec is malformed, including a spec with no
-    // levels (empty or only spaces).
+    // Throws std::runtime_error if the spec is malformed. An empty spec, or one with
+    // only spaces, is not an error; it gives no levels, which callers check with empty().
     explicit ParsedSortSpec(const std::string& spec);
     ParsedSortSpec(const ParsedSortSpec&);
     ParsedSortSpec(ParsedSortSpec&&) noexcept;
@@ -74,6 +74,8 @@ public:
     const std::string& getSpec() const noexcept { return _spec; }
     size_t size() const noexcept { return _field_sort_specs.size(); }
     bool empty() const noexcept { return _field_sort_specs.empty(); }
+    // True if some level sorts by [rank], also inside missing(...).
+    bool using_rank() const noexcept;
     const ParsedSortSpecLevel& operator[](size_t idx) const noexcept { return _field_sort_specs[idx]; }
     auto begin() const noexcept { return _field_sort_specs.begin(); }
     auto end() const noexcept { return _field_sort_specs.end(); }

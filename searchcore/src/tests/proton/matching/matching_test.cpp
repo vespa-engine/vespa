@@ -1547,6 +1547,32 @@ TEST_F(MatchingTest, require_that_attribute_sort_with_rank_still_reranks) {
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid);
 }
 
+TEST_F(MatchingTest, require_that_sort_spec_with_only_spaces_is_handled_as_no_sort_spec) {
+    auto search = [this](const std::string& sort_spec, uint32_t& docs_ranked) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = sort_spec;
+        SearchReply::UP reply = world.performSearch(*request, 1);
+        docs_ranked = world.matchingStats.docsRanked();
+        return reply;
+    };
+    uint32_t        ranked_unsorted = 0;
+    uint32_t        ranked_spaces = 0;
+    SearchReply::UP unsorted = search("", ranked_unsorted);
+    SearchReply::UP spaces = search("   ", ranked_spaces);
+    EXPECT_EQ(9u, ranked_unsorted);
+    EXPECT_EQ(ranked_unsorted, ranked_spaces);
+    EXPECT_TRUE(unsorted->sortData.empty());
+    EXPECT_TRUE(spaces->sortData.empty());
+    ASSERT_EQ(unsorted->hits.size(), spaces->hits.size());
+    for (size_t i = 0; i < unsorted->hits.size(); ++i) {
+        EXPECT_EQ(unsorted->hits[i].gid, spaces->hits[i].gid);
+        EXPECT_EQ(unsorted->hits[i].metric, spaces->hits[i].metric);
+    }
+}
+
 TEST_F(MatchingTest, require_that_unknown_sort_feature_fails_closed) {
     MyWorld world(shared_state());
     world.basicSetup();
