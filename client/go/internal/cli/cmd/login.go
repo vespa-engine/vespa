@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"strconv"
 	"time"
@@ -218,29 +217,16 @@ func loginDeviceFlow(cli *CLI, ctx context.Context, a *auth0.Client, noBrowser b
 	return res, nil
 }
 
-// loginDenyReason matches the reason given when Vespa Cloud denies a login: a three-digit code,
-// optionally followed by a message, e.g. "600" or "601: Disposable email addresses are not allowed".
-var loginDenyReason = regexp.MustCompile(`^(\d{3})(?::\s*(.+))?$`)
-
-// errLoginDenied returns the error to show the user when err says that Vespa Cloud denied the login,
-// or nil when err is any other failure.
+// errLoginDenied returns the error to show the user when Vespa Cloud denied the login, which it
+// reports as a three-digit code, or nil when err is any other failure.
 func errLoginDenied(err error) error {
-	match := loginDenyReason.FindStringSubmatch(err.Error())
-	if match == nil {
-		return nil
-	}
-	code, message := match[1], match[2]
-	switch code {
+	switch err.Error() {
 	case "600":
 		return errHint(fmt.Errorf("Your organization require SSO for Vespa Cloud access"),
 			"Please login by entering your email in the email address field")
 	case "601":
 		return errHint(fmt.Errorf("Disposable email addresses are not allowed for Vespa Cloud access"),
 			"Please sign up with a permanent email address")
-	}
-	// A code this version does not know: show the message that came with it, if any.
-	if message != "" {
-		return fmt.Errorf("login error: %s", message)
 	}
 	return nil
 }

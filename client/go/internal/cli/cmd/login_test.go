@@ -19,9 +19,8 @@ func TestErrLoginDenied(t *testing.T) {
 	}{
 		{"600", ssoRequired},
 		{"601", disposableEmail},
-		{"601: Sign-up with disposable email addresses is not allowed.", disposableEmail},
-		{"602: Some reason this version does not know.", "login error: Some reason this version does not know."},
 		{"602", ""},
+		{"601: Sign-up with disposable email addresses is not allowed.", ""},
 		{"User did not consent", ""},
 		{"6000", ""},
 		{"", ""},
