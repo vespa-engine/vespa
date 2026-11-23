@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch;
 
 import ai.vespa.telemetry.api.trace.OtelTracing;
 import ai.vespa.telemetry.api.trace.TraceAttributes;
-import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;

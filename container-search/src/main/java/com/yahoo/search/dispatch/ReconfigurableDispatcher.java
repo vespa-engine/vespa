@@ -5,7 +5,6 @@ import ai.vespa.cloud.SystemInfo;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.container.QrConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;

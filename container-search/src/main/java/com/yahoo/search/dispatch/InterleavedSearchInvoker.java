@@ -3,9 +3,6 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.concurrent.Timer;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.NearestNeighborItem;
-import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
@@ -15,14 +12,11 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;

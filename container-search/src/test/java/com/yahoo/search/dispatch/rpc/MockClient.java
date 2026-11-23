@@ -5,17 +5,9 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdIdString;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Result;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.BinaryFormat;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
