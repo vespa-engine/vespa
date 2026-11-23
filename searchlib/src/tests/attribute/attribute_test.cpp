@@ -1102,6 +1102,43 @@ void AttributeTest::testArray(const AttributePtr& ptr, const std::vector<BufferT
         }
     }
     EXPECT_TRUE(!v.assign_element(ptr->getNumDocs(), 0, values[0]));
+
+    // test remove_element()
+    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
+        ptr->clearDoc(doc);
+
+        // start from a known array: [values[0], values[1], values[2]]
+        {
+            for (uint32_t i = 0; i < 3; ++i) {
+                EXPECT_TRUE(v.append(doc, values[i], 1));
+            }
+            ptr->commit();
+            EXPECT_TRUE(checkContent(ptr, doc, 3, 3, values));
+        }
+
+        // remove in range.
+        EXPECT_TRUE(v.remove_element(doc, 1));
+        ptr->commit();
+        {
+            std::vector<BufferType> buffer(2);
+            EXPECT_EQ(2u, ptr->getValueCount(doc));
+            EXPECT_EQ(2u, ptr->get(doc, buffer.data(), buffer.size()));
+            EXPECT_EQ(values[0], buffer[0]);
+            EXPECT_EQ(values[2], buffer[1]);
+        }
+
+        // remove out of range is no-op
+        EXPECT_TRUE(v.remove_element(doc, 3));
+        ptr->commit();
+        {
+            std::vector<BufferType> buffer(2);
+            EXPECT_EQ(2u, ptr->getValueCount(doc));
+            EXPECT_EQ(2u, ptr->get(doc, buffer.data(), buffer.size()));
+            EXPECT_EQ(values[0], buffer[0]);
+            EXPECT_EQ(values[2], buffer[1]);
+        }
+    }
+    EXPECT_TRUE(!v.remove_element(ptr->getNumDocs(), 0));
 }
 
 void AttributeTest::testArray() {

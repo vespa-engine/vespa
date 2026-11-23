@@ -93,11 +93,21 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
 
         // iterate through all changes for this document
         for (; (current != end) && (current->_doc == doc); ++current) {
+            // These opcodes do not hold data, so they will get pruned by "extractChangeData" for
+            // enum optimization. So they are handled first.
             if (current->_type == ChangeBase::CLEARDOC) {
                 new_values.clear();
                 tombstones.clear();
                 continue;
+            } else if (current->_type == ChangeBase::REMOVE_ELEMENT) {
+                cull_tombstones(tombstones, new_values);
+                uint32_t index = current->element_index();
+                if (index < new_values.size()) {
+                    new_values.erase(new_values.begin() + index);
+                }
+                continue;
             }
+
             NonAtomicValueType data;
             bool               hasData = extractChangeData(*current, data);
             if (!hasData) {

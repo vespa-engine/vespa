@@ -25,6 +25,7 @@ public:
     bool assign_element(DocId doc, uint32_t index, double v) {
         return AttributeVector::assign_element(_changes, doc, index, NumericChangeData<double>(v));
     }
+    bool remove_element(DocId doc, uint32_t index) { return AttributeVector::remove_element(_changes, doc, index); }
     bool apply(DocId doc, const ArithmeticValueUpdate& op);
     bool applyWeight(DocId doc, const FieldValue& fv, const ArithmeticValueUpdate& wAdjust) override;
     bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;

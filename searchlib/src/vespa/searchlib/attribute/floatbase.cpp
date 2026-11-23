@@ -101,5 +101,7 @@ template bool AttributeVector::remove(FloatingPointAttribute::ChangeVector& chan
                                       const NumericChangeData<double>& v, int32_t w);
 template bool AttributeVector::assign_element(FloatingPointAttribute::ChangeVector& changes, DocId doc,
                                               uint32_t index, const NumericChangeData<double>& v);
+template bool AttributeVector::remove_element(FloatingPointAttribute::ChangeVector& changes, DocId doc,
+                                              uint32_t index);
 
 } // namespace search

@@ -109,5 +109,6 @@ template bool AttributeVector::remove(IntegerAttribute::ChangeVector& changes, D
                                       const NumericChangeData<largeint_t>& v, int32_t w);
 template bool AttributeVector::assign_element(IntegerAttribute::ChangeVector& changes, DocId doc, uint32_t index,
                                               const NumericChangeData<largeint_t>& v);
+template bool AttributeVector::remove_element(IntegerAttribute::ChangeVector& changes, DocId doc, uint32_t index);
 
 } // namespace search
