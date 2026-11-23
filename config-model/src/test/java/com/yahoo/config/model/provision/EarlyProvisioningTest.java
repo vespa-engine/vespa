@@ -45,7 +45,7 @@ public class EarlyProvisioningTest {
                           """;
 
         // TODO: Remove the cluster IDs below as collectAllocationRequests() is implemented for their builders
-        assertEarlyProvisioning(services, 10, "bar", "cluster-controllers", "foo");
+        assertEarlyProvisioning(services, 10, "cluster-controllers", "foo");
     }
 
     @Test

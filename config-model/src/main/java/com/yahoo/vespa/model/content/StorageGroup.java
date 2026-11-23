@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.builder.xml.dom.DomDistributorBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomStorageNodeBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -183,17 +182,6 @@ public class StorageGroup {
         return java.util.Objects.hash(index, name, partitions);
     }
 
-    public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification,
-                                                                      ClusterSpec.Id clusterId,
-                                                                      HostSystem hostSystem,
-                                                                      ConfigModelContext context) {
-        return nodesSpecification.setClusterSpecFrom(ClusterSpec.Type.content,
-                                                     clusterId,
-                                                     true,
-                                                     context.clusterInfo().build())
-                                 .provision(hostSystem, context.getDeployState());
-    }
-
     public static class Builder {
 
         private final ModelElement clusterElement;
@@ -204,24 +192,52 @@ public class StorageGroup {
             this.context = context;
         }
 
-        public StorageGroup buildRootGroup(DeployState deployState, ContentCluster owner, Boolean isStreaming) {
+        /** Returns the cluster to allocate hosts to for this content cluster: present if and only if hosted. */
+        public Optional<ClusterSpec> collectAllocationRequests() {
             try {
-                if (owner.isHosted())
-                    validateRedundancyAndGroups(deployState.zone().environment());
+                return collectRootGroup(true).nodesSpecification().map(NodesSpecification::cluster);
+            }
+            catch (IllegalArgumentException e) {
+                // Same message as in build(), see ContentCluster.toString()
+                throw new IllegalArgumentException("In content cluster '" + ContentCluster.getClusterId(clusterElement) + "'", e);
+            }
+        }
 
-                Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
-                Optional<ModelElement> nodes = getNodes(clusterElement);
+        /**
+         * Validates and collects the root group, without modifying any state: everything that happens before hosts
+         * are allocated, shared by {@link #collectAllocationRequests} and {@link #build}.
+         */
+        private GroupBuilder collectRootGroup(boolean collectingAllocationRequests) {
+            DeployState deployState = context.getDeployState();
+            if (deployState.isHosted())
+                validateRedundancyAndGroups(deployState.zone().environment());
 
-                if (group.isPresent() && nodes.isPresent())
-                    throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
-                if (group.isPresent() && (group.get().integerAttribute("distribution-key") != null)) {
+            Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
+            Optional<ModelElement> nodes = getNodes(clusterElement);
+
+            if (group.isPresent() && nodes.isPresent())
+                throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
+            if (group.isPresent() && group.get().integerAttribute("distribution-key") != null) {
+                if ( ! collectingAllocationRequests) // avoid logging both during collecting (aka early phase) and the later building
                     deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
-                }
+            }
 
-                GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
-                StorageGroup storageGroup = owner.isHosted()
-                                            ? groupBuilder.buildHosted(deployState, owner, Optional.empty(), context)
-                                            : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
+            GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
+
+            if (deployState.isHosted()) {
+                var clusterId = ClusterSpec.Id.from(ContentCluster.getClusterId(clusterElement));
+                NodesSpecification nodesSpecification = hostedNodesSpecification(nodes)
+                        .setClusterSpecFrom(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build());
+                groupBuilder.setNodesSpecification(nodesSpecification);
+            }
+
+            return groupBuilder;
+        }
+
+        public StorageGroup build(DeployState deployState, ContentCluster owner, Boolean isStreaming) {
+            try {
+                GroupBuilder groupBuilder = collectRootGroup(false);
+                StorageGroup storageGroup = groupBuilder.build(deployState, owner);
 
                 RedundancyBuilder redundancyBuilder = new RedundancyBuilder(clusterElement);
                 Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), isStreaming, storageGroup.subgroups.size(),
@@ -281,26 +297,16 @@ public class StorageGroup {
             private final List<GroupBuilder> subGroups;
             private final List<XmlNodeBuilder> nodeBuilders;
 
-            /** The nodes explicitly specified as a nodes tag in this group, or empty if none */
-            private final Optional<NodesSpecification> nodeRequirement;
+            /** The nodes specification for this group, if any. Only present in hosted deployments for the root group. */
+            private Optional<NodesSpecification> nodesSpecification = Optional.empty();
 
-
-            private GroupBuilder(StorageGroup storageGroup, List<GroupBuilder> subGroups, List<XmlNodeBuilder> nodeBuilders,
-                                 Optional<NodesSpecification> nodeRequirement) {
+            private GroupBuilder(StorageGroup storageGroup, List<GroupBuilder> subGroups, List<XmlNodeBuilder> nodeBuilders) {
                 this.storageGroup = storageGroup;
                 this.subGroups = subGroups;
                 this.nodeBuilders = nodeBuilders;
-                this.nodeRequirement = nodeRequirement;
             }
 
-            /**
-             * Builds a storage group for a nonhosted environment
-             *
-             * @param owner the cluster owning this
-             * @param parent the parent storage group, or empty if this is the root group
-             * @return the storage group build by this
-             */
-            public StorageGroup buildNonHosted(DeployState deployState, ContentCluster owner, Optional<GroupBuilder> parent) {
+            private StorageGroup buildNonHosted(DeployState deployState, ContentCluster owner, Optional<GroupBuilder> parent) {
                 for (GroupBuilder subGroup : subGroups) {
                     storageGroup.subgroups.add(subGroup.buildNonHosted(deployState, owner, Optional.of(this)));
                 }
@@ -331,32 +337,15 @@ public class StorageGroup {
                 return storageNode;
             }
 
-            /**
-             * Builds a storage group for a hosted environment
-             *
-             * @param owner the cluster owning this
-             * @param parent the parent storage group, or empty if this is the root group
-             * @return the storage group build by this
-             */
-            public StorageGroup buildHosted(DeployState deployState,
-                                            ContentCluster owner,
-                                            Optional<GroupBuilder> parent,
-                                            ConfigModelContext context) {
-                if (storageGroup.getIndex() != null)
-                    throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
-                Map<HostResource, ClusterMembership> hostMapping =
-                        nodeRequirement.isPresent() ?
-                        provisionHosts(nodeRequirement.get(),
-                                       ClusterSpec.Id.from(owner.getStorageCluster().getClusterName()),
-                                       owner.getRoot().hostSystem(),
-                                       context) :
-                        Map.of();
+            /** Builds the root storage group. */
+            public StorageGroup build(DeployState deployState, ContentCluster owner) {
+                if ( ! deployState.isHosted()) return buildNonHosted(deployState, owner, Optional.empty());
 
+                Map<HostResource, ClusterMembership> hostMapping = nodesSpecification
+                        .orElseThrow(() -> new IllegalStateException("Unable to build hosted storage group without a nodes specification"))
+                        .provision(owner.getRoot().hostSystem(), deployState);
                 Map<Integer, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
                 if (hostGroups.size() > 1) {
-                    if (parent.isPresent())
-                        throw new IllegalArgumentException("Cannot specify groups using the groups attribute in nested content groups");
-
                     // create subgroups as returned from allocation
                     for (Map.Entry<Integer, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
                         String groupIndex = String.valueOf(hostGroup.getKey());
@@ -367,12 +356,9 @@ public class StorageGroup {
                         storageGroup.subgroups.add(subgroup);
                     }
                 }
-                else { // or otherwise just create the nodes directly on this group, or the explicitly enumerated subgroups
+                else { // or otherwise just create the nodes directly on this group
                     for (Map.Entry<HostResource, ClusterMembership> host : hostMapping.entrySet()) {
                         storageGroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), storageGroup, host.getValue()));
-                    }
-                    for (GroupBuilder subGroup : subGroups) {
-                        storageGroup.subgroups.add(subGroup.buildHosted(deployState, owner, Optional.of(this), context));
                     }
                 }
                 return storageGroup;
@@ -389,6 +375,11 @@ public class StorageGroup {
                 return hostsPerGroup;
             }
 
+            public Optional<NodesSpecification> nodesSpecification() { return nodesSpecification; }
+
+            public void setNodesSpecification(NodesSpecification nodesSpecification) {
+                this.nodesSpecification = Optional.of(nodesSpecification);
+            }
         }
 
         private record XmlNodeBuilder(ModelElement clusterElement, ModelElement element) {
@@ -418,9 +409,9 @@ public class StorageGroup {
          * set of nodes. Such changes must be guarded by a common condition (e.g. feature flag) so the behaviour can be
          * changed simultaneously for all active config models.
          */
-        private GroupBuilder collectGroup(boolean isHosted, Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
+        private GroupBuilder collectGroup(Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
             StorageGroup group = new StorageGroup(
-                    isHosted, name, index,
+                    context.getDeployState().isHosted(), name, index,
                     childAsString(groupElement, "distribution.partitions"),
                     booleanAttributeOr(groupElement, VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME, false),
                     childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT),
@@ -430,7 +421,7 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
-            List<GroupBuilder> subGroups = groupElement.map(modelElement -> collectSubGroups(isHosted, group, modelElement)).orElseGet(List::of);
+            List<GroupBuilder> subGroups = groupElement.map(modelElement -> collectSubGroups(group, modelElement)).orElseGet(List::of);
 
             List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
             explicitNodes.addAll(collectExplicitNodes(groupElement));
@@ -439,56 +430,24 @@ public class StorageGroup {
             if (!subGroups.isEmpty() && nodesElement.isPresent())
                 throw new IllegalArgumentException("A group can contain either explicit subgroups or a nodes specification, but not both.");
 
-            Optional<NodesSpecification> nodeRequirement = getNodesSpecification(nodesElement, subGroups);
-
-            return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement);
+            return new GroupBuilder(group, subGroups, explicitNodes);
         }
 
-        private Optional<NodesSpecification> getNodesSpecification(Optional<ModelElement> nodesElement, List<GroupBuilder> subGroups) {
-            if (nodesElement.isEmpty()) {
-                return handleMissingNodesElement(subGroups);
-            }
+        /** Returns the nodes to allocate to this cluster in hosted. */
+        private NodesSpecification hostedNodesSpecification(Optional<ModelElement> nodesElement) {
+            if (nodesElement.isEmpty())
+                return NodesSpecification.nonDedicated(1, context);
 
             ModelElement nodes = nodesElement.get();
-            boolean isHosted = context.getDeployState().isHosted();
-            boolean hasCountAttribute = hasCountAttribute(nodes);
-            boolean hasGroupAttributes = hasGroupAttributes(nodes);
+            if (hasCountAttribute(nodes) || hasGroupAttributes(nodes) ||
+                context.getDeployState().zone().environment().isManuallyDeployed())
+                return NodesSpecification.from(nodes, context);
 
-            if (hasCountAttribute || hasGroupAttributes) {
-                return Optional.of(NodesSpecification.from(nodes, context));
-            }
-
-            if (isHosted) {
-                return handleHostedEnvironment(nodes);
-            }
-
-            // Nodes explicitly listed - resolve in GroupBuilder
-            return Optional.empty();
-        }
-
-        private Optional<NodesSpecification> handleMissingNodesElement(List<GroupBuilder> subGroups) {
-            boolean isHosted = context.getDeployState().isHosted();
-            if (subGroups.isEmpty() && isHosted) {
-                return Optional.of(NodesSpecification.nonDedicated(1, context));
-            }
-            return Optional.empty();
-        }
-
-        private Optional<NodesSpecification> handleHostedEnvironment(ModelElement nodes) {
-            boolean isManuallyDeployed = context.getDeployState().zone().environment().isManuallyDeployed();
-            if (isManuallyDeployed) {
-                return Optional.of(NodesSpecification.from(nodes, context));
-            }
-
-            if (!hasCountAttribute(nodes) && !hasGroupAttributes(nodes)) {
-                throw new IllegalArgumentException("""
-                        Clusters in hosted environments must have a <nodes count='N'> tag
-                        matching all zones, and having no <node> subtags,
-                        or <nodes groups='N' and group-size='N'> tags
-                        see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""");
-            }
-
-            return Optional.empty();
+            throw new IllegalArgumentException("""
+                    Clusters in hosted environments must have a <nodes count='N'> tag
+                    matching all zones, and having no <node> subtags,
+                    or <nodes groups='N' and group-size='N'> tags
+                    see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""");
         }
 
         private boolean hasCountAttribute(ModelElement nodes) {
@@ -526,8 +485,10 @@ public class StorageGroup {
             return nodes;
         }
 
-        private List<GroupBuilder> collectSubGroups(boolean isHosted, StorageGroup parentGroup, ModelElement parentGroupElement) {
+        private List<GroupBuilder> collectSubGroups(StorageGroup parentGroup, ModelElement parentGroupElement) {
             List<ModelElement> subGroupElements = parentGroupElement.subElements("group");
+            if ( ! subGroupElements.isEmpty() && context.getDeployState().isHosted())
+                throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
             if (subGroupElements.size() > 1 && parentGroup.getPartitions().isEmpty())
                 throw new IllegalArgumentException("'distribution' attribute is required with multiple subgroups");
 
@@ -537,7 +498,7 @@ public class StorageGroup {
                 indexPrefix = parentGroup.index + ".";
             }
             for (ModelElement g : subGroupElements) {
-                subGroups.add(collectGroup(isHosted, Optional.of(g), Optional.ofNullable(g.child("nodes")), g.stringAttribute("name"),
+                subGroups.add(collectGroup(Optional.of(g), Optional.ofNullable(g.child("nodes")), g.stringAttribute("name"),
                                            indexPrefix + g.integerAttribute("distribution-key")));
             }
             return subGroups;
