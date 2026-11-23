@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
@@ -2652,6 +2653,51 @@ TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
     ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
+}
+
+namespace {
+
+// Records the thread taking each stable enum guard.
+class RecordingAttributeContext : public MockAttributeContext {
+public:
+    mutable std::vector<std::pair<std::string, std::thread::id>> stable_enum_lookups;
+    const IAttributeVector* getAttributeStableEnum(std::string_view name) const override {
+        stable_enum_lookups.emplace_back(std::string(name), std::this_thread::get_id());
+        return MockAttributeContext::getAttributeStableEnum(name);
+    }
+};
+
+} // namespace
+
+TEST(ResultProcessorTest, map_key_enum_guard_is_taken_before_dispatch_for_any_thread_count) {
+    // The guard holds a shared lock, which must be released by the thread that took it, so it
+    // is taken here and not in a match thread, also when there is only one match thread.
+    for (size_t num_threads : {1, 4}) {
+        SCOPED_TRACE(num_threads);
+        RecordingAttributeContext          ac;
+        DocumentMetaStore                  meta_store(std::make_shared<bucketdb::BucketDBOwner>());
+        SessionManager                     session_mgr(10);
+        auto                               valid_lids = search::BitVector::create(0, 10);
+        std::atomic<vespalib::steady_time> now(vespalib::steady_clock::now());
+        search::grouping::GroupingContext  grouping(*valid_lids, now, vespalib::steady_time::max());
+        ResultProcessor rp(ac, meta_store, session_mgr, grouping, "", ParsedSortSpec("+m{\"k\"} +a"), 0, 10);
+        rp.prepareThreadContextCreation(num_threads);
+        ASSERT_EQ(1u, ac.stable_enum_lookups.size());
+        EXPECT_EQ("m.key", ac.stable_enum_lookups[0].first);
+        EXPECT_EQ(std::this_thread::get_id(), ac.stable_enum_lookups[0].second);
+    }
+}
+
+TEST(ResultProcessorTest, no_enum_guard_is_taken_without_a_sort_spec) {
+    RecordingAttributeContext          ac;
+    DocumentMetaStore                  meta_store(std::make_shared<bucketdb::BucketDBOwner>());
+    SessionManager                     session_mgr(10);
+    auto                               valid_lids = search::BitVector::create(0, 10);
+    std::atomic<vespalib::steady_time> now(vespalib::steady_clock::now());
+    search::grouping::GroupingContext  grouping(*valid_lids, now, vespalib::steady_time::max());
+    ResultProcessor                    rp(ac, meta_store, session_mgr, grouping, "", std::nullopt, 0, 10);
+    rp.prepareThreadContextCreation(1);
+    EXPECT_TRUE(ac.stable_enum_lookups.empty());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
