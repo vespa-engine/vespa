@@ -118,7 +118,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c.search);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
-            c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, c, c.search.isStreaming());
+            c.rootGroup = new StorageGroup.Builder(contentElement, context).build(deployState, c, c.search.isStreaming());
             var resourceLimits = calculateAndSetResourceLimits(c, deployState, contentElement);
             c.clusterControllerConfig = createClusterControllerConfig(contentElement, deployState, c, resourceLimits);
             validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
