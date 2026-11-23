@@ -32,7 +32,7 @@ class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
 
     private static final Logger log = Logger.getLogger(PeerAuthorizerTrustManager.class.getName());
 
-    private final PeerAuthorizer authorizer;
+    private volatile PeerAuthorizer authorizer;
     private final X509ExtendedTrustManager defaultTrustManager;
     private final AuthorizationMode mode;
     private final HostnameVerification hostnameVerification;
@@ -48,6 +48,11 @@ class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers, AuthorizationMode mode,
                                HostnameVerification hostnameVerification, KeyStore truststore) {
         this(authorizedPeers, mode, hostnameVerification, TrustManagerUtils.createDefaultX509TrustManager(truststore));
+    }
+
+    /** Replaces the authorization rules used for subsequent handshakes */
+    void updateAuthorizedPeers(AuthorizedPeers authorizedPeers) {
+        this.authorizer = new PeerAuthorizer(authorizedPeers);
     }
 
     @Override
