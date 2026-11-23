@@ -131,7 +131,7 @@ public abstract class FleetControllerTest implements Waiter {
         database.setMinimumWaitBetweenFailedConnectionAttempts(2_000);
 
         var stateGenerator = new StateChangeHandler(context, timer, log);
-        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
+        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer, metricUpdater);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
 
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, rpcServer, nodeLookup,

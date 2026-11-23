@@ -157,7 +157,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         var database = new DatabaseHandler(context, options.dbFactoryFn().apply(context), timer, options.zooKeeperServerAddress(), timer);
         var lookUp = new SlobrokClient(context, timer, options.slobrokConnectionSpecs());
         var stateGenerator = new StateChangeHandler(context, timer, log);
-        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
+        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer, metricUpdater);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator,
                                              null, lookUp, database, stateGenerator,
