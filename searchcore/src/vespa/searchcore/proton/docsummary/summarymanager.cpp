@@ -114,10 +114,14 @@ SummaryManager::createSummarySetup(const SummaryConfig& summaryCfg, const Junipe
 
 SummaryManager::SummaryManager(vespalib::Executor& shared_executor, const LogDocumentStore::Config& storeConfig,
                                const search::GrowStrategy& growStrategy, const std::string& baseDir,
+                               std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
                                const TuneFileSummary& tuneFileSummary, const FileHeaderContext& fileHeaderContext,
                                search::transactionlog::SyncProxy& tlSyncer, search::IBucketizer::SP bucketizer,
                                std::shared_ptr<const search::IDocumentIdProvider> document_id_provider)
-    : _baseDir(baseDir), _docStore(), _document_id_provider(std::move(document_id_provider)) {
+    : _baseDir(baseDir),
+      _docStore(),
+      _document_id_provider(std::move(document_id_provider)),
+      _doc_type_and_subdb_name(std::move(doc_type_and_subdb_name_in)) {
     _docStore =
         std::make_shared<LogDocumentStore>(shared_executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
                                            fileHeaderContext, tlSyncer, std::move(bucketizer));
@@ -144,10 +148,10 @@ void SummaryManager::moveDocument(uint64_t syncToken, search::DocumentIdT prevLi
 
 namespace {
 
-IFlushTarget::SP createShrinkLidSpaceFlushTarget(vespalib::Executor& summaryService, IDocumentStore::SP docStore) {
+IFlushTarget::SP createShrinkLidSpaceFlushTarget(vespalib::Executor& summaryService, IDocumentStore::SP docStore,
+                                                 std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name) {
     return std::make_shared<ShrinkSummaryLidSpaceFlushTarget>(
-        "summary.shrink", IFlushTarget::Type::GC, IFlushTarget::Component::DOCUMENT_STORE,
-        docStore->tentativeLastSyncToken(), summaryService, std::move(docStore));
+        std::move(doc_type_and_subdb_name), docStore->tentativeLastSyncToken(), summaryService, std::move(docStore));
 }
 
 } // namespace
@@ -159,7 +163,7 @@ IFlushTarget::List SummaryManager::getFlushTargets(vespalib::Executor& summarySe
         ret.push_back(std::make_shared<SummaryCompactBloatTarget>(summaryService, getBackingStore()));
         ret.push_back(std::make_shared<SummaryCompactSpreadTarget>(summaryService, getBackingStore()));
     }
-    ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore));
+    ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore, _doc_type_and_subdb_name));
     return ret;
 }
 

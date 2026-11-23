@@ -15,12 +15,13 @@ class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget {
     vespalib::Executor& _summaryService;
 
 public:
-    ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type, Component component,
+    ShrinkSummaryLidSpaceFlushTarget(std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
                                      SerialNum flushedSerialNum, vespalib::Executor& summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
     void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
                     TaskPromise task_promise) override;
+    [[nodiscard]] std::string_view trace_span_name() const noexcept override;
 };
 
 } // namespace proton

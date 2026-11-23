@@ -22,6 +22,8 @@ class Fast_NormalizeWordFolder;
 
 namespace proton {
 
+class DocTypeAndSubDbName;
+
 class SummaryManager : public ISummaryManager {
 public:
     class SummarySetup : public ISummarySetup {
@@ -59,13 +61,15 @@ private:
     std::string                                        _baseDir;
     std::shared_ptr<search::IDocumentStore>            _docStore;
     std::shared_ptr<const search::IDocumentIdProvider> _document_id_provider;
+    const std::shared_ptr<const DocTypeAndSubDbName>   _doc_type_and_subdb_name;
 
 public:
     using SP = std::shared_ptr<SummaryManager>;
     SummaryManager(vespalib::Executor& shared_executor, const search::LogDocumentStore::Config& summary,
                    const search::GrowStrategy& growStrategy, const std::string& baseDir,
-                   const search::TuneFileSummary&           tuneFileSummary,
-                   const search::common::FileHeaderContext& fileHeaderContext,
+                   std::shared_ptr<const DocTypeAndSubDbName> doc_type_and_subdb_name_in,
+                   const search::TuneFileSummary&             tuneFileSummary,
+                   const search::common::FileHeaderContext&   fileHeaderContext,
                    search::transactionlog::SyncProxy& tlSyncer, std::shared_ptr<search::IBucketizer> bucketizer,
                    std::shared_ptr<const search::IDocumentIdProvider> document_id_provider);
     ~SummaryManager() override;
