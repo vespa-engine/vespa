@@ -2,12 +2,10 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.search.dispatch.rpc.Client.ResponseReceiver;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

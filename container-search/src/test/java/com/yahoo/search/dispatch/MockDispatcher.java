@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch;
 
 import ai.vespa.cloud.ApplicationId;
 import ai.vespa.cloud.Cloud;
-import ai.vespa.cloud.Cluster;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;

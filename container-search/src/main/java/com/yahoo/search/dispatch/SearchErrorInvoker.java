@@ -5,9 +5,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.searchchain.Execution;
 
-import java.io.IOException;
 import java.util.Optional;
 
 /**
