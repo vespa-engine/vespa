@@ -564,4 +564,22 @@ public class BinaryFormatTestCase {
         assertArrayEquals(expd, c.field("f").asData());
         assertFalse(c.entry(5).valid()); // not ARRAY
     }
+
+    @Test
+    public void testASizeHintDoesNotChangeTheEncoding() {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("name", "value");
+        root.setData("blob", new byte[10_000]);
+        root.setLong("count", 7);
+        Compressor compressor = new Compressor(CompressionType.NONE);
+        Compressor.Compression expected = BinaryFormat.encode_and_compress(slime, compressor);
+        // Too small, about right and much too large.
+        for (int sizeHint : new int[] { 0, 1, 100, 10_000, 10_256, 1_000_000 }) {
+            Compressor.Compression actual = BinaryFormat.encode_and_compress(slime, compressor, sizeHint);
+            assertEquals(expected.type(), actual.type());
+            assertEquals(expected.uncompressedSize(), actual.uncompressedSize());
+            assertArrayEquals(expected.data(), actual.data());
+        }
+    }
 }

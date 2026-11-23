@@ -35,6 +35,9 @@ import java.util.Optional;
  */
 public class RPCSendV2 extends RPCSend {
 
+    /** Room in the encoding buffer for the short fields beside the payload, such as the version and protocol. */
+    private static final int HEADROOM_BYTES = 256;
+
     private final static String METHOD_NAME = "mbus.slime";
     private final static String METHOD_PARAMS = "bixbix";
     private final static String METHOD_RETURN = "bixbix";
@@ -141,8 +144,9 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
+        String routeText = route.toString();
         root.setString(VERSION_F, version.toUtf8().getBytes());
-        root.setString(ROUTE_F, route.toString());
+        root.setString(ROUTE_F, routeText);
         root.setString(SESSION_F, address.getSessionName());
         root.setString(PROTOCOL_F, msg.getProtocol().toString());
         root.setBool(USERETRY_F, msg.getRetryEnabled());
@@ -151,7 +155,9 @@ public class RPCSendV2 extends RPCSend {
         root.setLong(TRACELEVEL_F, traceLevel);
         root.setData(BLOB_F, payload);
 
-        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
+        // Start the buffer at about the encoded size, so it does not grow while the payload is added.
+        int sizeHint = payload.length + routeText.length() + address.getSessionName().length() + HEADROOM_BYTES;
+        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor, sizeHint);
 
         v.add(new Int8Value(compressionResult.type().getCode()));
         v.add(new Int32Value(compressionResult.uncompressedSize()));
@@ -273,7 +279,11 @@ public class RPCSendV2 extends RPCSend {
             }
         }
 
-        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
+        // Start the buffer at about the encoded size, so it does not grow while the payload is added. Replies with
+        // errors or a trace have more text of unknown size, and keep the default start size.
+        Compressor.Compression compressionResult = payload == null || reply.hasErrors() || reply.getTrace().getLevel() > 0
+                ? BinaryFormat.encode_and_compress(slime, compressor)
+                : BinaryFormat.encode_and_compress(slime, compressor, payload.length + HEADROOM_BYTES);
 
         ret.add(new Int8Value(compressionResult.type().getCode()));
         ret.add(new Int32Value(compressionResult.uncompressedSize()));
