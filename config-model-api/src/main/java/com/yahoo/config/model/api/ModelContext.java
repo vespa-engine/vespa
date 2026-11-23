@@ -137,7 +137,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedMemoryFactor() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forceDisableOnnxModelOptimization() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}, unusedSince = "8.796") default boolean failWhenConfiguringIndexedMapOfArray() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default String allowStructFieldIndex() { return "disallow"; }
         @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
         @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonResampleDiskCapacity() { return true; }
