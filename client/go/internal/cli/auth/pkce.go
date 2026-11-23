@@ -170,7 +170,13 @@ func (a *Authenticator) WaitPKCE(ctx context.Context, s *PKCEState) (Result, err
 	})
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	go server.Serve(s.listener)
-	defer server.Close()
+	defer func() {
+		// Shut down gracefully so that the response to the callback request is fully written before the
+		// connection is closed
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		server.Shutdown(shutdownCtx)
+	}()
 
 	var res callbackResult
 	select {
