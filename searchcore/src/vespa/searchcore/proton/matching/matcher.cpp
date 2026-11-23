@@ -104,7 +104,7 @@ struct RequestSortSpec {
         }
         try {
             parsed.emplace(sort_spec);
-        } catch (const std::exception& e) {
+        } catch (const std::runtime_error& e) {
             parse_error = e.what();
             return;
         }
@@ -453,8 +453,8 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             }
         }
 
-        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, sort_spec, params.offset,
-                           params.hits);
+        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, std::move(sort_spec),
+                           params.offset, params.hits);
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         vespalib::LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);

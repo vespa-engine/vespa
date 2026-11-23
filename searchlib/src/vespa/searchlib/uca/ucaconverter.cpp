@@ -2,6 +2,7 @@
 
 #include "ucaconverter.h"
 
+#include <vespa/searchlib/common/sortspec.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -37,20 +38,22 @@ UcaConverter::UcaConverter(std::string_view locale, std::string_view strength)
     }
     if (U_SUCCESS(status)) {
         _collator.reset(coll);
-        if (strength.empty()) {
+        switch (common::sortspec::to_uca_strength(strength)) {
+        case common::sortspec::UcaStrength::PRIMARY:
             _collator->setStrength(Collator::PRIMARY);
-        } else if (strength == "PRIMARY") {
-            _collator->setStrength(Collator::PRIMARY);
-        } else if (strength == "SECONDARY") {
+            break;
+        case common::sortspec::UcaStrength::SECONDARY:
             _collator->setStrength(Collator::SECONDARY);
-        } else if (strength == "TERTIARY") {
+            break;
+        case common::sortspec::UcaStrength::TERTIARY:
             _collator->setStrength(Collator::TERTIARY);
-        } else if (strength == "QUATERNARY") {
+            break;
+        case common::sortspec::UcaStrength::QUATERNARY:
             _collator->setStrength(Collator::QUATERNARY);
-        } else if (strength == "IDENTICAL") {
+            break;
+        case common::sortspec::UcaStrength::IDENTICAL:
             _collator->setStrength(Collator::IDENTICAL);
-        } else {
-            throw std::runtime_error("Illegal uca collation strength : " + std::string(strength));
+            break;
         }
     } else {
         delete coll;

@@ -26,6 +26,8 @@ using search::attribute::make_map_lookup_sort_blob_writer;
 using search::attribute::make_sort_blob_writer;
 using search::common::FieldSortSpec;
 using search::common::SortSpec;
+using search::common::sortspec::map_key_attribute_name;
+using search::common::sortspec::map_value_attribute_name;
 using search::common::sortspec::ParsedSortSpec;
 using vespalib::alloc::Alloc;
 using namespace vespalib;
@@ -184,8 +186,8 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
         // The key is part of the field reference, so _field is the map name. No attribute has that
         // name; the value and the key live in the struct-field attributes.
         type = (field_sort_spec.is_ascending()) ? ASC_VECTOR : DESC_VECTOR;
-        auto value_name = field_sort_spec._field + ".value";
-        auto key_name = field_sort_spec._field + ".key";
+        auto value_name = map_value_attribute_name(field_sort_spec._field);
+        auto key_name = map_key_attribute_name(field_sort_spec._field);
         // The value is copied into the sort blob immediately, as in ordinary string sorting.
         // The key handle is compared for the whole query, so only m.key needs a stable enum.
         vector = vecMan.getAttribute(value_name);
@@ -423,8 +425,8 @@ FastS_SortSpec::~FastS_SortSpec() {
 void FastS_SortSpec::prefetch_enum_guards(IAttributeContext& attr_ctx, const ParsedSortSpec& sort_spec) {
     for (const auto& field : sort_spec) {
         if (field._map_key.has_value()) {
-            attr_ctx.getAttributeStableEnum(field._field_or_name + ".key");
-            attr_ctx.getAttribute(field._field_or_name + ".value");
+            attr_ctx.getAttributeStableEnum(map_key_attribute_name(field._field_or_name));
+            attr_ctx.getAttribute(map_value_attribute_name(field._field_or_name));
         }
     }
 }

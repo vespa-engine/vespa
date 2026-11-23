@@ -20,6 +20,7 @@ using sortspec::MissingPolicy;
 using sortspec::ParsedSortSpec;
 using sortspec::ParsedSortSpecLevel;
 using sortspec::SortOrder;
+using sortspec::to_uca_strength;
 
 using vespalib::ConstBufferRef;
 using vespalib::make_string;
@@ -45,6 +46,37 @@ ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef& src) const {
 }
 
 namespace sortspec {
+
+std::string map_key_attribute_name(std::string_view map_name) {
+    std::string result(map_name);
+    result.append(".key");
+    return result;
+}
+
+std::string map_value_attribute_name(std::string_view map_name) {
+    std::string result(map_name);
+    result.append(".value");
+    return result;
+}
+
+UcaStrength to_uca_strength(std::string_view name) {
+    if (name.empty() || name == "PRIMARY") {
+        return UcaStrength::PRIMARY;
+    }
+    if (name == "SECONDARY") {
+        return UcaStrength::SECONDARY;
+    }
+    if (name == "TERTIARY") {
+        return UcaStrength::TERTIARY;
+    }
+    if (name == "QUATERNARY") {
+        return UcaStrength::QUATERNARY;
+    }
+    if (name == "IDENTICAL") {
+        return UcaStrength::IDENTICAL;
+    }
+    throw std::runtime_error("Illegal uca collation strength : " + std::string(name));
+}
 
 ParsedSortSpecLevel::ParsedSortSpecLevel(std::string_view field, SortOrder sort_order) noexcept
     : ParsedSortSpecLevel(LevelType::ATTRIBUTE, field, sort_order) {
@@ -284,12 +316,6 @@ std::string decode_missing_value(Tokenizer& tokenizer) {
     }
 }
 
-// An empty strength means PRIMARY. Case matters, as in UcaConverter.
-bool is_uca_strength(std::string_view strength) noexcept {
-    return strength.empty() || strength == "PRIMARY" || strength == "SECONDARY" || strength == "TERTIARY" ||
-           strength == "QUATERNARY" || strength == "IDENTICAL";
-}
-
 ParsedSortSpecLevel parseBrackets(Tokenizer& tokenizer, SortOrder sort_order) {
     std::string_view name = tokenizer.bracketed();
     if (name == "[rank]") {
@@ -360,10 +386,8 @@ ParsedSortSpecLevel parseUca(Tokenizer& tokenizer, SortOrder sort_order) {
         result._uca_strength = tokenizer.token();
         tokenizer.expect_char(')');
     }
-    // Same check and message as UcaConverter, but at parse time.
-    if (!is_uca_strength(result._uca_strength)) {
-        throw std::runtime_error("Illegal uca collation strength : " + std::string(result._uca_strength));
-    }
+    // The same check UcaConverter does, but at parse time.
+    to_uca_strength(result._uca_strength);
     return result;
 }
 

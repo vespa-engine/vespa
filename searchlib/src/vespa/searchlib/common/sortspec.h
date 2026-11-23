@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace search::common {
@@ -29,6 +30,19 @@ enum class MissingPolicy : uint8_t {
 // Which string converter a sort level asks for. The converter itself is created
 // when a ParsedSortSpec is turned into a SortSpec.
 enum class ConverterKind : uint8_t { NONE, LOWERCASE, UCA };
+
+enum class UcaStrength : uint8_t { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL };
+
+// Maps a uca strength name, as written in uca(field,locale,strength), to a UcaStrength.
+// An empty name means PRIMARY. Case matters. Throws std::runtime_error on an unknown name.
+// Both the sort spec parser and UcaConverter use this, so they accept the same names.
+UcaStrength to_uca_strength(std::string_view name);
+
+// The attributes holding the keys and the values of the map named in m{"k"}. Everything that
+// looks these up must use these, so the m.key enum guard taken before dispatch is the one the
+// match threads find in the attribute context cache.
+std::string map_key_attribute_name(std::string_view map_name);
+std::string map_value_attribute_name(std::string_view map_name);
 
 // One sort level as written in the sort spec, before any converter is created.
 struct ParsedSortSpecLevel {
