@@ -481,8 +481,15 @@ void SearchVisitor::init(const Parameters& params) {
 
         if (hasSortSpec) {
             search::uca::UcaConverterFactory ucaFactory;
-            _sortSpec = search::common::SortSpec(std::string(sortRef.data(), sortRef.size()), ucaFactory);
-            LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
+            std::string                      sort_spec(sortRef.data(), sortRef.size());
+            try {
+                _sortSpec = search::common::SortSpec(sort_spec, ucaFactory);
+                LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
+            } catch (const std::runtime_error& e) {
+                // The container may pass a spec the backend parser rejects. Don't sort then, the
+                // hits stay in rank order, as in proton.
+                Issue::report("Failed parsing sortspec '%s': %s", sort_spec.c_str(), e.what());
+            }
         }
 
         SerializedQueryTreeSP serialized_query_tree;
