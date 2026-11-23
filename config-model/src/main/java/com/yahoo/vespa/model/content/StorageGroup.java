@@ -182,20 +182,59 @@ public class StorageGroup {
         return java.util.Objects.hash(index, name, partitions);
     }
 
+    /**
+     * Builds the root storage group of a content cluster, with its subgroups and nodes.
+     */
     public static class Builder {
 
         private final ModelElement clusterElement;
-        private final ConfigModelContext context;
+        private final DeployState deployState;
 
-        public Builder(ModelElement clusterElement, ConfigModelContext context) {
-            this.clusterElement = clusterElement;
-            this.context = context;
-        }
+        /** The root {@code <group>} and {@code <nodes>} elements of the cluster: at most one of these are present. */
+        private final Optional<ModelElement> groupElement;
+        private final Optional<ModelElement> nodesElement;
 
-        /** Returns the cluster to allocate hosts to for this content cluster: present if and only if hosted. */
-        public Optional<ClusterSpec> collectAllocationRequests() {
+        /** The root group, which is without subgroups and nodes until {@link #build} is called. */
+        private final StorageGroup rootGroup;
+
+        /** The cluster to allocate hosts to: present if and only if hosted. */
+        private final Optional<ClusterSpec> clusterSpec;
+
+        /**
+         * Validates the given content cluster as much as possible, and parses the element enough to determine
+         * the allocation requests (ClusterSpec) needed for early provisioning. During model building, this builder
+         * can be used to complete the building ({@link #build(ContentCluster, Boolean) build()}).
+         *
+         * @throws IllegalArgumentException if the cluster is invalid
+         */
+        public static Builder from(ModelElement clusterElement, ConfigModelContext context) {
             try {
-                return collectRootGroup(true).clusterSpec();
+                DeployState deployState = context.getDeployState();
+                if (deployState.isHosted())
+                    validateRedundancyAndGroups(clusterElement, context);
+
+                Optional<ModelElement> groupElement = Optional.ofNullable(clusterElement.child("group"));
+                Optional<ModelElement> nodesElement = getNodes(clusterElement);
+
+                if (groupElement.isPresent() && nodesElement.isPresent())
+                    throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
+
+                StorageGroup rootGroup = createGroup(deployState.isHosted(), groupElement, null, null);
+
+                final Optional<ClusterSpec> clusterSpec;
+                if (deployState.isHosted()) {
+                    if (groupElement.isPresent() && ! groupElement.get().subElements("group").isEmpty())
+                        throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
+
+                    var clusterId = ClusterSpec.Id.from(ContentCluster.getClusterId(clusterElement));
+                    clusterSpec = Optional.of(hostedNodesSpecification(nodesElement, context)
+                                                      .setClusterSpecFrom(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build())
+                                                      .cluster());
+                } else {
+                    clusterSpec = Optional.empty();
+                }
+
+                return new Builder(clusterElement, deployState, groupElement, nodesElement, rootGroup, clusterSpec);
             }
             catch (IllegalArgumentException e) {
                 // Same message as in build(), see ContentCluster.toString()
@@ -203,58 +242,52 @@ public class StorageGroup {
             }
         }
 
-        /**
-         * Validates and collects the root group, without modifying any state: everything that happens before hosts
-         * are allocated, shared by {@link #collectAllocationRequests} and {@link #build}.
-         */
-        private GroupBuilder collectRootGroup(boolean collectingAllocationRequests) {
-            DeployState deployState = context.getDeployState();
-            if (deployState.isHosted())
-                validateRedundancyAndGroups(deployState.zone().environment());
-
-            Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
-            Optional<ModelElement> nodes = getNodes(clusterElement);
-
-            if (group.isPresent() && nodes.isPresent())
-                throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
-            if (group.isPresent() && group.get().integerAttribute("distribution-key") != null) {
-                if ( ! collectingAllocationRequests) // avoid logging both during collecting (aka early phase) and the later building
-                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
-            }
-
-            GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
-
-            if (deployState.isHosted()) {
-                var clusterId = ClusterSpec.Id.from(ContentCluster.getClusterId(clusterElement));
-                ClusterSpec clusterSpec = hostedNodesSpecification(nodes)
-                        .setClusterSpecFrom(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build())
-                        .cluster();
-                groupBuilder.setClusterSpec(clusterSpec);
-            }
-
-            return groupBuilder;
+        private Builder(ModelElement clusterElement, DeployState deployState,
+                        Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement,
+                        StorageGroup rootGroup, Optional<ClusterSpec> clusterSpec) {
+            this.clusterElement = clusterElement;
+            this.deployState = deployState;
+            this.groupElement = groupElement;
+            this.nodesElement = nodesElement;
+            this.rootGroup = rootGroup;
+            this.clusterSpec = clusterSpec;
         }
 
-        public StorageGroup build(DeployState deployState, ContentCluster owner, Boolean isStreaming) {
+        /** Returns the clusters to allocate hosts to for this content cluster: exactly one if hosted, otherwise none. */
+        public List<ClusterSpec> collectAllocationRequests() {
+            return clusterSpec.stream().toList();
+        }
+
+        /**
+         * Allocates hosts to the cluster returned by {@link #collectAllocationRequests}, if any, builds the subgroups
+         * and nodes of the root group, and sets the redundancy of the owner. This can only be called once.
+         */
+        public StorageGroup build(ContentCluster owner, Boolean isStreaming) {
             try {
-                GroupBuilder groupBuilder = collectRootGroup(false);
-                StorageGroup storageGroup = groupBuilder.build(deployState, owner);
+                if (groupElement.isPresent() && groupElement.get().integerAttribute("distribution-key") != null) {
+                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                }
+
+                if (clusterSpec.isPresent())
+                    addAllocatedNodes(clusterSpec.get(), owner);
+                else
+                    addExplicitNodes(owner);
 
                 RedundancyBuilder redundancyBuilder = new RedundancyBuilder(clusterElement);
-                Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), isStreaming, storageGroup.subgroups.size(),
-                                                                storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false));
+                Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), isStreaming, rootGroup.subgroups.size(),
+                                                                rootGroup.getNumberOfLeafGroups(), rootGroup.countNodes(false));
                 owner.setRedundancy(redundancy);
-                if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
-                    storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
+                if (rootGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
+                    rootGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
                 }
-                return storageGroup;
+                return rootGroup;
             }
             catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("In " + owner, e);
             }
         }
 
-        private void validateRedundancyAndGroups(Environment environment) {
+        private static void validateRedundancyAndGroups(ModelElement clusterElement, ConfigModelContext context) {
             var redundancyElement = clusterElement.child("redundancy");
             if (redundancyElement == null) return;
             long redundancy = redundancyElement.asLong();
@@ -264,7 +297,7 @@ public class StorageGroup {
             var nodesSpec = NodesSpecification.from(nodesElement, context);
 
             // Allow dev deployment of self-hosted apps which do not specify node count by defaulting to 1 node
-            if (!nodesSpec.specifiesNodeCount() && environment == Environment.dev) return;
+            if (!nodesSpec.specifiesNodeCount() && context.getDeployState().zone().environment() == Environment.dev) return;
 
             int minNodesPerGroup = (int) Math.ceil((double) nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 
@@ -288,130 +321,15 @@ public class StorageGroup {
         }
 
         /**
-         * Represents a storage group and can build storage nodes in both hosted and non-hosted environments.
-         */
-        private static class GroupBuilder {
-
-            private final StorageGroup storageGroup;
-
-            /* The explicitly defined subgroups of this */
-            private final List<GroupBuilder> subGroups;
-            private final List<XmlNodeBuilder> nodeBuilders;
-
-            /** The cluster to allocate hosts to. Only present in hosted deployments for the root group. */
-            private Optional<ClusterSpec> clusterSpec = Optional.empty();
-
-            private GroupBuilder(StorageGroup storageGroup, List<GroupBuilder> subGroups, List<XmlNodeBuilder> nodeBuilders) {
-                this.storageGroup = storageGroup;
-                this.subGroups = subGroups;
-                this.nodeBuilders = nodeBuilders;
-            }
-
-            private StorageGroup buildNonHosted(DeployState deployState, ContentCluster owner, Optional<GroupBuilder> parent) {
-                for (GroupBuilder subGroup : subGroups) {
-                    storageGroup.subgroups.add(subGroup.buildNonHosted(deployState, owner, Optional.of(this)));
-                }
-                for (XmlNodeBuilder nodeBuilder : nodeBuilders) {
-                    storageGroup.nodes.add(nodeBuilder.build(deployState, owner, storageGroup));
-                }
-                
-                if (parent.isEmpty() && subGroups.isEmpty() && nodeBuilders.isEmpty()) { // no nodes or groups: create single node
-                    storageGroup.nodes.add(buildSingleNode(deployState, owner));
-                }
-
-                return storageGroup;
-            }
-
-            private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
-                int distributionKey = 0;
-
-                StorageNode storageNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
-                storageNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
-
-                parent.getSearch().addSearchNode(deployState, storageNode, storageGroup);
-                PersistenceEngine provider = parent.getPersistence().create(storageNode);
-                storageNode.initService(deployState);
-
-                Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, provider);
-                distributor.setHostResource(storageNode.getHostResource());
-                distributor.initService(deployState);
-                return storageNode;
-            }
-
-            /** Builds the root storage group. */
-            public StorageGroup build(DeployState deployState, ContentCluster owner) {
-                if ( ! deployState.isHosted()) return buildNonHosted(deployState, owner, Optional.empty());
-
-                ClusterSpec cluster = clusterSpec.orElseThrow(() -> new IllegalStateException("Unable to build hosted storage group without a cluster spec"));
-                Map<HostResource, ClusterMembership> hostMapping = owner.getRoot().hostSystem().allocateHosts(cluster, deployState);
-                Map<Integer, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
-                if (hostGroups.size() > 1) {
-                    // create subgroups as returned from allocation
-                    for (Map.Entry<Integer, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
-                        String groupIndex = String.valueOf(hostGroup.getKey());
-                        StorageGroup subgroup = new StorageGroup(true, groupIndex, groupIndex);
-                        for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
-                            subgroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), subgroup, host.getValue()));
-                        }
-                        storageGroup.subgroups.add(subgroup);
-                    }
-                }
-                else { // or otherwise just create the nodes directly on this group
-                    for (Map.Entry<HostResource, ClusterMembership> host : hostMapping.entrySet()) {
-                        storageGroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), storageGroup, host.getValue()));
-                    }
-                }
-                return storageGroup;
-            }
-
-            /** Collect hosts per group */
-            private Map<Integer, Map<HostResource, ClusterMembership>> collectAllocatedSubgroups(Map<HostResource, ClusterMembership> hostMapping) {
-                Map<Integer, Map<HostResource, ClusterMembership>> hostsPerGroup = new LinkedHashMap<>();
-                for (Map.Entry<HostResource, ClusterMembership> entry : hostMapping.entrySet()) {
-                    Integer group = entry.getValue().group();
-                    Map<HostResource, ClusterMembership> hostsInGroup = hostsPerGroup.computeIfAbsent(group, k -> new LinkedHashMap<>());
-                    hostsInGroup.put(entry.getKey(), entry.getValue());
-                }
-                return hostsPerGroup;
-            }
-
-            public Optional<ClusterSpec> clusterSpec() { return clusterSpec; }
-
-            public void setClusterSpec(ClusterSpec clusterSpec) {
-                this.clusterSpec = Optional.of(clusterSpec);
-            }
-        }
-
-        private record XmlNodeBuilder(ModelElement clusterElement, ModelElement element) {
-
-            public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
-                StorageNode sNode = new DomStorageNodeBuilder().build(deployState, parent.getStorageCluster(), element.getXml());
-                parent.getSearch().addSearchNode(deployState, sNode, storageGroup, element);
-                PersistenceEngine provider = parent.getPersistence().create(sNode);
-                new DomDistributorBuilder(provider).build(deployState, parent.getDistributorNodes(), element.getXml());
-                return sNode;
-            }
-
-        }
-
-        /**
-         * Creates a content group builder from a group and/or nodes element.
-         * These are the possibilities:
-         * <ul>
-         * <li>group and nodes is present: This is a leaf group specifying a set of nodes</li>
-         * <li>only group is present: This is a nonleaf group</li>
-         * <li>only nodes is present: This is the implicitly specified toplevel leaf group, or a set of groups
-         *                            specified using a group count attribute.
-         * <li>Neither element is present: Create a single node.
-         * </ul>
+         * Returns a new group without subgroups and nodes.
          *
-         * Note: DO NOT change allocation behaviour to allow version X and Y of the config-model to allocate a different
-         * set of nodes. Such changes must be guarded by a common condition (e.g. feature flag) so the behaviour can be
-         * changed simultaneously for all active config models.
+         * @param groupElement the element specifying the group, or empty if this is an implicit root group
+         * @param name the name of the group, or null if this is the root group
+         * @param index the index of the group, or null if this is the root group
          */
-        private GroupBuilder collectGroup(Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
-            StorageGroup group = new StorageGroup(
-                    context.getDeployState().isHosted(), name, index,
+        private static StorageGroup createGroup(boolean isHosted, Optional<ModelElement> groupElement, String name, String index) {
+            return new StorageGroup(
+                    isHosted, name, index,
                     childAsString(groupElement, "distribution.partitions"),
                     booleanAttributeOr(groupElement, VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME, false),
                     childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT),
@@ -420,21 +338,135 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
+        }
 
-            List<GroupBuilder> subGroups = groupElement.map(modelElement -> collectSubGroups(group, modelElement)).orElseGet(List::of);
+        /**
+         * Hosted: Allocates hosts to the given cluster, and adds a node for each to the root group,
+         * or to a subgroup for each group of the allocation if there are more than one.
+         *
+         * Note: DO NOT change allocation behaviour to allow version X and Y of the config-model to allocate a different
+         * set of nodes. Such changes must be guarded by a common condition (e.g. feature flag) so the behaviour can be
+         * changed simultaneously for all active config models.
+         */
+        private void addAllocatedNodes(ClusterSpec cluster, ContentCluster owner) {
+            Map<HostResource, ClusterMembership> hostMapping = owner.getRoot().hostSystem().allocateHosts(cluster, deployState);
+            Map<Integer, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
+            if (hostGroups.size() > 1) {
+                // create subgroups as returned from allocation
+                for (Map.Entry<Integer, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
+                    String groupIndex = String.valueOf(hostGroup.getKey());
+                    StorageGroup subgroup = new StorageGroup(true, groupIndex, groupIndex);
+                    for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
+                        subgroup.nodes.add(createStorageNode(owner, host.getKey(), subgroup, host.getValue()));
+                    }
+                    rootGroup.subgroups.add(subgroup);
+                }
+            }
+            else { // or otherwise just create the nodes directly on the root group
+                for (Map.Entry<HostResource, ClusterMembership> host : hostMapping.entrySet()) {
+                    rootGroup.nodes.add(createStorageNode(owner, host.getKey(), rootGroup, host.getValue()));
+                }
+            }
+        }
 
-            List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
-            explicitNodes.addAll(collectExplicitNodes(groupElement));
-            explicitNodes.addAll(collectExplicitNodes(nodesElement));
+        /** Collect hosts per group */
+        private static Map<Integer, Map<HostResource, ClusterMembership>> collectAllocatedSubgroups(Map<HostResource, ClusterMembership> hostMapping) {
+            Map<Integer, Map<HostResource, ClusterMembership>> hostsPerGroup = new LinkedHashMap<>();
+            for (Map.Entry<HostResource, ClusterMembership> entry : hostMapping.entrySet()) {
+                Integer group = entry.getValue().group();
+                Map<HostResource, ClusterMembership> hostsInGroup = hostsPerGroup.computeIfAbsent(group, k -> new LinkedHashMap<>());
+                hostsInGroup.put(entry.getKey(), entry.getValue());
+            }
+            return hostsPerGroup;
+        }
 
-            if (!subGroups.isEmpty() && nodesElement.isPresent())
+        private StorageNode createStorageNode(ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
+            StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), null, clusterMembership.index(), clusterMembership.retired());
+            sNode.setHostResource(hostResource);
+            sNode.initService(deployState);
+
+            parent.getSearch().addSearchNode(deployState, sNode, parentGroup);
+            PersistenceEngine provider = parent.getPersistence().create(sNode);
+            Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), provider);
+            d.setHostResource(sNode.getHostResource());
+            d.initService(deployState);
+            return sNode;
+        }
+
+        /**
+         * Self-hosted: Adds the explicitly specified subgroups and nodes to the root group,
+         * or a single node if there are none.
+         */
+        private void addExplicitNodes(ContentCluster owner) {
+            addExplicitNodes(rootGroup, groupElement, nodesElement, owner);
+
+            if (rootGroup.subgroups.isEmpty() && rootGroup.nodes.isEmpty()) // no nodes or groups: create single node
+                rootGroup.nodes.add(buildSingleNode(owner));
+        }
+
+        /**
+         * Adds the explicitly specified subgroups and nodes to the given group, recursively.
+         * These are the possibilities:
+         * <ul>
+         * <li>group and nodes is present: This is a leaf group specifying a set of nodes</li>
+         * <li>only group is present: This is a nonleaf group, or a leaf group with nodes directly below it</li>
+         * <li>only nodes is present: This is the implicitly specified toplevel leaf group</li>
+         * <li>Neither element is present: Nothing is added</li>
+         * </ul>
+         */
+        private void addExplicitNodes(StorageGroup group, Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement,
+                                      ContentCluster owner) {
+            List<ModelElement> subGroupElements = groupElement.map(element -> element.subElements("group")).orElseGet(List::of);
+            if (subGroupElements.size() > 1 && group.getPartitions().isEmpty())
+                throw new IllegalArgumentException("'distribution' attribute is required with multiple subgroups");
+
+            String indexPrefix = group.index == null ? "" : group.index + ".";
+            for (ModelElement subGroupElement : subGroupElements) {
+                StorageGroup subgroup = createGroup(false, Optional.of(subGroupElement), subGroupElement.stringAttribute("name"),
+                                                    indexPrefix + subGroupElement.integerAttribute("distribution-key"));
+                addExplicitNodes(subgroup, Optional.of(subGroupElement), Optional.ofNullable(subGroupElement.child("nodes")), owner);
+                group.subgroups.add(subgroup);
+            }
+
+            if ( ! subGroupElements.isEmpty() && nodesElement.isPresent())
                 throw new IllegalArgumentException("A group can contain either explicit subgroups or a nodes specification, but not both.");
 
-            return new GroupBuilder(group, subGroups, explicitNodes);
+            for (ModelElement nodeElement : nodeElements(groupElement))
+                group.nodes.add(buildNode(nodeElement, owner, group));
+            for (ModelElement nodeElement : nodeElements(nodesElement))
+                group.nodes.add(buildNode(nodeElement, owner, group));
+        }
+
+        private static List<ModelElement> nodeElements(Optional<ModelElement> groupOrNodesElement) {
+            return groupOrNodesElement.map(element -> element.subElements("node")).orElseGet(List::of);
+        }
+
+        private StorageNode buildNode(ModelElement nodeElement, ContentCluster parent, StorageGroup storageGroup) {
+            StorageNode sNode = new DomStorageNodeBuilder().build(deployState, parent.getStorageCluster(), nodeElement.getXml());
+            parent.getSearch().addSearchNode(deployState, sNode, storageGroup, nodeElement);
+            PersistenceEngine provider = parent.getPersistence().create(sNode);
+            new DomDistributorBuilder(provider).build(deployState, parent.getDistributorNodes(), nodeElement.getXml());
+            return sNode;
+        }
+
+        private StorageNode buildSingleNode(ContentCluster parent) {
+            int distributionKey = 0;
+
+            StorageNode storageNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
+            storageNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
+
+            parent.getSearch().addSearchNode(deployState, storageNode, rootGroup);
+            PersistenceEngine provider = parent.getPersistence().create(storageNode);
+            storageNode.initService(deployState);
+
+            Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, provider);
+            distributor.setHostResource(storageNode.getHostResource());
+            distributor.initService(deployState);
+            return storageNode;
         }
 
         /** Returns the nodes to allocate to this cluster in hosted. */
-        private NodesSpecification hostedNodesSpecification(Optional<ModelElement> nodesElement) {
+        private static NodesSpecification hostedNodesSpecification(Optional<ModelElement> nodesElement, ConfigModelContext context) {
             if (nodesElement.isEmpty())
                 return NodesSpecification.nonDedicated(1, context);
 
@@ -450,72 +482,33 @@ public class StorageGroup {
                     see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""");
         }
 
-        private boolean hasCountAttribute(ModelElement nodes) {
+        private static boolean hasCountAttribute(ModelElement nodes) {
             return nodes.stringAttribute("count") != null;
         }
 
-        private boolean hasGroupAttributes(ModelElement nodes) {
+        private static boolean hasGroupAttributes(ModelElement nodes) {
             return nodes.stringAttribute("groups") != null && nodes.stringAttribute("group-size") != null;
         }
 
-        private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {
+        private static Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {
             return element.map(modelElement -> modelElement.childAsString(childTagName));
         }
-        private Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
+        private static Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
             return element.map(modelElement -> modelElement.childAsLong(childTagName));
         }
-        private Optional<Boolean> childAsBoolean(Optional<ModelElement> element, String childTagName) {
+        private static Optional<Boolean> childAsBoolean(Optional<ModelElement> element, String childTagName) {
             return element.map(modelElement -> modelElement.childAsBoolean(childTagName));
         }
 
-        private boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {
+        private static boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {
             return element.map(modelElement -> modelElement.booleanAttribute(attributeName, defaultValue)).orElse(defaultValue);
         }
 
-        private Optional<ModelElement> getNodes(ModelElement groupOrNodesElement) {
+        private static Optional<ModelElement> getNodes(ModelElement groupOrNodesElement) {
             if (groupOrNodesElement.getXml().getTagName().equals("nodes")) return Optional.of(groupOrNodesElement);
             return Optional.ofNullable(groupOrNodesElement.child("nodes"));
         }
 
-        private List<XmlNodeBuilder> collectExplicitNodes(Optional<ModelElement> groupOrNodesElement) {
-            if (groupOrNodesElement.isEmpty()) return List.of();
-            List<XmlNodeBuilder> nodes = new ArrayList<>();
-            for (ModelElement n : groupOrNodesElement.get().subElements("node"))
-                nodes.add(new XmlNodeBuilder(clusterElement, n));
-            return nodes;
-        }
-
-        private List<GroupBuilder> collectSubGroups(StorageGroup parentGroup, ModelElement parentGroupElement) {
-            List<ModelElement> subGroupElements = parentGroupElement.subElements("group");
-            if ( ! subGroupElements.isEmpty() && context.getDeployState().isHosted())
-                throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
-            if (subGroupElements.size() > 1 && parentGroup.getPartitions().isEmpty())
-                throw new IllegalArgumentException("'distribution' attribute is required with multiple subgroups");
-
-            List<GroupBuilder> subGroups = new ArrayList<>();
-            String indexPrefix = "";
-            if (parentGroup.index != null) {
-                indexPrefix = parentGroup.index + ".";
-            }
-            for (ModelElement g : subGroupElements) {
-                subGroups.add(collectGroup(Optional.of(g), Optional.ofNullable(g.child("nodes")), g.stringAttribute("name"),
-                                           indexPrefix + g.integerAttribute("distribution-key")));
-            }
-            return subGroups;
-        }
-
-        private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
-            StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), null, clusterMembership.index(), clusterMembership.retired());
-            sNode.setHostResource(hostResource);
-            sNode.initService(deployState);
-
-            parent.getSearch().addSearchNode(deployState, sNode, parentGroup);
-            PersistenceEngine provider = parent.getPersistence().create(sNode);
-            Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), provider);
-            d.setHostResource(sNode.getHostResource());
-            d.initService(deployState);
-            return sNode;
-        }
     }
 
 }

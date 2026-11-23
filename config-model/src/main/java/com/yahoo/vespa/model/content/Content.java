@@ -286,7 +286,7 @@ public class Content extends ConfigModel {
         @Override
         public List<ClusterSpec> collectAllocationRequests(Element contentXml, ConfigModelContext context) {
             // TODO(hakon): the cluster controllers
-            return new StorageGroup.Builder(new ModelElement(contentXml), context).collectAllocationRequests().stream().toList();
+            return StorageGroup.Builder.from(new ModelElement(contentXml), context).collectAllocationRequests();
         }
 
         @Override
