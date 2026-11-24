@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
  * These tags are propagated to the underlying cloud provider (AWS, GCP, Azure) and
  * applied to infrastructure resources provisioned for the enclave.
  *
- * <p>Rules shared with all tags are in {@link CloudTagRules}. This class adds the rules for customer tags:
+ * <p>{@link #from(Map)} checks only the structure of the tags, using {@link CloudTagRules}, so an instance
+ * may hold any tags. Tags requested by a customer must also pass {@link #validateCustomerTags(CloudName)}:
  * keys reserved by the platform are rejected, the number of tags is limited, and values may contain
  * template variables.</p>
  *
@@ -46,10 +47,36 @@ public class CloudResourceTags {
     public int size() { return tags.size(); }
 
     /**
-     * Validates that all {@code ${...}} placeholders in tag values are recognized.
-     * Throws on any unknown placeholder. Does not resolve anything.
+     * Validates these tags as customer tags for the given cloud: keys reserved by the platform are rejected,
+     * the number of tags is limited, all template variables must be known, and keys and values must follow
+     * the cloud's character set and length limits. Template variables are removed from values before the
+     * cloud's character rules are checked; keys are checked as they are.
      */
-    public void validatePlaceholders() {
+    public void validateCustomerTags(CloudName cloud) {
+        if (tags.isEmpty()) return;
+        validateNotReserved();
+        validatePlaceholders();
+        CloudTagRules rules = CloudTagRules.forCloud(cloud);
+        if (tags.size() > MAX_CUSTOMER_TAGS)
+            throw new IllegalArgumentException("Too many cloud resource tags (" + tags.size() + "): " +
+                                               rules.cloudName() + " allows at most " + MAX_CUSTOMER_TAGS +
+                                               " customer tags");
+        tags.forEach((key, value) -> rules.validate(key, value, TEMPLATE_VARIABLE.matcher(value).replaceAll("")));
+    }
+
+    /** Validates that no key is a name or has a prefix reserved by the platform, ignoring case. */
+    public void validateNotReserved() {
+        for (String key : tags.keySet()) {
+            if (CloudTagRules.isReservedName(key))
+                throw new IllegalArgumentException("Tag key '" + key + "' is reserved by the platform");
+            Optional<String> reservedPrefix = CloudTagRules.reservedPrefixOf(key);
+            if (reservedPrefix.isPresent())
+                throw new IllegalArgumentException("Tag key prefix '" + reservedPrefix.get() +
+                                                   "' is reserved by the platform: '" + key + "'");
+        }
+    }
+
+    private void validatePlaceholders() {
         for (var entry : tags.entrySet()) {
             String remaining = entry.getValue();
             for (String p : PLACEHOLDERS) remaining = remaining.replace(p, "");
@@ -60,25 +87,9 @@ public class CloudResourceTags {
     }
 
     /**
-     * Validates these tags against the character set and length limits of the given cloud provider.
-     * Template-variable placeholders are stripped from values before checking per-cloud character
-     * rules; keys are validated as-is. Callers should also invoke {@link #validatePlaceholders()}
-     * to reject unrecognized template variables.
-     */
-    public void validateFor(CloudName cloud) {
-        if (tags.isEmpty()) return;
-        CloudTagRules rules = CloudTagRules.forCloud(cloud);
-        if (tags.size() > MAX_CUSTOMER_TAGS)
-            throw new IllegalArgumentException("Too many cloud resource tags (" + tags.size() + "): " +
-                                               rules.cloudName() + " allows at most " + MAX_CUSTOMER_TAGS +
-                                               " customer tags");
-        tags.forEach((key, value) -> rules.validate(key, value, TEMPLATE_VARIABLE.matcher(value).replaceAll("")));
-    }
-
-    /**
-     * Returns a new instance with all template variables substituted and validated against the target cloud's
-     * character set, length, and count limits. Throws if any {@code ${...}} placeholders remain after
-     * substitution, or if the resolved tags violate the cloud's rules.
+     * Returns a new instance with all template variables substituted, validated as customer tags for the target
+     * cloud. Throws if any {@code ${...}} placeholders remain after substitution, or if the resolved tags are not
+     * valid customer tags, see {@link #validateCustomerTags(CloudName)}.
      */
     public CloudResourceTags resolve(ApplicationId application, Environment environment, RegionName region,
                                      ClusterSpec.Id clusterId, ClusterSpec.Type clusterType, CloudName cloud) {
@@ -99,7 +110,7 @@ public class CloudResourceTags {
             resolved.put(entry.getKey(), value);
         }
         CloudResourceTags result = from(resolved);
-        result.validateFor(cloud);
+        result.validateCustomerTags(cloud);
         return result;
     }
 
@@ -130,23 +141,11 @@ public class CloudResourceTags {
 
     public static CloudResourceTags empty() { return EMPTY; }
 
-    /** Creates a new instance from the given map, validating keys and values. */
+    /** Creates a new instance from the given map, checking only its structure, see {@link CloudTagRules#validateStructure}. */
     public static CloudResourceTags from(Map<String, String> tags) {
         if (tags.isEmpty()) return EMPTY;
-        validate(tags);
-        return new CloudResourceTags(tags);
-    }
-
-    private static void validate(Map<String, String> tags) {
         CloudTagRules.validateStructure(tags);
-        for (String key : tags.keySet()) {
-            if (CloudTagRules.isReservedName(key))
-                throw new IllegalArgumentException("Tag key '" + key + "' is reserved by the platform");
-            Optional<String> reservedPrefix = CloudTagRules.reservedPrefixOf(key);
-            if (reservedPrefix.isPresent())
-                throw new IllegalArgumentException("Tag key prefix '" + reservedPrefix.get() +
-                                                   "' is reserved by the platform: '" + key + "'");
-        }
+        return new CloudResourceTags(tags);
     }
 
 }

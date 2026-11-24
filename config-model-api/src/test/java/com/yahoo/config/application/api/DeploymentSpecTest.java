@@ -2373,6 +2373,19 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void reservedCloudResourceTagKeysAreRejected() {
+        String tags = "<resource-tags><tag key='VAI_os_version' value='9.4'/></resource-tags>";
+        for (String xml : List.of("<deployment>" + tags + "<prod><region>us-east-1</region></prod></deployment>",
+                                  "<deployment><instance id='a'>" + tags + "<prod><region>us-east-1</region></prod></instance></deployment>",
+                                  "<deployment><prod><region name='us-east-1'>" + tags + "</region></prod></deployment>",
+                                  "<deployment><staging>" + tags + "</staging><prod><region>us-east-1</region></prod></deployment>",
+                                  "<deployment><prod><region>us-east-1</region></prod><dev>" + tags + "</dev></deployment>"))
+            assertInvalid(xml, "Tag key prefix 'vai_' is reserved by the platform: 'VAI_os_version'");
+        assertInvalid("<deployment><resource-tags><tag key='Owner' value='me'/></resource-tags></deployment>",
+                      "Tag key 'Owner' is reserved by the platform");
+    }
+
+    @Test
     public void cloudResourceTags() {
         String r =
                 """
