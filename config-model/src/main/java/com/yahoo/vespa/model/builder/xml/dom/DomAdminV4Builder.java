@@ -90,11 +90,11 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         NodesSpecification slobroks = slobroksNodeSpecification(adminModelElement.child("slobroks"));
         if (slobroks.isDedicated())
-            allocationRequests.add(setClusterSpecOn(slobroks, SLOBROKS_CLUSTER_ID).cluster());
+            allocationRequests.add(makeClusterSpec(slobroks, SLOBROKS_CLUSTER_ID));
 
         NodesSpecification logservers = logserverNodeSpecification(adminModelElement.child("logservers"));
         if (logservers.isDedicated())
-            allocationRequests.add(setClusterSpecOn(logservers, LOGSERVER_CLUSTER_ID).cluster());
+            allocationRequests.add(makeClusterSpec(logservers, LOGSERVER_CLUSTER_ID));
 
         return allocationRequests;
     }
@@ -156,11 +156,11 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, ClusterSpec.Id clusterId, NodesSpecification nodesSpecification) {
-        return setClusterSpecOn(nodesSpecification, clusterId).provision(hostSystem, context.getDeployState()).keySet();
+        return hostSystem.allocateHosts(makeClusterSpec(nodesSpecification, clusterId), context.getDeployState()).keySet();
     }
 
-    private NodesSpecification setClusterSpecOn(NodesSpecification nodesSpecification, ClusterSpec.Id clusterId) {
-        return nodesSpecification.setClusterSpecFrom(ClusterSpec.Type.admin, clusterId, false, context.clusterInfo().build());
+    private ClusterSpec makeClusterSpec(NodesSpecification nodesSpecification, ClusterSpec.Id clusterId) {
+        return nodesSpecification.makeClusterSpec(ClusterSpec.Type.admin, clusterId, false, context.clusterInfo().build());
     }
 
     /**
