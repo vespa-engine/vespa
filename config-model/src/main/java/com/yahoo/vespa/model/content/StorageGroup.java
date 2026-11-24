@@ -226,10 +226,7 @@ public class StorageGroup {
                     if (groupElement.isPresent() && ! groupElement.get().subElements("group").isEmpty())
                         throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
 
-                    var clusterId = ClusterSpec.Id.from(ContentCluster.getClusterId(clusterElement));
-                    clusterSpec = Optional.of(hostedNodesSpecification(nodesElement, context)
-                                                      .setClusterSpecFrom(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build())
-                                                      .cluster());
+                    clusterSpec = Optional.of(hostedClusterSpec(nodesElement, clusterElement, context));
                 } else {
                     clusterSpec = Optional.empty();
                 }
@@ -465,7 +462,12 @@ public class StorageGroup {
             return storageNode;
         }
 
-        /** Returns the nodes to allocate to this cluster in hosted. */
+        private static ClusterSpec hostedClusterSpec(Optional<ModelElement> nodesElement, ModelElement clusterElement, ConfigModelContext context) {
+            var clusterId = ClusterSpec.Id.from(ContentCluster.getClusterId(clusterElement));
+            return hostedNodesSpecification(nodesElement, context)
+                    .makeClusterSpec(ClusterSpec.Type.content, clusterId, true, context.clusterInfo().build());
+        }
+
         private static NodesSpecification hostedNodesSpecification(Optional<ModelElement> nodesElement, ConfigModelContext context) {
             if (nodesElement.isEmpty())
                 return NodesSpecification.nonDedicated(1, context);
