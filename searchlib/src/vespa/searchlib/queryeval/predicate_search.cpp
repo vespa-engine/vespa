@@ -158,15 +158,21 @@ void PredicateSearch::rewind_posting_lists() {
     _posting_lists_at = 0;
 }
 
+namespace {
+// Start the skipper just before the range instead of scanning from docid 0. It works in 32-doc chunks, and may
+// skip its first doc (docid 0 when unoffset), so it starts on a chunk boundary strictly below begin_id.
+uint32_t skipper_start_offset(uint32_t begin_id, uint32_t kv_size) {
+    uint32_t offset = (begin_id > 0) ? ((begin_id - 1) & ~31u) : 0;
+    return std::min(offset, kv_size & ~31u);
+}
+} // namespace
+
 void PredicateSearch::initRange(uint32_t begin_id, uint32_t end_id) {
     SearchIterator::initRange(begin_id, end_id);
     if (begin_id <= _posting_lists_at) {
         rewind_posting_lists();
     }
-    // Start the skipper just before the range instead of scanning from docid 0. It works in 32-doc chunks, and may
-    // skip its first doc (docid 0 when unoffset), so it starts on a chunk boundary strictly below begin_id.
-    uint32_t offset = (begin_id > 0) ? ((begin_id - 1) & ~31u) : 0;
-    offset = std::min(offset, static_cast<uint32_t>(_kv.size()) & ~31u);
+    uint32_t offset = skipper_start_offset(begin_id, static_cast<uint32_t>(_kv.size()));
     _skip = SkipMinFeature::create(_min_feature_vector + offset, _kv.data() + offset, _kv.size() - offset);
     _skip_offset = offset;
 }
