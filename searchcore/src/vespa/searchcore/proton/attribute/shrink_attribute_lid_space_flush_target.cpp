@@ -33,17 +33,14 @@ void ShrinkAttributeLidSpaceFlushTarget::init_flush(SerialNum                   
                                                     std::shared_ptr<search::IFlushToken> flush_token,
                                                     TaskPromise                          task_promise) {
     // Called by document db main executor.
-    auto        tracer = get_tracer();
-    auto        parent_span = tracer->GetCurrentSpan();
-    TaskPromise proxied_task_promise;
-    auto        future_flush_task = proxied_task_promise.get_future();
+    auto tracer = get_tracer();
+    auto parent_span = tracer->GetCurrentSpan();
     _executor.executeLambda(_executor_id, [this, currentSerial, flush_token(std::move(flush_token)),
-                                           proxied_task_promise(std::move(proxied_task_promise)),
-                                           tracer(std::move(tracer)), parent_span(std::move(parent_span))]() mutable {
+                                           task_promise(std::move(task_promise)), tracer(std::move(tracer)),
+                                           parent_span(std::move(parent_span))]() mutable {
         auto scope = tracer->WithActiveSpan(parent_span);
-        ShrinkLidSpaceFlushTarget::init_flush(currentSerial, std::move(flush_token), std::move(proxied_task_promise));
+        ShrinkLidSpaceFlushTarget::init_flush(currentSerial, std::move(flush_token), std::move(task_promise));
     });
-    task_promise.set_value(future_flush_task.get());
 }
 
 [[nodiscard]] std::string_view ShrinkAttributeLidSpaceFlushTarget::trace_span_name() const noexcept {
