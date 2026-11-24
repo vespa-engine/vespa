@@ -35,9 +35,9 @@ using search::attribute::getUndefined;
 using search::attribute::IAttributeVector;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::ISortBlobWriter;
+using search::attribute::make_map_lookup_sort_blob_writer;
 using search::attribute::NumericSortBlobWriter;
 using search::attribute::StringSortBlobWriter;
-using search::attribute::make_map_lookup_sort_blob_writer;
 using search::common::FieldSortSpec;
 using search::common::LowercaseConverter;
 using search::common::sortspec::MissingPolicy;
@@ -50,19 +50,19 @@ using SortData = std::vector<unsigned char>;
 constexpr uint32_t num_test_docs = 16;
 
 // Documents in the shared map fixture. Doc 0 is the reserved document.
-constexpr uint32_t doc_key_middle = 1;    // selected key at position 1 of 3
-constexpr uint32_t doc_key_first = 2;     // selected key at position 0 of 3
-constexpr uint32_t doc_key_last = 3;      // selected key at position 2 of 3
-constexpr uint32_t doc_key_absent = 4;    // map without the selected key
-constexpr uint32_t doc_empty_map = 5;     // no entries at all
-constexpr uint32_t doc_misaligned = 6;    // selected key present, but no value at that position
+constexpr uint32_t doc_key_middle = 1;      // selected key at position 1 of 3
+constexpr uint32_t doc_key_first = 2;       // selected key at position 0 of 3
+constexpr uint32_t doc_key_last = 3;        // selected key at position 2 of 3
+constexpr uint32_t doc_key_absent = 4;      // map without the selected key
+constexpr uint32_t doc_empty_map = 5;       // no entries at all
+constexpr uint32_t doc_misaligned = 6;      // selected key present, but no value at that position
 constexpr uint32_t doc_undefined_value = 7; // selected value is the reserved undefined value / NaN / empty string
 
 const std::string selected_key("k1");
 const std::string unknown_key("no_such_key_anywhere");
 
 std::shared_ptr<AttributeVector> make_attribute(const std::string& name, BasicType basic_type,
-                                                 CollectionType collection_type, bool fast_search) {
+                                                CollectionType collection_type, bool fast_search) {
     Config cfg(basic_type, collection_type);
     cfg.setFastSearch(fast_search);
     auto attr = AttributeFactory::createAttribute(name, cfg);
@@ -125,18 +125,30 @@ FieldSortSpec make_spec(bool ascending, MissingPolicy policy = MissingPolicy::DE
                          false, key);
 }
 
+/*
+ * Writes the sort blob for docid, offering buffers of increasing size starting at 0, so every
+ * blob is also written to every too-small buffer. Checks that the writer returns -1 for a
+ * too-small buffer, accepts the first buffer that is large enough, and never writes past
+ * the available size (verified with guard bytes after the offered buffer).
+ */
 SortData write_blob(ISortBlobWriter& writer, uint32_t docid) {
-    size_t   len = 0;
-    SortData buf;
-    while (len < 1024) { // the writer must terminate long before this
-        buf.clear();
-        buf.resize(len);
-        auto written = writer.write(docid, buf.data(), buf.size());
+    constexpr size_t        guard_size = 16;
+    constexpr unsigned char guard_byte = 0xa5;
+    for (size_t len = 0; len < 1024; ++len) { // the writer must terminate long before this
+        SortData buf(len + guard_size, guard_byte);
+        auto     written = writer.write(docid, buf.data(), len);
+        for (size_t i = len; i < buf.size(); ++i) {
+            if (buf[i] != guard_byte) {
+                ADD_FAILURE() << "Sort blob writer wrote past available size " << len << " for docid " << docid;
+                return {};
+            }
+        }
         if (written >= 0) {
+            EXPECT_EQ(static_cast<long>(len), written) << "Sort blob writer refused a large enough buffer";
             buf.resize(written);
             return buf;
         }
-        ++len;
+        EXPECT_EQ(-1, written);
     }
     ADD_FAILURE() << "Sort blob writer never accepted a buffer for docid " << docid;
     return {};
@@ -195,7 +207,8 @@ SortData expect_string(const char* value, bool asc, MissingPolicy policy = Missi
 
 SortData expect_missing_string(bool asc, MissingPolicy policy = MissingPolicy::DEFAULT,
                                const char* missing_value = "") {
-    return asc ? string_blob<true>(policy, missing_value, nullptr) : string_blob<false>(policy, missing_value, nullptr);
+    return asc ? string_blob<true>(policy, missing_value, nullptr)
+               : string_blob<false>(policy, missing_value, nullptr);
 }
 
 /*
@@ -303,8 +316,8 @@ TEST_F(MapLookupSortBlobWriterTest, absent_key_empty_map_and_misalignment_are_mi
 TEST_F(MapLookupSortBlobWriterTest, globally_unknown_key_is_missing_for_every_document) {
     auto values = make_int_values();
     for (bool asc : {true, false}) {
-        auto writer =
-            make_map_lookup_sort_blob_writer(*_keys, *values, make_spec(asc, MissingPolicy::DEFAULT, "", unknown_key));
+        auto writer = make_map_lookup_sort_blob_writer(*_keys, *values,
+                                                       make_spec(asc, MissingPolicy::DEFAULT, "", unknown_key));
         ASSERT_TRUE(writer);
         for (uint32_t docid = 1; docid <= doc_undefined_value; ++docid) {
             EXPECT_EQ(expect_missing<int32_t>(asc), write_blob(*writer, docid));
@@ -479,7 +492,7 @@ TEST_F(MapLookupSortBlobWriterTest, valid_and_invalid_missing_as_values) {
         BasicType::Type basic_type;
         const char*     valid;
     };
-    const std::vector<Case> cases{{BasicType::INT8, "12"},   {BasicType::INT16, "1234"},
+    const std::vector<Case> cases{{BasicType::INT8, "12"},    {BasicType::INT16, "1234"},
                                   {BasicType::INT32, "1234"}, {BasicType::INT64, "1234"},
                                   {BasicType::FLOAT, "12.5"}, {BasicType::DOUBLE, "12.5"}};
     for (const auto& c : cases) {
@@ -525,8 +538,9 @@ TEST_F(MapLookupSortBlobWriterTest, rejects_unsupported_attribute_combinations) 
     EXPECT_FALSE(make_map_lookup_sort_blob_writer(*_keys, imported_value, make_spec(true)));
 
     // Unsupported value basic types.
-    for (auto basic_type : {BasicType::BOOL, BasicType::TENSOR, BasicType::RAW, BasicType::PREDICATE,
-                            BasicType::REFERENCE}) {
+    for (auto basic_type :
+         {BasicType::BOOL, BasicType::TENSOR, BasicType::RAW, BasicType::PREDICATE, BasicType::REFERENCE})
+    {
         SCOPED_TRACE(BasicType(basic_type).asString());
         MockMultiValueAttribute bad_value("m.value", basic_type, CollectionType::ARRAY, false, false);
         EXPECT_FALSE(make_map_lookup_sort_blob_writer(*_keys, bad_value, make_spec(true)));
@@ -541,10 +555,10 @@ TEST_F(MapLookupSortBlobWriterTest, missing_read_view_fails_construction) {
 
     // Value side, numeric and string.
     MockMultiValueAttribute numeric_value_without_view("m.value", BasicType::INT32, CollectionType::ARRAY, false,
-                                                        false);
+                                                       false);
     EXPECT_FALSE(make_map_lookup_sort_blob_writer(*_keys, numeric_value_without_view, make_spec(true)));
     MockMultiValueAttribute string_value_without_view("m.value", BasicType::STRING, CollectionType::ARRAY, true,
-                                                       false);
+                                                      false);
     EXPECT_FALSE(make_map_lookup_sort_blob_writer(*_keys, string_value_without_view, make_spec(true)));
 }
 
@@ -558,15 +572,16 @@ TEST(MapLookupExactKey, uncased_dictionary_selects_the_exact_key) {
     auto numbers = make_attribute("m.value", BasicType::INT32, CollectionType::ARRAY, false);
     append_ints(*numbers, doc_key_middle, {1, 2});
     numbers->commit();
-    auto numeric = make_map_lookup_sort_blob_writer(*keys, *numbers, make_spec(true, MissingPolicy::DEFAULT, "", "A"));
+    auto numeric =
+        make_map_lookup_sort_blob_writer(*keys, *numbers, make_spec(true, MissingPolicy::DEFAULT, "", "A"));
     ASSERT_TRUE(numeric);
     EXPECT_EQ(expect_value<int32_t>(2, true), write_blob(*numeric, doc_key_middle));
 
     auto strings = make_attribute("m.str", BasicType::STRING, CollectionType::ARRAY, false);
     append_strings(*strings, doc_key_middle, {"alpha", "Beta"});
     strings->commit();
-    FieldSortSpec folded("m", SortOrder::ASCENDING, std::make_shared<LowercaseConverter>(), MissingPolicy::DEFAULT, "",
-                         false, "A");
+    FieldSortSpec folded("m", SortOrder::ASCENDING, std::make_shared<LowercaseConverter>(), MissingPolicy::DEFAULT,
+                         "", false, "A");
     auto          text = make_map_lookup_sort_blob_writer(*keys, *strings, folded);
     ASSERT_TRUE(text);
     EXPECT_EQ(expect_string("beta", true), write_blob(*text, doc_key_middle));
