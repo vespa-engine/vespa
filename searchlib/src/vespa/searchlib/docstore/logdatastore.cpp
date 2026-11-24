@@ -335,6 +335,7 @@ size_t LogDataStore::getMaxSpreadAsBloat() const {
 }
 
 void LogDataStore::flush(uint64_t syncToken) {
+    // Called by flush thread
     WriteableFileChunk*              active = nullptr;
     std::unique_ptr<FileChunkHolder> activeHolder;
     CHECK(syncToken == _initFlushSyncToken);
@@ -353,6 +354,7 @@ void LogDataStore::flush(uint64_t syncToken) {
 }
 
 uint64_t LogDataStore::initFlush(uint64_t syncToken) {
+    // Called by document db summary executor
     CHECK(syncToken >= _initFlushSyncToken);
     syncToken = flushActive(syncToken);
     _initFlushSyncToken = syncToken;

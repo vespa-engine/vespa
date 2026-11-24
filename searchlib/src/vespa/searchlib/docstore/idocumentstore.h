@@ -101,10 +101,13 @@ public:
     virtual void move(uint64_t syncToken, DocumentIdT fromLid, DocumentIdT toLid, const document::Document& doc);
 
     /**
-     * Flush all in-memory updates to disk.
+     * Flush in-memory data to disk. Called by flush thread.
      **/
     virtual void flush(uint64_t syncToken) = 0;
 
+    /**
+     * Prepare to flush in-memory data to disk. Called by document db summary executor.
+     **/
     virtual uint64_t initFlush(uint64_t synctoken) = 0;
 
     /**
