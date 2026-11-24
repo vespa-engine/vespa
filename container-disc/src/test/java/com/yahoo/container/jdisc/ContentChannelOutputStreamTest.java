@@ -133,14 +133,15 @@ class ContentChannelOutputStreamTest {
     // Long responses: 64 KiB buffers once a buffer has filled
 
     @Test
-    void after_the_first_buffer_is_filled_a_long_response_is_sent_in_64_KiB_writes() throws Exception {
+    void after_the_first_buffer_is_filled_a_long_response_is_sent_in_64_KiB_writes_as_each_fills() throws Exception {
         var expected = new ByteArrayOutputStream();
         for (int i = 0; i < 40; i++) { // 40 pieces of 8,000 bytes, the size a JSON generator typically writes at a time
             byte[] piece = bytes(8000, i);
             out.write(piece);
             expected.writeBytes(piece);
-            if (i == 24) assertEquals(List.of(), channel.sizes(), "8 KiB and two 64 KiB buffers are held while a third is filled");
-            if (i == 25) assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(), "sent before a fourth 64 KiB buffer is made");
+            if (i == 0) assertEquals(List.of(), channel.sizes(), "the 8 KiB buffer is not full yet");
+            if (i == 1) assertEquals(List.of(8192), channel.sizes(), "the full 8 KiB buffer is sent at once");
+            if (i == 9) assertEquals(List.of(8192, 65536), channel.sizes(), "and so is the first full 64 KiB buffer");
         }
         out.flush();
         assertEquals(List.of(8192, 65536, 65536, 65536, 65536, 49664), channel.sizes());
@@ -153,6 +154,7 @@ class ContentChannelOutputStreamTest {
         for (int i = 0; i < 8193; i++) {
             out.write(i);
             expected.write(i);
+            if (i == 8191) assertEquals(List.of(8192), channel.sizes(), "the full buffer is sent at the byte that fills it");
         }
         out.flush();
         assertEquals(List.of(8192, 65536), channel.arraySizes());
@@ -232,34 +234,22 @@ class ContentChannelOutputStreamTest {
                           "the change to the reused array is not sent");
     }
 
-    // Holding: data is sent at flush, or before a new buffer would take the held arrays over 256 KiB
+    // Sending: a full buffer is sent at once, so at most one buffer is held
 
     @Test
-    void data_is_held_until_flush_or_until_a_new_buffer_would_take_the_held_arrays_over_256_KiB() throws Exception {
+    void a_full_buffer_is_sent_at_once_so_the_stream_holds_at_most_one_buffer() throws Exception {
         byte[] data = bytes(8192 + 3 * 65536, 1);
         out.write(data);
-        assertEquals(List.of(), channel.sizes(), "an 8 KiB and three 64 KiB buffers, 200 KiB, are held");
+        assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(), "every buffer is full, so all are sent");
         out.write(7);
-        assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(),
-                     "a fourth 64 KiB buffer would take the held arrays to 264 KiB, so they are sent first");
-        out.flush();
-        assertEquals(List.of(8192, 65536, 65536, 65536, 1), channel.sizes());
-        assertArrayEquals(concat(data, new byte[] { 7 }), channel.content());
-    }
-
-    @Test
-    void after_the_first_send_four_64_KiB_buffers_are_held_and_then_sent_together() throws Exception {
-        out.write(bytes(8192 + 7 * 65536, 1)); // the 8 KiB buffer and seven full 64 KiB buffers
-        assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(), "the 8 KiB and the first three 64 KiB buffers were sent");
-        out.write(7);
-        assertEquals(repeat(65536, 4), channel.sizes().subList(4, 8),
-                     "four 64 KiB buffers, exactly 256 KiB, were held until a fifth was needed");
+        assertEquals(4, channel.writes.size(), "a part full buffer waits for flush");
         byte[] large = bytes(1024 * 1024, 2);
         out.write(large); // fills the rest of the buffer holding the 7, and 15 more, plus one byte in a 17th
-        assertEquals(repeat(65536, 16), channel.sizes().subList(8, 24), "sent four at a time; the last buffer, with one byte, is held");
+        assertEquals(repeat(65536, 16), channel.sizes().subList(4, 20));
+        assertEquals(20, channel.writes.size(), "the buffer with one byte waits for flush");
         out.flush();
-        assertEquals(List.of(1), channel.sizes().subList(24, 25));
-        assertArrayEquals(concat(bytes(8192 + 7 * 65536, 1), new byte[] { 7 }, large), channel.content());
+        assertEquals(List.of(1), channel.sizes().subList(20, 21));
+        assertArrayEquals(concat(data, new byte[] { 7 }, large), channel.content());
     }
 
     @Test
@@ -271,7 +261,7 @@ class ContentChannelOutputStreamTest {
                 super.send(src);
             }
         };
-        subclassed.write(bytes(5 * 65536, 1)); // more than 256 KiB, so some is sent by the write itself
+        subclassed.write(bytes(5 * 65536, 1)); // fills five buffers, which the write itself sends
         subclassed.write(bytes(10, 2));
         subclassed.flush();
         assertEquals(6, sent.size());
@@ -324,30 +314,28 @@ class ContentChannelOutputStreamTest {
         assertArrayEquals(concat(bytes(100, 1), bytes(10, 2), bytes(5, 3), bytes(4, 4)), channel.content());
     }
 
-    // A send that throws: the rest of the held data is dropped, never sent twice
+    // A send that throws: its buffer is dropped, never sent twice
 
     @Test
-    void when_a_send_at_flush_throws_the_rest_of_the_held_data_is_never_sent() throws Exception {
-        byte[] data = bytes(140_000, 7); // an 8 KiB, two full 64 KiB and one part full 64 KiB buffer
+    void when_a_send_at_flush_throws_its_buffer_is_never_sent_again() throws Exception {
+        byte[] data = bytes(140_000, 7); // an 8 KiB and two 64 KiB buffers, sent as they fill, and 736 bytes
         out.write(data);
-        channel.failAtWrite = 2; // the channel takes the second buffer, then throws
+        channel.failAtWrite = 4; // the channel takes the last buffer, then throws
         assertThrows(IOException.class, out::flush);
-        assertEquals(List.of(8192, 65536), channel.sizes(), "the last two buffers are not tried");
         out.flush();
-        assertEquals(2, channel.writes.size(), "a later flush sends none of the held data again");
+        assertEquals(List.of(8192, 65536, 65536, 736), channel.sizes(), "a later flush does not send the buffer again");
         out.write(bytes(5, 10));
         out.flush();
-        assertArrayEquals(concat(Arrays.copyOf(data, 8192 + 65536), bytes(5, 10)), channel.content(),
-                          "new data is sent after a failure");
+        assertArrayEquals(concat(data, bytes(5, 10)), channel.content(), "new data is sent after a failure");
     }
 
     @Test
-    void when_a_send_started_by_a_write_throws_the_rest_of_the_held_data_is_never_sent() throws Exception {
-        byte[] data = bytes(8192 + 3 * 65536 + 1, 1); // the last byte needs a fourth 64 KiB buffer
-        channel.failAtWrite = 2; // the channel takes the second buffer, then throws
+    void when_a_send_from_a_write_throws_the_rest_of_that_write_is_dropped() throws Exception {
+        byte[] data = bytes(8192 + 65536 + 10, 1); // the 10 last bytes go into a third buffer
+        channel.failAtWrite = 2; // the channel takes the full 64 KiB buffer, then throws
         assertThrows(IOException.class, () -> out.write(data));
         out.flush(); // a retry, as ThreadedHttpRequestHandler does after an IOException
-        assertEquals(List.of(8192, 65536), channel.sizes(), "the other two buffers and the last byte are never sent");
+        assertEquals(List.of(8192, 65536), channel.sizes(), "no buffer is sent twice, and the last 10 bytes are never sent");
         out.write(bytes(5, 2));
         out.flush();
         assertArrayEquals(concat(Arrays.copyOf(data, 8192 + 65536), bytes(5, 2)), channel.content(),
@@ -355,38 +343,24 @@ class ContentChannelOutputStreamTest {
     }
 
     @Test
-    void after_a_send_throws_data_is_held_again_from_zero() throws Exception {
-        byte[] lost = bytes(8192 + 3 * 65536, 1); // an 8 KiB and three full 64 KiB buffers
-        out.write(lost);
-        channel.failAtWrite = 2; // the channel takes the second buffer, then throws
-        assertThrows(IOException.class, () -> out.write(1)); // a fourth 64 KiB buffer is needed, so the held data is sent first
-        byte[] after = bytes(3 * 65536 + 1, 2);
-        out.write(after);
-        assertEquals(2, channel.writes.size(), "four 64 KiB buffers, exactly 256 KiB, are held without sending");
-        out.flush();
-        assertEquals(List.of(8192, 65536, 65536, 65536, 65536, 1), channel.sizes(), "the other two buffers and the byte are dropped");
-        assertArrayEquals(concat(Arrays.copyOf(lost, 8192 + 65536), after), channel.content());
-    }
-
-    @Test
     void after_a_flush_throws_the_next_buffer_is_8_KiB() throws Exception {
-        out.write(bytes(8192, 1)); // fills the first buffer
+        out.write(bytes(8192, 1)); // fills the first buffer, which is sent
         out.write(bytes(10, 2)); // goes into a 64 KiB buffer
-        channel.failAtWrite = 1;
+        channel.failAtWrite = 2;
         assertThrows(IOException.class, out::flush);
         out.write(bytes(10, 3));
         out.flush();
-        assertEquals(List.of(8192, 8192), channel.arraySizes(), "the 64 KiB buffer is dropped, and the next buffer is 8 KiB");
+        assertEquals(List.of(8192, 65536, 8192), channel.arraySizes(), "the 64 KiB buffer failed, and the next buffer is 8 KiB");
     }
 
     @Test
-    void a_runtime_exception_from_a_subclass_send_is_an_io_exception_and_the_held_data_is_dropped() throws Exception {
+    void a_runtime_exception_from_a_subclass_send_is_an_io_exception_and_the_buffer_is_dropped() throws Exception {
         var subclassed = new ContentChannelOutputStream(channel) {
             @Override public void send(ByteBuffer src) { throw new IllegalStateException("rejected"); }
         };
         subclassed.write(bytes(100, 1));
         assertThrows(IOException.class, subclassed::flush);
-        subclassed.flush(); // would throw again if the held data were kept
+        subclassed.flush(); // would throw again if the buffer were kept
     }
 
     // Invalid input

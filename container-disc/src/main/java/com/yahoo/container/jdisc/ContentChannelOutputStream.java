@@ -10,8 +10,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -21,13 +19,10 @@ import java.util.logging.Logger;
  * <p>Each write to the channel has a fixed cost, so writes are collected in buffers. After a flush,
  * the first buffer is 8 KiB, which holds a short response. If it fills up, the response is long, and
  * the next buffers are 64 KiB until the next flush, so a long response is sent in few, large writes.
- * Every write, however large, is copied into these buffers, so a buffer is only sent part full at flush().
- * Held data is sent at flush(), or as soon as the held arrays, plus a new buffer being made,
- * would take more than 256 KiB: the first time at 200 KiB (an 8 KiB and three 64 KiB buffers),
- * then every 256 KiB.
- * Holding data does not save writes, as each held buffer is still one write. When the channel is a
- * response's content channel, its first write sends the response status and headers, so holding
- * delays that until flush() or until about 200 KiB is written.</p>
+ * Every write, however large, is copied into these buffers. A buffer is sent as soon as it is full,
+ * or at flush() if it is not, so the stream holds at most one buffer.
+ * When the channel is a response's content channel, its first write sends the response status
+ * and headers: at flush(), or when the first 8 KiB buffer is full.</p>
  *
  * @author Steinar Knutsen
  */
@@ -39,16 +34,9 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     private static final int SMALL_BUFFER_SIZE = 8 * 1024;
     /** The size of the buffers after a buffer is filled. */
     private static final int LARGE_BUFFER_SIZE = 64 * 1024;
-    /**
-     * Held buffers are sent once their arrays, plus a new buffer being made, would take more than this many bytes.
-     * This limits only the data this stream holds, not the data already sent and waiting in the channel.
-     */
-    private static final int MAX_HELD_BYTES = 256 * 1024;
 
     private final ContentChannel endpoint;
-    private final List<ByteBuffer> held = new ArrayList<>(); // buffers waiting to be sent, in order
-    private long heldBytes = 0; // the total capacity of the held buffers' arrays
-    private ByteBuffer current = null; // the buffer being filled, made at the first write
+    private ByteBuffer current = null; // the buffer being filled, made when there is data for it
     private int nextBufferSize = SMALL_BUFFER_SIZE; // 8 KiB after a flush, 64 KiB once a buffer has filled
     private long bufferedData = 0L; // bytes given to this stream by write and nonCopyingWrite
     private long byteBufferData = 0L; // bytes sent to the endpoint
@@ -64,9 +52,10 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      */
     @Override
     public void write(int b) throws IOException {
-        if (current == null || ! current.hasRemaining()) startNewBuffer();
+        if (current == null) current = ByteBuffer.allocate(nextBufferSize);
         current.put((byte) b);
         bufferedData++;
+        if ( ! current.hasRemaining()) sendCurrentBuffer();
     }
 
     /**
@@ -85,8 +74,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     @Override
     public void flush() throws IOException {
         try {
-            holdCurrentBuffer();
-            sendHeld();
+            sendCurrentBuffer();
         } finally {
             nextBufferSize = SMALL_BUFFER_SIZE;
         }
@@ -136,54 +124,36 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     }
 
     /**
-     * Copies the data into the current buffer, and into new buffers as each one fills up.
+     * Copies the data into the current buffer, sending each buffer as soon as it is full.
      * Every write and nonCopyingWrite method ends here, and none calls another, so a subclass
      * that overrides one of them and calls another does not loop.
      */
     private void copyIntoBuffers(byte[] b, int off, int len) throws IOException {
         bufferedData += len;
         while (len > 0) {
-            if (current == null || ! current.hasRemaining()) startNewBuffer();
+            if (current == null) current = ByteBuffer.allocate(nextBufferSize);
             int n = Math.min(len, current.remaining());
             current.put(b, off, n);
             off += n;
             len -= n;
+            if ( ! current.hasRemaining()) sendCurrentBuffer();
         }
     }
 
-    /** Starts a new buffer. If it would take the held arrays over MAX_HELD_BYTES, the held buffers are sent first. */
-    private void startNewBuffer() throws IOException {
-        holdCurrentBuffer();
-        if (heldBytes + nextBufferSize > MAX_HELD_BYTES) sendHeld();
-        current = ByteBuffer.allocate(nextBufferSize);
-    }
-
     /**
-     * Moves the current buffer, if it has data, to the held buffers. A full buffer means the response
-     * is long, so the next buffers are 64 KiB. This never goes over MAX_HELD_BYTES, as that was checked
-     * when the buffer was made.
+     * Sends the current buffer, if there is one. A full buffer means the response is long, so the next
+     * buffers are 64 KiB. The buffer is let go before it is sent, so it is never written to again,
+     * and never sent again if the send throws.
      */
-    private void holdCurrentBuffer() {
-        if (current == null || current.position() == 0) return;
+    private void sendCurrentBuffer() throws IOException {
+        if (current == null) return;
         if ( ! current.hasRemaining()) nextBufferSize = LARGE_BUFFER_SIZE;
-        current.flip();
-        held.add(current);
-        heldBytes += current.capacity();
-        current = null; // the buffer is handed over, so never write to it again
-    }
-
-    /**
-     * Sends the held buffers. If a send throws, the rest of the held buffers are dropped too,
-     * so a later flush does not send them.
-     */
-    private void sendHeld() throws IOException {
+        ByteBuffer data = current.flip();
+        current = null;
         try {
-            for (ByteBuffer data : held) send(data);
+            send(data);
         } catch (RuntimeException e) {
             throw new IOException(Exceptions.toMessageString(e), e);
-        } finally {
-            held.clear();
-            heldBytes = 0;
         }
     }
 
