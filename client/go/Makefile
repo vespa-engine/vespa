@@ -19,7 +19,9 @@ GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/internal/build.
 PROJECT_ROOT := $(shell realpath $(CURDIR)/../..)
 GO_TMPDIR := $(PROJECT_ROOT)/build/go
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
-GOTOOLCHAIN := $(shell go env GOTOOLCHAIN)
+# Build with exactly the toolchain pinned in go.mod. The environment overrides
+# GOTOOLCHAIN from go.env (e.g. "local" in Fedora/RHEL) and from go env -w.
+export GOTOOLCHAIN := $(shell awk '/^toolchain/ {print $$2}' go.mod)
 
 all: test checkfmt install
 
@@ -121,8 +123,6 @@ install-all: all manpages
 #
 
 setenv:
-# Set GOTOOLCHAIN if its default value has been changed
-	@test "$(GOTOOLCHAIN)" = auto || go env -w GOTOOLCHAIN="auto"
 ifdef CI
 # Ensure that CI systems use a proxy for downloading dependencies
 	go env -w GOPROXY="https://proxy.golang.org,direct"

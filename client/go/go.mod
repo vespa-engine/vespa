@@ -2,6 +2,8 @@ module github.com/vespa-engine/vespa/client/go
 
 go 1.27
 
+toolchain go1.27.4
+
 require (
 	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.19.0
