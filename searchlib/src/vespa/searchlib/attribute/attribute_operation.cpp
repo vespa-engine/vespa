@@ -3,6 +3,7 @@
 #include "attribute_operation.h"
 
 #include "singlenumericattribute.h"
+#include "typify_basic_type.h"
 
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchlib/common/bitvector.h>
@@ -10,6 +11,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/vespalib/util/array.hpp>
+
+#include <type_traits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.attribute_operation");
@@ -145,11 +148,20 @@ private:
     std::vector<uint32_t> _docIds;
 };
 
+/*
+ * Value types supported by attribute operations: all numeric attribute value types except int16_t.
+ * int16_t is left out since INT16 attributes cannot be configured in a schema.
+ */
+template <typename ValueType>
+constexpr bool is_supported_value_type =
+    std::is_same_v<ValueType, int8_t> || std::is_same_v<ValueType, int32_t> || std::is_same_v<ValueType, int64_t> ||
+    std::is_same_v<ValueType, float> || std::is_same_v<ValueType, double>;
+
 struct Operation {
     enum class Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
     Operation(Type operation_in, std::string_view operand_in) : operation(operation_in), operand(operand_in) {}
     template <typename V> std::unique_ptr<AttributeOperation> create(BasicType type, V vector) const;
-    template <typename IT, typename V> std::unique_ptr<AttributeOperation> create(V vector) const;
+    template <typename ValueType, typename V> std::unique_ptr<AttributeOperation> create(V vector) const;
     bool valid() const { return operation != Type::BAD; }
     bool hasArgument() const { return valid() && (operation != Type::INC) && (operation != Type::DEC); }
     Type             operation;
@@ -202,9 +214,12 @@ std::unique_ptr<AttributeOperation> createOperation(AttributeOperation::FullResu
     return std::make_unique<OperateOverResultSet<OP>>(std::move(result), operand);
 }
 
-template <typename T_IN, typename V> std::unique_ptr<AttributeOperation> Operation::create(V vector) const {
-    using T = typename T_IN::T;
-    using A = typename T_IN::A;
+template <typename ValueType, typename V> std::unique_ptr<AttributeOperation> Operation::create(V vector) const {
+    static_assert(is_supported_value_type<ValueType>);
+    // Integer operands are int64_t and floating point operands are double, independent of the value type.
+    using T = std::conditional_t<std::is_integral_v<ValueType>, int64_t, double>;
+    using A = std::conditional_t<std::is_integral_v<ValueType>, IntegerAttributeTemplate<ValueType>,
+                                 FloatingPointAttributeTemplate<ValueType>>;
     T    value(0);
     Type validOp = operation;
     if (hasArgument()) {
@@ -247,48 +262,26 @@ template <typename T_IN, typename V> std::unique_ptr<AttributeOperation> Operati
     }
 }
 
-struct Int64T {
-    using T = int64_t;
-    using A = IntegerAttributeTemplate<int64_t>;
-};
-
-struct Int32T {
-    using T = int64_t;
-    using A = IntegerAttributeTemplate<int32_t>;
-};
-
-struct Int8T {
-    using T = int64_t;
-    using A = IntegerAttributeTemplate<int8_t>;
-};
-
-struct DoubleT {
-    using T = double;
-    using A = FloatingPointAttributeTemplate<double>;
-};
-struct FloatT {
-    using T = double;
-    using A = FloatingPointAttributeTemplate<float>;
+/*
+ * Target for typify_invoke, templated on the attribute value type (see TypifyBasicType).
+ * Basic types without a supported value type (including INT16) give no operation.
+ */
+struct CreateOperation {
+    template <typename ValueType, typename V>
+    static std::unique_ptr<AttributeOperation> invoke(const Operation& op, V hits) {
+        if constexpr (is_supported_value_type<ValueType>) {
+            return op.create<ValueType, V>(std::move(hits));
+        } else {
+            return {};
+        }
+    }
 };
 
 template <typename V> std::unique_ptr<AttributeOperation> Operation::create(BasicType type, V hits) const {
     if (!valid()) {
         return {};
     }
-    switch (type.type()) {
-    case BasicType::INT64:
-        return create<Int64T, V>(std::move(hits));
-    case BasicType::INT32:
-        return create<Int32T, V>(std::move(hits));
-    case BasicType::INT8:
-        return create<Int8T, V>(std::move(hits));
-    case BasicType::DOUBLE:
-        return create<DoubleT, V>(std::move(hits));
-    case BasicType::FLOAT:
-        return create<FloatT, V>(std::move(hits));
-    default:
-        return {};
-    }
+    return vespalib::typify_invoke<1, TypifyBasicType, CreateOperation>(type.type(), *this, std::move(hits));
 }
 
 } // namespace

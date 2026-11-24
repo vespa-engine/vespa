@@ -45,6 +45,20 @@ TEST(AttributeOperationTest, test_illegal_operations_on_float_attribute) {
     }
 }
 
+TEST(AttributeOperationTest, test_supported_basic_types) {
+    const std::vector<uint32_t> docs;
+    for (auto type : {BasicType::INT8, BasicType::INT32, BasicType::INT64, BasicType::FLOAT, BasicType::DOUBLE}) {
+        SCOPED_TRACE(BasicType(type).asString());
+        EXPECT_TRUE(AttributeOperation::create(type, "++", docs));
+    }
+    for (auto type : {BasicType::NONE, BasicType::STRING, BasicType::BOOL, BasicType::INT16, BasicType::PREDICATE,
+                      BasicType::TENSOR, BasicType::REFERENCE, BasicType::RAW})
+    {
+        SCOPED_TRACE(BasicType(type).asString());
+        EXPECT_FALSE(AttributeOperation::create(type, "++", docs));
+    }
+}
+
 AttributeVector::SP createAttribute(BasicType basicType, const std::string& fieldName, bool fastSearch = false,
                                     bool immutable = false) {
     constexpr size_t NUM_DOCS = 20;
