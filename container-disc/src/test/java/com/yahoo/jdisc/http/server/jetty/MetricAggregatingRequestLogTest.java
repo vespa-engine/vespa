@@ -39,7 +39,10 @@ public class MetricAggregatingRequestLogTest {
         assertEquals(1, metricSnapshot.size());
         var latencySample = metricSnapshot.entrySet().iterator().next();
         assertEquals(200L, latencySample.getKey().get(MetricDefinitions.STATUS_CODE_DIMENSION));
-        assertEquals(0.0, latencySample.getValue());
+        // Latency is measured from when the request was received. The mock request says it was received
+        // at the moment latency is calculated, so latency is usually 0 ms, but can be a few ms if the
+        // thread is paused in between (e.g. by GC)
+        assertTrue(latencySample.getValue() >= 0.0);
     }
 
     @Test
