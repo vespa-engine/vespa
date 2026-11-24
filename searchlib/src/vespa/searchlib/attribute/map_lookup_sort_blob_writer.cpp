@@ -16,6 +16,7 @@
 #include <vespa/vespalib/util/stash.h>
 
 #include <limits>
+#include <optional>
 #include <type_traits>
 
 using search::common::FieldSortSpec;
@@ -36,26 +37,29 @@ constexpr uint32_t npos = std::numeric_limits<uint32_t>::max();
  * neither an enum store lookup nor a string compare is done per entry.
  */
 class StringEnumKeyFinder {
+    using EnumHandle = IAttributeVector::EnumHandle;
     const IArrayEnumReadView* _view;
-    uint32_t                  _key_handle;
-    bool                      _usable; // false => key is not in the global enum dictionary, every document misses
+    std::optional<EnumHandle> _key_handle; // empty => key is not in the global enum dictionary, every document misses
+
+    static std::optional<EnumHandle> find_key_handle(const IAttributeVector& key_attr, const std::string& key) {
+        EnumHandle handle = 0;
+        if (key_attr.findEnum(key.c_str(), handle)) {
+            return handle;
+        }
+        return std::nullopt;
+    }
 
 public:
     StringEnumKeyFinder(const IAttributeVector& key_attr, const IArrayEnumReadView* view, const std::string& key)
-        : _view(view), _key_handle(0), _usable(false) {
-        IAttributeVector::EnumHandle handle = 0;
-        if (key_attr.findEnum(key.c_str(), handle)) {
-            _key_handle = handle;
-            _usable = true;
-        }
-    }
+        : _view(view), _key_handle(find_key_handle(key_attr, key)) {}
     uint32_t position(uint32_t docid) const noexcept {
-        if (!_usable) {
+        if (!_key_handle.has_value()) {
             return npos; // globally unknown key, no scan needed
         }
-        auto keys = _view->get_values(docid);
+        const EnumHandle key_handle = *_key_handle;
+        auto             keys = _view->get_values(docid);
         for (uint32_t i = 0; i < keys.size(); ++i) {
-            if (keys[i].load_acquire().ref() == _key_handle) {
+            if (keys[i].load_acquire().ref() == key_handle) {
                 return i;
             }
         }
