@@ -11,20 +11,18 @@ class BasicType {
 public:
     enum Type : uint8_t {
         NONE = 0,
-        STRING = 1,
-        BOOL = 2,
-        UINT2 = 3,
-        UINT4 = 4,
-        INT8 = 5,
-        INT16 = 6,
-        INT32 = 7,
-        INT64 = 8,
-        FLOAT = 9,
-        DOUBLE = 10,
-        PREDICATE = 11,
-        TENSOR = 12,
-        REFERENCE = 13,
-        RAW = 14,
+        STRING,
+        BOOL,
+        INT8,
+        INT16,
+        INT32,
+        INT64,
+        FLOAT,
+        DOUBLE,
+        PREDICATE,
+        TENSOR,
+        REFERENCE,
+        RAW,
         MAX_TYPE
     };
 
@@ -51,6 +49,7 @@ private:
     static const char* asString(Type t) noexcept { return _typeTable[t]._name; }
     static size_t fixedSize(Type t) noexcept { return _typeTable[t]._fixedSize; }
     static Type asType(const std::string& t);
+    static consteval bool type_table_is_consistent() noexcept;
 
     Type _type;
 

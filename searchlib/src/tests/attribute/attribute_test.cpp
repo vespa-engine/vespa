@@ -73,19 +73,12 @@ string make_scoped_trace_msg(string prefix, const search::attribute::Config& con
            ", collection type=" + config.collectionType().asString();
 }
 
-bool isUnsignedSmallIntAttribute(const BasicType::Type& type) {
-    switch (type) {
-    case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
-        return true;
-    default:
-        return false;
-    }
+bool isBoolAttribute(BasicType::Type type) {
+    return type == BasicType::BOOL;
 }
 
-bool isUnsignedSmallIntAttribute(const AttributeVector& a) {
-    return isUnsignedSmallIntAttribute(a.getBasicType());
+bool isBoolAttribute(const AttributeVector& a) {
+    return isBoolAttribute(a.getBasicType());
 }
 
 template <typename BufferType> void expectZero(const BufferType& b) {
@@ -493,12 +486,6 @@ template <typename VectorType, typename BufferType> void AttributeTest::testRelo
             exp_reserved_memory_for_flush =
                 BitVector::legacy_num_bytes_with_single_guard_bit(a->getCommittedDocIdLimit());
         }
-        if (a->getBasicType() == BasicType::UINT2 && !multivalue_attr) {
-            exp_reserved_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 15) / 16);
-        }
-        if (a->getBasicType() == BasicType::UINT4 && !multivalue_attr) {
-            exp_reserved_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 7) / 8);
-        }
         EXPECT_EQ(exp_reserved_memory_for_flush, a->reserved_memory_for_flush(false));
         if (single_normal_numeric_attribute(*a)) {
             // Buffer handover from attribute saver to attribute memory file writer
@@ -532,7 +519,7 @@ template <typename VectorType, typename BufferType> void AttributeTest::testRelo
     EXPECT_NE(zero_flush_duration, c->last_flush_duration());
     compare<VectorType, BufferType>(*(static_cast<VectorType*>(a.get())), *(static_cast<VectorType*>(c.get())));
 
-    if (isUnsignedSmallIntAttribute(*a)) {
+    if (isBoolAttribute(*a)) {
         return;
     }
     populate(static_cast<VectorType&>(*b.get()), 700);
@@ -545,16 +532,6 @@ void AttributeTest::testReload() {
     // CollectionType::SINGLE
     {
         AttributePtr iv1 = createAttribute("sint32_1", Config(BasicType::INT32, CollectionType::SINGLE));
-        testReloadInt(iv1, 0);
-        testReloadInt(iv1, 100);
-    }
-    {
-        AttributePtr iv1 = createAttribute("suint4_1", Config(BasicType::UINT4, CollectionType::SINGLE));
-        testReloadInt(iv1, 0);
-        testReloadInt(iv1, 100);
-    }
-    {
-        AttributePtr iv1 = createAttribute("suint2_1", Config(BasicType::UINT2, CollectionType::SINGLE));
         testReloadInt(iv1, 0);
         testReloadInt(iv1, 100);
     }
@@ -721,10 +698,6 @@ void AttributeTest::testMemorySaver() {
         testMemorySaverInt(iv1, 100);
     }
     {
-        AttributePtr iv1 = createAttribute("suint4_1ms", Config(BasicType::UINT4, CollectionType::SINGLE));
-        testMemorySaverInt(iv1, 100);
-    }
-    {
         AttributePtr iv1 = createAttribute("sstr_1ms", Config(BasicType::STRING, CollectionType::SINGLE));
         testMemorySaverString(iv1, 100);
     }
@@ -854,7 +827,7 @@ void AttributeTest::testSingle(const AttributePtr& ptr, const std::vector<Buffer
     }
     EXPECT_TRUE(!v.assign_element(ptr->getNumDocs(), 0, values[0]));
 
-    bool smallUInt = isUnsignedSmallIntAttribute(*ptr);
+    bool isBool = isBoolAttribute(*ptr);
     // test clearDoc()
     for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
         uint32_t i = (doc + 2) % numUniques;
@@ -866,7 +839,7 @@ void AttributeTest::testSingle(const AttributePtr& ptr, const std::vector<Buffer
         ptr->commit();
         EXPECT_EQ(1u, ptr->get(doc, buffer.data(), buffer.size()));
         if (doc % 2 == 0) {
-            if (smallUInt) {
+            if (isBool) {
                 expectZero(buffer[0]);
             } else {
                 EXPECT_TRUE(attribute::isUndefined<BaseType>(buffer[0]));
@@ -882,12 +855,9 @@ void AttributeTest::testSingle(const AttributePtr& ptr, const std::vector<Buffer
 void AttributeTest::testSingle() {
     uint32_t numDocs = 1000;
     uint32_t numUniques = 50;
-    uint32_t numUniqueNibbles = 9;
     {
         std::vector<AttributeVector::largeint_t> values;
         fillNumeric(values, numUniques);
-        std::vector<AttributeVector::largeint_t> nibbleValues;
-        fillNumeric(nibbleValues, numUniqueNibbles);
         {
             AttributePtr ptr = createAttribute("sv-int32", Config(BasicType::INT32, CollectionType::SINGLE));
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
@@ -895,11 +865,6 @@ void AttributeTest::testSingle() {
             EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
-        }
-        {
-            AttributePtr ptr = createAttribute("sv-uint4", Config(BasicType::UINT4, CollectionType::SINGLE));
-            addDocs(ptr, numDocs);
-            testSingle<IntegerAttribute, AttributeVector::largeint_t, int8_t>(ptr, nibbleValues);
         }
         {
             Config cfg(BasicType::INT32, CollectionType::SINGLE);
@@ -2061,8 +2026,8 @@ void AttributeTest::testCompactLidSpace(const Config& config, bool fast_search) 
 
 template <typename VectorType, typename BufferType> void AttributeTest::testCompactLidSpace(const Config& config) {
     testCompactLidSpace<VectorType, BufferType>(config, false);
-    bool smallUInt = isUnsignedSmallIntAttribute(config.basicType().type());
-    if (smallUInt) {
+    bool isBool = isBoolAttribute(config.basicType().type());
+    if (isBool) {
         return;
     }
     testCompactLidSpace<VectorType, BufferType>(config, true);
@@ -2082,8 +2047,6 @@ void AttributeTest::testCompactLidSpace(const Config& config) {
     SCOPED_TRACE(make_scoped_trace_msg("compact lid space", config));
     switch (config.basicType().type()) {
     case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
     case BasicType::INT8:
     case BasicType::INT16:
     case BasicType::INT32:
@@ -2119,8 +2082,6 @@ void AttributeTest::testCompactLidSpace(const Config& config) {
 
 void AttributeTest::testCompactLidSpace() {
     testCompactLidSpace(Config(BasicType::BOOL, CollectionType::SINGLE));
-    testCompactLidSpace(Config(BasicType::UINT2, CollectionType::SINGLE));
-    testCompactLidSpace(Config(BasicType::UINT4, CollectionType::SINGLE));
     testCompactLidSpace(Config(BasicType::INT8, CollectionType::SINGLE));
     testCompactLidSpace(Config(BasicType::INT8, CollectionType::ARRAY));
     testCompactLidSpace(Config(BasicType::INT8, CollectionType::WSET));

@@ -53,10 +53,6 @@ template <typename ConfigType> Schema::DataType convertDataType(const ConfigType
         return DataType::STRING;
     case ConfigType::BOOL:
         return DataType::BOOL;
-    case ConfigType::UINT2:
-        return DataType::UINT2;
-    case ConfigType::UINT4:
-        return DataType::UINT4;
     case ConfigType::INT8:
         return DataType::INT8;
     case ConfigType::INT16:

@@ -39,15 +39,8 @@ namespace search {
 
 namespace {
 
-bool isUnsignedSmallIntAttribute(const AttributeVector& a) {
-    switch (a.getBasicType()) {
-    case attribute::BasicType::BOOL:
-    case attribute::BasicType::UINT2:
-    case attribute::BasicType::UINT4:
-        return true;
-    default:
-        return false;
-    }
+bool isBoolAttribute(const AttributeVector& a) {
+    return a.getBasicType() == attribute::BasicType::BOOL;
 }
 
 } // namespace
@@ -229,7 +222,6 @@ protected:
     void testNonStrictSearchIterator(SearchContext& threeHits, SearchContext& noHits,
                                      const IteratorTester& typeTester);
     AttributePtr fillForSearchIteratorTest(const std::string& name, const Config& cfg);
-    AttributePtr fillForSemiNibbleSearchIteratorTest(const std::string& name, const Config& cfg);
 
     // test search iterator unpacking
     void fillForSearchIteratorUnpackingTest(IntegerAttribute* ia, bool extra);
@@ -838,10 +830,6 @@ AttributePtr SearchContextTest::fillForSearchIteratorTest(const std::string& nam
     return AttributeBuilder(name, cfg).fill({10, 20, 10, 20, 10}).get();
 }
 
-AttributePtr SearchContextTest::fillForSemiNibbleSearchIteratorTest(const std::string& name, const Config& cfg) {
-    return AttributeBuilder(name, cfg).fill({1, 2, 1, 2, 1}).get();
-}
-
 TEST_F(SearchContextTest, test_search_iterator) {
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
@@ -853,18 +841,6 @@ TEST_F(SearchContextTest, test_search_iterator) {
         testStrictSearchIterator(*threeHits, *noHits, tester);
         threeHits = getSearch(*ptr.get(), 10);
         noHits = getSearch(*ptr.get(), 30);
-        testNonStrictSearchIterator(*threeHits, *noHits, tester);
-    }
-    {
-        Config cfg(BasicType::UINT2, CollectionType::SINGLE);
-        auto   ptr = fillForSemiNibbleSearchIteratorTest("s-uint2", cfg);
-
-        SearchContextPtr        threeHits = getSearch(*ptr.get(), 1);
-        SearchContextPtr        noHits = getSearch(*ptr.get(), 3);
-        AttributeIteratorTester tester;
-        testStrictSearchIterator(*threeHits, *noHits, tester);
-        threeHits = getSearch(*ptr.get(), 1);
-        noHits = getSearch(*ptr.get(), 3);
         testNonStrictSearchIterator(*threeHits, *noHits, tester);
     }
     {
@@ -1019,10 +995,6 @@ TEST_F(SearchContextTest, test_search_iterator_unpacking) {
         config.emplace_back("s-int32", cfg);
     }
     {
-        Config cfg(BasicType::UINT4, CollectionType::SINGLE);
-        config.emplace_back("s-uint4", cfg);
-    }
-    {
         Config cfg(BasicType::INT32, CollectionType::ARRAY);
         config.emplace_back("a-int32", cfg);
     }
@@ -1104,8 +1076,8 @@ void SearchContextTest::testRangeSearch(const AttributePtr& ptr, uint32_t numDoc
     }
     ptr->commit(CommitParam::UpdateStats::FORCE);
     ValueType zeroValue = 0;
-    bool      smallUInt = isUnsignedSmallIntAttribute(vec);
-    if (smallUInt) {
+    bool      isBool = isBoolAttribute(vec);
+    if (isBool) {
         for (uint32_t i = docCnt; i < numDocs; ++i) {
             postingList[zeroValue].insert(i + 1u);
         }
@@ -1116,7 +1088,7 @@ void SearchContextTest::testRangeSearch(const AttributePtr& ptr, uint32_t numDoc
         vespalib::asciistream ss;
         ss << "<" << values[i];
         DocSet expected;
-        if (smallUInt) {
+        if (isBool) {
             expected.insert(postingList[zeroValue].begin(), postingList[zeroValue].end());
         }
         for (uint32_t j = 0; j < i; ++j) {
@@ -1249,18 +1221,13 @@ TEST_F(SearchContextTest, test_range_search_limited) {
 TEST_F(SearchContextTest, test_range_search) {
     const uint32_t numDocs = 100;
     const uint32_t numValues = 20;
-    const uint32_t numNibbleValues = 9;
 
     { // IntegerAttribute
         std::vector<largeint_t> values;
-        std::vector<largeint_t> nibbleValues;
         largeint_t              start = 1;
 
         for (uint32_t i = 0; i < numValues; ++i) {
             values.push_back(start + i);
-        }
-        for (uint32_t i = 0; i < numNibbleValues; ++i) {
-            nibbleValues.push_back(start + i);
         }
 
         for (const auto& cfg : _integerCfg) {
@@ -1272,11 +1239,6 @@ TEST_F(SearchContextTest, test_range_search) {
             cfg.setFastSearch(true);
             AttributePtr ptr = AttributeFactory::createAttribute("flags", cfg);
             testRangeSearch<IntegerAttribute, largeint_t>(ptr, numDocs, values);
-        }
-        {
-            Config       cfg(BasicType::UINT4, CollectionType::SINGLE);
-            AttributePtr ptr = AttributeFactory::createAttribute("s-uint4", cfg);
-            testRangeSearch<IntegerAttribute, largeint_t>(ptr, numDocs, nibbleValues);
         }
     }
 

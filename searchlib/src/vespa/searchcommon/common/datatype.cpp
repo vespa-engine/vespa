@@ -16,10 +16,6 @@ using config::InvalidConfigException;
 DataType dataTypeFromName(std::string_view name) {
     if (name == "BOOL") {
         return DataType::BOOL;
-    } else if (name == "UINT2") {
-        return DataType::UINT2;
-    } else if (name == "UINT4") {
-        return DataType::UINT4;
     } else if (name == "INT8") {
         return DataType::INT8;
     } else if (name == "INT16") {
@@ -49,9 +45,9 @@ DataType dataTypeFromName(std::string_view name) {
     }
 }
 
-const char* datatype_str[] = {"BOOL",        "UINT2",  "UINT4",     "INT8",    "INT16", "INT32",
-                              "INT64",       "FLOAT",  "DOUBLE",    "STRING",  "RAW",   "FEATURE_NOTUSED",
-                              "BOOLEANTREE", "TENSOR", "REFERENCE", "COMBINED"};
+const char* datatype_str[] = {"BOOL",   "INT8", "INT16",       "INT32",  "INT64",     "FLOAT",   "DOUBLE",
+                              "STRING", "RAW",  "BOOLEANTREE", "TENSOR", "REFERENCE", "COMBINED"};
+static_assert(vespalib::arraysize(datatype_str) == static_cast<size_t>(DataType::COMBINED) + 1);
 
 std::string getTypeName(DataType type) {
     size_t typeAsNum = static_cast<size_t>(type);

@@ -52,6 +52,7 @@ public abstract class DataType extends Identifiable implements Comparable<DataTy
     public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, UriFieldValue.getFactory());
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
     final static int TAG_ID = 18;
+    // TODO: consider adding SHORT with id 19, already implemented in C++
     public final static PrimitiveDataType PREDICATE = new PrimitiveDataType("predicate", 20, PredicateFieldValue.class, PredicateFieldValue.getFactory());
     public final static int tensorDataTypeCode = 21; // All TensorDataType instances have id=21 but carries additional type information serialized separately
     // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference, tensor

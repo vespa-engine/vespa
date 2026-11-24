@@ -66,8 +66,6 @@ void SingleAttrDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, Ge
                                  Inserter& target) const {
     const auto& v = get_attribute(state);
     switch (v.getBasicType()) {
-    case BasicType::Type::UINT2:
-    case BasicType::Type::UINT4:
     case BasicType::Type::INT8:
     case BasicType::Type::INT16:
     case BasicType::Type::INT32:

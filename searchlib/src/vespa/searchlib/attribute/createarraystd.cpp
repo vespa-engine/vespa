@@ -28,9 +28,6 @@ AttributeVector::SP AttributeFactory::createArrayStd(std::string name, const Con
     case BasicType::BOOL:
         ret.reset(new attribute::ArrayBoolAttribute(name, info));
         break;
-    case BasicType::UINT2:
-    case BasicType::UINT4:
-        break;
     case BasicType::INT8:
         ret.reset(CREATEINTARRAY(int8_t, name, info));
         break;

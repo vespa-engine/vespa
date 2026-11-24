@@ -24,8 +24,6 @@ DataTypeMap getDataTypeMap() {
     DataTypeMap map;
     map[AttributesConfig::Attribute::Datatype::STRING] = BasicType::STRING;
     map[AttributesConfig::Attribute::Datatype::BOOL] = BasicType::BOOL;
-    map[AttributesConfig::Attribute::Datatype::UINT2] = BasicType::UINT2;
-    map[AttributesConfig::Attribute::Datatype::UINT4] = BasicType::UINT4;
     map[AttributesConfig::Attribute::Datatype::INT8] = BasicType::INT8;
     map[AttributesConfig::Attribute::Datatype::INT16] = BasicType::INT16;
     map[AttributesConfig::Attribute::Datatype::INT32] = BasicType::INT32;

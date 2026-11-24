@@ -48,8 +48,6 @@ std::unique_ptr<document::select::Value> AttributeFieldValueNode::getValue(const
         return std::make_unique<StringValue>(std::string_view{value.data(), value.size()});
     }
     case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
     case BasicType::INT8:
     case BasicType::INT16:
     case BasicType::INT32:
