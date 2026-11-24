@@ -642,9 +642,8 @@ void Proton::closeDocumentDBs(vespalib::ThreadStackExecutorBase& executor) {
     auto tracer = get_tracer();
     auto parent_span = tracer->GetCurrentSpan();
     for (const auto& docTypeName : docTypes) {
-        executor.execute(makeLambdaTask([this, docTypeName, parent_span, tracer]() {
-            auto parent_span_copy = parent_span;
-            auto scope = tracer->WithActiveSpan(parent_span_copy);
+        executor.execute(makeLambdaTask([this, docTypeName, parent_span, tracer]() mutable {
+            auto scope = tracer->WithActiveSpan(parent_span);
             removeDocumentDB(docTypeName);
         }));
     }

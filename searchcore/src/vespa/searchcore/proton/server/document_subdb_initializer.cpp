@@ -36,9 +36,8 @@ void DocumentSubDbInitializer::run() {
     auto               scope = tracer->WithActiveSpan(span);
     std::promise<void> promise;
     auto               future = promise.get_future();
-    _master.execute(makeLambdaTask([&, tracer, span]() {
-        auto span_copy = span;
-        auto scope2 = tracer->WithActiveSpan(span_copy);
+    _master.execute(makeLambdaTask([&, tracer(std::move(tracer)), span]() mutable {
+        auto scope2 = tracer->WithActiveSpan(span);
         _subDB.setup(_result);
         promise.set_value();
     }));

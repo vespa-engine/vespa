@@ -509,8 +509,9 @@ MatchingStats StoreOnlyDocSubDB::getMatcherStats(const std::string& rankProfile)
 void StoreOnlyDocSubDB::flush_document_summary(bool sync_tls) {
     CHECK(_writeService.master().isCurrentThread());
     search::IDocumentStore& store(_rSummaryMgr->getBackingStore());
-    auto                    summaryFlush = std::make_shared<SummaryFlushTarget>(store, _writeService.summary());
-    auto                    summaryFlushTask =
+    auto                    summaryFlush =
+        std::make_shared<SummaryFlushTarget>(store, _writeService.summary(), _doc_type_and_subdb_name);
+    auto summaryFlushTask =
         summaryFlush->initFlush(store.tentativeLastSyncToken(), std::make_shared<search::FlushToken>());
     if (summaryFlushTask) {
         SerialNum syncToken = summaryFlushTask->getFlushSerial();
