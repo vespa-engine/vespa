@@ -2,6 +2,7 @@
 
 #include "searchvisitor.h"
 
+#include "ext_attribute_factory.h"
 #include "matching_elements_filler.h"
 #include "search_environment_snapshot.h"
 #include "searchenvironment.h"
@@ -330,51 +331,11 @@ SearchVisitor::SearchVisitor(StorageComponent& component, VisitorEnvironment& vE
 }
 
 bool SearchVisitor::is_text_matching(std::string_view index) const noexcept {
-    StringFieldIdTMap fieldIdMap;
-    _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
-    return std::any_of(fieldIdMap.map().begin(), fieldIdMap.map().end(),
-                       [&specMap = _fieldSearchSpecMap.specMap()](const auto& fieldId) {
-                           auto found = specMap.find(fieldId.second);
-                           return (found != specMap.end() && found->second.uses_string_search_method());
-                       });
+    return _fieldSearchSpecMap.is_text_matching(index);
 }
-
-namespace {
-
-uint32_t count_normalize_lowercase(const vsm::FieldSearchSpecMapT& specMap, const StringFieldIdTMap& fieldIdMap) {
-    size_t count = 0;
-    for (const auto& fieldId : fieldIdMap.map()) {
-        auto found = specMap.find(fieldId.second);
-        if ((found != specMap.end()) && found->second.searcher().normalize_mode() == Normalizing::LOWERCASE) {
-            count++;
-        }
-    }
-    return count;
-}
-
-uint32_t count_normalize_none(const vsm::FieldSearchSpecMapT& specMap, const StringFieldIdTMap& fieldIdMap) {
-    size_t count = 0;
-    for (const auto& fieldId : fieldIdMap.map()) {
-        auto found = specMap.find(fieldId.second);
-        if ((found != specMap.end()) && found->second.searcher().normalize_mode() == Normalizing::NONE) {
-            count++;
-        }
-    }
-    return count;
-}
-
-} // namespace
 
 search::Normalizing SearchVisitor::normalizing_mode(std::string_view index) const noexcept {
-    StringFieldIdTMap fieldIdMap;
-    _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
-    if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) {
-        return Normalizing::NONE;
-    }
-    if (count_normalize_lowercase(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) {
-        return Normalizing::LOWERCASE;
-    }
-    return Normalizing::LOWERCASE_AND_FOLD;
+    return _fieldSearchSpecMap.normalizing_mode(index);
 }
 
 void SearchVisitor::init(const Parameters& params) {

@@ -100,6 +100,9 @@ public:
 
     static std::string stripNonFields(std::string_view rawIndex);
     search::attribute::DistanceMetric get_distance_metric(const std::string& name) const;
+    // Backs search::QueryNormalization for streaming query setup.
+    bool is_text_matching(std::string_view index) const noexcept;
+    search::Normalizing normalizing_mode(std::string_view index) const noexcept;
     static search::Normalizing convert_normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode);
 
 private:

@@ -169,7 +169,6 @@ private:
     void waitForInitDone();
     void waitForOnlineState();
     uint32_t getDistributionKey() const override { return _distributionKey; }
-    BootstrapConfig::SP getActiveConfigSnapshot() const;
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
     SessionManager& session_manager() override;
     std::shared_ptr<MaintenanceJobTokenSource> get_lid_space_compaction_job_token_source() override;
@@ -179,6 +178,7 @@ private:
     void closeDocumentDBs(vespalib::ThreadStackExecutorBase& executor);
 
 public:
+    BootstrapConfig::SP getActiveConfigSnapshot() const;
     using UP = std::unique_ptr<Proton>;
     using SP = std::shared_ptr<Proton>;
 

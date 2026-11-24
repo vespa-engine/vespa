@@ -24,6 +24,7 @@
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchvisitor/indexenvironment.h>
 #include <vespa/searchvisitor/rankmanager.h>
+#include <vespa/searchvisitor/reverse_match_feature.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vsm/config/config-vsmfields.h>
@@ -165,6 +166,8 @@ bool VerifyRankSetup::verifyIndexEnv(const search::fef::IIndexEnvironment& index
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);
+    // Same extra features as the proton binary, without runtime context.
+    streaming::register_reverse_match(factory, std::make_shared<const streaming::ReverseMatchContext>());
 
     search::fef::RankSetup rankSetup(factory, indexEnv);
     rankSetup.configure(); // reads config values from the property map
