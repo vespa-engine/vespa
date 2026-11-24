@@ -16,6 +16,7 @@
 #include <vespa/vespalib/util/stash.h>
 
 #include <limits>
+#include <type_traits>
 
 using search::common::FieldSortSpec;
 using search::common::sortspec::MissingPolicy;
@@ -147,6 +148,17 @@ void report_missing_read_view(const IAttributeVector& attr, const char* role) {
                   role, attr.getName().c_str(), BasicType(attr.getBasicType()).asString());
 }
 
+/*
+ * Calls make with std::true_type for ascending and std::false_type for descending order,
+ * so the sort order can be used as a template argument in the created writer.
+ */
+template <typename MakeWriter> std::unique_ptr<ISortBlobWriter> make_ordered(bool ascending, MakeWriter&& make) {
+    if (ascending) {
+        return make(std::true_type());
+    }
+    return make(std::false_type());
+}
+
 template <typename T>
 std::unique_ptr<ISortBlobWriter>
 make_numeric_writer(Stash&& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
@@ -157,12 +169,10 @@ make_numeric_writer(Stash&& stash, const StringEnumKeyFinder& keys, const IAttri
         return {};
     }
     T missing_value = string_to_number<T>(field_sort_spec._missing_value);
-    if (field_sort_spec.is_ascending()) {
-        return std::make_unique<NumericMapLookupSortBlobWriter<T, true>>(
+    return make_ordered(field_sort_spec.is_ascending(), [&](auto asc) {
+        return std::make_unique<NumericMapLookupSortBlobWriter<T, decltype(asc)::value>>(
             std::move(stash), keys, values, field_sort_spec._missing_policy, missing_value);
-    }
-    return std::make_unique<NumericMapLookupSortBlobWriter<T, false>>(std::move(stash), keys, values,
-                                                                      field_sort_spec._missing_policy, missing_value);
+    });
 }
 
 std::unique_ptr<ISortBlobWriter> make_string_writer(Stash&& stash, const StringEnumKeyFinder& keys,
@@ -174,14 +184,11 @@ std::unique_ptr<ISortBlobWriter> make_string_writer(Stash&& stash, const StringE
         report_missing_read_view(value_attr, "value array enum");
         return {};
     }
-    if (field_sort_spec.is_ascending()) {
-        return std::make_unique<StringMapLookupSortBlobWriter<true>>(
+    return make_ordered(field_sort_spec.is_ascending(), [&](auto asc) {
+        return std::make_unique<StringMapLookupSortBlobWriter<decltype(asc)::value>>(
             std::move(stash), keys, values, value_attr, field_sort_spec._converter.get(),
             field_sort_spec._missing_policy, field_sort_spec._missing_value);
-    }
-    return std::make_unique<StringMapLookupSortBlobWriter<false>>(
-        std::move(stash), keys, values, value_attr, field_sort_spec._converter.get(), field_sort_spec._missing_policy,
-        field_sort_spec._missing_value);
+    });
 }
 
 bool is_supported_component(const IAttributeVector& attr, const char* role) {
