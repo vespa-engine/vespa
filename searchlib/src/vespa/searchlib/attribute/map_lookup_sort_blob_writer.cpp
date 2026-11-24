@@ -261,7 +261,7 @@ std::unique_ptr<ISortBlobWriter> make_map_lookup_sort_blob_writer(const IAttribu
             return {};
         }
     } catch (const IllegalArgumentException& e) {
-        Issue::report("make_map_lookup_sort_blob_writer: For attribute vector %s (basic type %s): %s",
+        Issue::report("make_map_lookup_sort_blob_writer: For attribute vector '%s' (basic type %s): %s",
                       value_attr.getName().c_str(), BasicType(value_attr.getBasicType()).asString(), e.message());
         return {};
     }
