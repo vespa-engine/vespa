@@ -4,7 +4,7 @@
 
 namespace search::predicate {
 
-PredicateZeroConstraintPostingList::PredicateZeroConstraintPostingList(Iterator it) : _start(it), _iterator(it) {
+PredicateZeroConstraintPostingList::PredicateZeroConstraintPostingList(Iterator it) : _iterator(it) {
 }
 
 bool PredicateZeroConstraintPostingList::next(uint32_t doc_id) {

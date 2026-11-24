@@ -13,8 +13,7 @@ namespace search::predicate {
  */
 class PredicateZeroConstraintPostingList : public PredicatePostingList {
     using Iterator = ZeroConstraintDocs::Iterator;
-    const Iterator _start;
-    Iterator       _iterator;
+    Iterator _iterator;
 
 public:
     PredicateZeroConstraintPostingList(Iterator it);
@@ -22,7 +21,7 @@ public:
     bool nextInterval() override { return false; }
     VESPA_DLL_LOCAL uint32_t getInterval() const override { return 0x00010001; }
     void reset() override {
-        _iterator = _start;
+        _iterator.begin();
         setDocId(0);
     }
 };

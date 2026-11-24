@@ -38,7 +38,8 @@ public:
     virtual bool nextInterval() = 0;
 
     /*
-     * Moves back to where the posting list was when created, so it can be iterated again.
+     * Moves back to the start of the posting list, so it can be iterated again. Assumes the
+     * iterator it was created from was at the start of its list.
      */
     virtual void reset() = 0;
 
