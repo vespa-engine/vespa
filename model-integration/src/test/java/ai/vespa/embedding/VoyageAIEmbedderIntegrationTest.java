@@ -9,6 +9,11 @@ import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import static ai.vespa.embedding.EmbedderTestUtils.assertNonZeroTensor;
@@ -317,6 +322,66 @@ public class VoyageAIEmbedderIntegrationTest {
         assertTrue(sim02 > sim01, "ML texts should be more similar. Sim(0,2)=%f, Sim(0,1)=%f".formatted(sim02, sim01));
 
         embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithMultimodal35TextAndImage() throws IOException {
+        var embedder = createEmbedder("voyage-multimodal-3.5", 1024);
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        byte[] red = squarePng(Color.RED);
+        byte[] blue = squarePng(Color.BLUE);
+
+        // Each call gets its own context, since a context caches the response for equal input
+        Tensor image = embedder.embed(Embedder.Input.of(new Embedder.Image(red)),
+                                      new Embedder.Context("integration-test"), targetType);
+        Tensor sameImage = embedder.embed(Embedder.Input.of(new Embedder.Image(red)),
+                                          new Embedder.Context("integration-test"), targetType);
+        Tensor otherImage = embedder.embed(Embedder.Input.of(new Embedder.Image(blue)),
+                                           new Embedder.Context("integration-test"), targetType);
+        Tensor text = embedder.embed("A red square", new Embedder.Context("integration-test"), targetType);
+        Tensor textAndImage = embedder.embed(Embedder.Input.of("A red square", new Embedder.Image(red)),
+                                             new Embedder.Context("integration-test"), targetType);
+
+        for (Tensor embedding : List.of(image, sameImage, otherImage, text, textAndImage)) {
+            assertEquals(1024, embedding.size());
+            assertNonZeroTensor(embedding);
+        }
+        assertTrue(cosineSimilarity(image, sameImage) > 0.999, "The same image gives the same embedding");
+        assertTrue(cosineSimilarity(image, otherImage) < 0.999, "Another image gives another embedding");
+        assertTrue(cosineSimilarity(textAndImage, text) < 0.999, "A text with an image is not embedded as the text alone");
+        assertTrue(cosineSimilarity(textAndImage, image) < 0.999, "A text with an image is not embedded as the image alone");
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithMultimodal35ImageDimensionAndQuantization() throws IOException {
+        var image = Embedder.Input.of(new Embedder.Image(squarePng(Color.RED)));
+
+        var reducedEmbedder = createEmbedder("voyage-multimodal-3.5", 512);
+        Tensor reduced = reducedEmbedder.embed(image, new Embedder.Context("integration-test"),
+                                               TensorType.fromSpec("tensor<float>(d0[512])"));
+        assertEquals(512, reduced.size());
+        assertNonZeroTensor(reduced);
+        reducedEmbedder.deconstruct();
+
+        var int8Embedder = createEmbedder("voyage-multimodal-3.5", 1024, VoyageAiEmbedderConfig.Quantization.Enum.INT8);
+        Tensor int8 = int8Embedder.embed(image, new Embedder.Context("integration-test"),
+                                         TensorType.fromSpec("tensor<int8>(d0[1024])"));
+        assertEquals(1024, int8.size());
+        assertNonZeroTensor(int8);
+        int8Embedder.deconstruct();
+    }
+
+    private static byte[] squarePng(Color color) throws IOException {
+        var image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        graphics.setColor(color);
+        graphics.fillRect(0, 0, 64, 64);
+        graphics.dispose();
+        var out = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", out);
+        return out.toByteArray();
     }
 
     // ===== Helper Methods =====
