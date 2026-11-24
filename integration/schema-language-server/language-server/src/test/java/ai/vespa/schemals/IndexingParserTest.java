@@ -26,6 +26,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.NormalizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PackBitsExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.MultipartExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
@@ -121,6 +122,13 @@ public class IndexingParserTest {
             InputExpression.class,
             AbsExpression.class,
             AttributeExpression.class}, "input weight_src | abs | attribute");
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            MultipartExpression.class,
+            InputExpression.class,
+            InputExpression.class,
+            EmbedExpression.class,
+            AttributeExpression.class}, "input title, input image | embed embedder | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {

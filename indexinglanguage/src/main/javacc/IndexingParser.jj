@@ -86,6 +86,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.NowExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OptimizePredicateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PackBitsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ParenthesisExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.MultipartExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PassthroughExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.RandomExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -369,8 +370,19 @@ StatementExpression statement() :
     List<Expression> lst = new ArrayList<Expression>();
 }
 {
-    ( exp = expression() { lst.add(exp); } ( <PIPE> nl() exp = expression() { lst.add(exp); } )* )
+    ( exp = multipartExpression() { lst.add(exp); } ( <PIPE> nl() exp = multipartExpression() { lst.add(exp); } )* )
     { return new StatementExpression(lst); }
+}
+
+Expression multipartExpression() :
+{
+    Expression part;
+    List<Expression> parts = new ArrayList<Expression>();
+}
+{
+    part = expression() { parts.add(part); }
+    ( <COMMA> nl() part = expression() { parts.add(part); } )*
+    { return parts.size() == 1 ? parts.get(0) : new MultipartExpression(parts); }
 }
 
 Expression expression() :
