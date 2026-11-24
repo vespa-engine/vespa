@@ -47,12 +47,14 @@ TEST(AttributeOperationTest, test_illegal_operations_on_float_attribute) {
 
 TEST(AttributeOperationTest, test_supported_basic_types) {
     const std::vector<uint32_t> docs;
-    for (auto type : {BasicType::INT8, BasicType::INT32, BasicType::INT64, BasicType::FLOAT, BasicType::DOUBLE}) {
+    for (auto type :
+         {BasicType::INT8, BasicType::INT16, BasicType::INT32, BasicType::INT64, BasicType::FLOAT, BasicType::DOUBLE})
+    {
         SCOPED_TRACE(BasicType(type).asString());
         EXPECT_TRUE(AttributeOperation::create(type, "++", docs));
     }
-    for (auto type : {BasicType::NONE, BasicType::STRING, BasicType::BOOL, BasicType::INT16, BasicType::PREDICATE,
-                      BasicType::TENSOR, BasicType::REFERENCE, BasicType::RAW})
+    for (auto type : {BasicType::NONE, BasicType::STRING, BasicType::BOOL, BasicType::PREDICATE, BasicType::TENSOR,
+                      BasicType::REFERENCE, BasicType::RAW})
     {
         SCOPED_TRACE(BasicType(type).asString());
         EXPECT_FALSE(AttributeOperation::create(type, "++", docs));
@@ -105,6 +107,9 @@ void verify2(BasicType typeClaimed, std::string_view operation, AttributeVector&
                                                                       docs, std::move(result));
     } else if (type == BasicType::INT32) {
         verify<int32_t, search::IntegerAttributeTemplate<int32_t>, R>(typeClaimed, operation, attr, initial, expected,
+                                                                      docs, std::move(result));
+    } else if (type == BasicType::INT16) {
+        verify<int16_t, search::IntegerAttributeTemplate<int16_t>, R>(typeClaimed, operation, attr, initial, expected,
                                                                       docs, std::move(result));
     } else if (type == BasicType::DOUBLE) {
         verify<double, search::FloatingPointAttributeTemplate<double>, R>(typeClaimed, operation, attr, initial,
@@ -170,6 +175,15 @@ template <typename T> void verify(std::string_view operation, AttributeVector& a
 
 TEST(AttributeOperationTest, test_all_integer_operations) {
     auto                                               attr = createAttribute(BasicType::INT64, "ai");
+    const std::vector<std::pair<const char*, int64_t>> expectedOperation = {
+        {"++", 8}, {"--", 6}, {"+=7", 14}, {"-=9", -2}, {"*=3", 21}, {"/=3", 2}, {"%=3", 1}};
+    for (auto operation : expectedOperation) {
+        verify<int64_t>(operation.first, *attr, 7, operation.second);
+    }
+}
+
+TEST(AttributeOperationTest, test_all_int16_operations) {
+    auto                                               attr = createAttribute(BasicType::INT16, "ai");
     const std::vector<std::pair<const char*, int64_t>> expectedOperation = {
         {"++", 8}, {"--", 6}, {"+=7", 14}, {"-=9", -2}, {"*=3", 21}, {"/=3", 2}, {"%=3", 1}};
     for (auto operation : expectedOperation) {

@@ -149,15 +149,6 @@ private:
     std::vector<uint32_t> _docIds;
 };
 
-/*
- * Value types supported by attribute operations: all numeric attribute value types except int16_t.
- * int16_t is left out since INT16 attributes cannot be configured in a schema.
- */
-template <typename ValueType>
-constexpr bool is_supported_value_type =
-    std::is_same_v<ValueType, int8_t> || std::is_same_v<ValueType, int32_t> || std::is_same_v<ValueType, int64_t> ||
-    std::is_same_v<ValueType, float> || std::is_same_v<ValueType, double>;
-
 struct Operation {
     enum class Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
     Operation(Type operation_in, std::string_view operand_in) : operation(operation_in), operand(operand_in) {}
@@ -216,7 +207,7 @@ std::unique_ptr<AttributeOperation> createOperation(AttributeOperation::FullResu
 }
 
 template <typename ValueType, typename V> std::unique_ptr<AttributeOperation> Operation::create(V vector) const {
-    static_assert(is_supported_value_type<ValueType>);
+    static_assert(std::is_arithmetic_v<ValueType>);
     // Integer operands are int64_t and floating point operands are double, independent of the value type.
     using T = std::conditional_t<std::is_integral_v<ValueType>, int64_t, double>;
     using A = NumericAttributeTemplate<ValueType>;
@@ -264,12 +255,12 @@ template <typename ValueType, typename V> std::unique_ptr<AttributeOperation> Op
 
 /*
  * Target for typify_invoke, templated on the attribute value type (see TypifyBasicType).
- * Basic types without a supported value type (including INT16) give no operation.
+ * Only numeric basic types give an operation.
  */
 struct CreateOperation {
     template <typename ValueType, typename V>
     static std::unique_ptr<AttributeOperation> invoke(const Operation& op, V hits) {
-        if constexpr (is_supported_value_type<ValueType>) {
+        if constexpr (std::is_arithmetic_v<ValueType>) {
             return op.create<ValueType, V>(std::move(hits));
         } else {
             return {};
