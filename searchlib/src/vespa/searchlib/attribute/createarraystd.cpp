@@ -2,11 +2,14 @@
 
 #include "array_bool_attribute.h"
 #include "attributefactory.h"
-#include "defines.h"
 #include "multinumericattribute.h"
 #include "multistringattribute.h"
+#include "numeric_attribute_template.h"
+#include "typify_basic_type.h"
 
 #include <vespa/check_require.h>
+
+#include <type_traits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.create_array_std");
@@ -14,45 +17,30 @@ LOG_SETUP(".searchlib.attribute.create_array_std");
 namespace search {
 
 using attribute::BasicType;
+using attribute::TypifyBasicType;
 
-#define INTARRAY(T) MultiValueNumericAttribute<IntegerAttributeTemplate<T>, MULTIVALUE_ARG(T)>
-#define FLOATARRAY(T) MultiValueNumericAttribute<FloatingPointAttributeTemplate<T>, MULTIVALUE_ARG(T)>
+namespace {
 
-#define CREATEINTARRAY(T, fname, info) static_cast<AttributeVector*>(new INTARRAY(T)(fname, info))
-#define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector*>(new FLOATARRAY(T)(fname, info))
+struct CreateArrayStd {
+    template <typename T> static AttributeVector::SP invoke(const std::string& name, const attribute::Config& info) {
+        if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
+            return std::make_shared<ArrayStringAttribute>(name, info);
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::Unsupported>) {
+            return {};
+        } else {
+            return std::make_shared<MultiValueNumericAttribute<NumericAttributeTemplate<T>, T>>(name, info);
+        }
+    }
+};
+
+} // namespace
 
 AttributeVector::SP AttributeFactory::createArrayStd(std::string name, const Config& info) {
     CHECK(info.collectionType().type() == attribute::CollectionType::ARRAY);
-    AttributeVector::SP ret;
-    switch (info.basicType().type()) {
-    case BasicType::BOOL:
-        ret.reset(new attribute::ArrayBoolAttribute(name, info));
-        break;
-    case BasicType::INT8:
-        ret.reset(CREATEINTARRAY(int8_t, name, info));
-        break;
-    case BasicType::INT16:
-        ret.reset(CREATEINTARRAY(int16_t, name, info));
-        break;
-    case BasicType::INT32:
-        ret.reset(CREATEINTARRAY(int32_t, name, info));
-        break;
-    case BasicType::INT64:
-        ret.reset(CREATEINTARRAY(int64_t, name, info));
-        break;
-    case BasicType::FLOAT:
-        ret.reset(CREATEFLOATARRAY(float, name, info));
-        break;
-    case BasicType::DOUBLE:
-        ret.reset(CREATEFLOATARRAY(double, name, info));
-        break;
-    case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector*>(new ArrayStringAttribute(name, info)));
-        break;
-    default:
-        break;
+    if (info.basicType().type() == BasicType::BOOL) {
+        return std::make_shared<attribute::ArrayBoolAttribute>(name, info);
     }
-    return ret;
+    return vespalib::typify_invoke<1, TypifyBasicType, CreateArrayStd>(info.basicType().type(), name, info);
 }
 
 } // namespace search

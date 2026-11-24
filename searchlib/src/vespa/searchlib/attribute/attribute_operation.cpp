@@ -2,6 +2,7 @@
 
 #include "attribute_operation.h"
 
+#include "numeric_attribute_template.h"
 #include "singlenumericattribute.h"
 #include "typify_basic_type.h"
 
@@ -218,8 +219,7 @@ template <typename ValueType, typename V> std::unique_ptr<AttributeOperation> Op
     static_assert(is_supported_value_type<ValueType>);
     // Integer operands are int64_t and floating point operands are double, independent of the value type.
     using T = std::conditional_t<std::is_integral_v<ValueType>, int64_t, double>;
-    using A = std::conditional_t<std::is_integral_v<ValueType>, IntegerAttributeTemplate<ValueType>,
-                                 FloatingPointAttributeTemplate<ValueType>>;
+    using A = NumericAttributeTemplate<ValueType>;
     T    value(0);
     Type validOp = operation;
     if (hasArgument()) {
