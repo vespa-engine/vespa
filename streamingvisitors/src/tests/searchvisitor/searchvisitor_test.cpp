@@ -401,6 +401,10 @@ TEST_F(SearchVisitorTest, sorting_works) {
     check_sorting(*this, "+id", {{4, 14.0}, {5, 15.0}, {7, 17.0}}, {});
     check_sorting(*this, "-badid", {{7, 17.0}, {5, 15.0}, {4, 14.0}},
                   {"Cannot locate field 'badid' in field name registry"});
+    check_sorting(*this, "+m{\"k\"}", {{7, 17.0}, {5, 15.0}, {4, 14.0}},
+                  {"Sorting by a map value is not supported in streaming search (field 'm{\"k\"}')"});
+    check_sorting(*this, "+m{\"k\"} +id", {{4, 14.0}, {5, 15.0}, {7, 17.0}},
+                  {"Sorting by a map value is not supported in streaming search (field 'm{\"k\"}')"});
 }
 
 } // namespace streaming
