@@ -46,6 +46,7 @@ import com.yahoo.vespa.model.search.IndexingDocprocChain;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 /**
  * The config model from a content tag in services.
@@ -273,6 +275,8 @@ public class Content extends ConfigModel {
     public static class Builder extends ConfigModelBuilder<Content> {
     
         public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName("content"));
+
+        private static final ClusterSpec.Id CLUSTER_CONTROLLERS_CLUSTER_ID = ClusterSpec.Id.from("cluster-controllers");
     
         public Builder() {
             super(Content.class);
@@ -284,9 +288,11 @@ public class Content extends ConfigModel {
         }
 
         @Override
-        public List<ClusterSpec> collectAllocationRequests(Element contentXml, ConfigModelContext context) {
-            // TODO(hakon): the cluster controllers
-            return StorageGroup.Builder.from(new ModelElement(contentXml), context).collectAllocationRequests();
+        public List<ClusterSpec> collectAllocationRequests(Element w3cContentElement, ConfigModelContext context) {
+            ModelElement contentElement = new ModelElement(w3cContentElement);
+            return Stream.concat(StorageGroup.Builder.from(contentElement, context).collectAllocationRequest().stream(),
+                                 collectCCAllocationRequest(contentElement, Optional.empty(), context).stream())
+                           .toList();
         }
 
         @Override
@@ -298,28 +304,83 @@ public class Content extends ConfigModel {
             addIndexingChainToContainersInheritingFromIt(content.containers);
         }
 
+        private static boolean isFirstOfSiblingNamesakes(ModelElement element) {
+            Node sibling = element.getXml();
+            do {
+                sibling = sibling.getPreviousSibling();
+                if (sibling == null)
+                    return true;
+                if (sibling instanceof Element previous && previous.getTagName().equals(element.getXml().getTagName()))
+                    return false;
+            } while (true);
+        }
+
+        /**
+         * Returns the allocation request for cluster controllers, only non-empty in hosted.
+         *
+         * @param admin pass in admin during build, empty during early provisioning (collectAllocationRequests())
+         */
+        private static Optional<ClusterSpec> collectCCAllocationRequest(ModelElement contentElement, Optional<Admin> admin, ConfigModelContext context) {
+            if ( ! context.properties().hostedVespa()) return Optional.empty();
+
+            boolean isFirstContentCluster = isFirstOfSiblingNamesakes(contentElement);
+
+            if (admin.isPresent()) {
+                // In hosted...
+                // 1. During early provisioning, the content cluster's {@link #collectAllocationRequests(Element, ConfigModelContext)}
+                //    assumes the first content cluster will make an allocation request for the cluster controller.
+                // 2. During building, the content cluster's doBuild() only makes an allocation request if the Admin
+                //    element doesn't have one already.
+                //
+                // That is:
+                // A. The first content cluster finds no cluster controllers on Admin (and adds one).
+                if (isFirstContentCluster && admin.get().getClusterControllers() != null)
+                    throw new IllegalStateException("Admin has cluster controllers, but this is the first content cluster");
+                // B. Later content clusters find Admin has cluster controllers (and adds none).
+                if ( ! isFirstContentCluster && admin.get().getClusterControllers() == null)
+                    throw new IllegalStateException("Admin has no cluster controllers, but this is not the first content cluster");
+                //
+                // If this verification fails, it means the above statements are false, and early provisioning
+                // is making the wrong allocation decisions.
+            }
+
+            if ( ! isFirstContentCluster) return Optional.empty();
+
+            return Optional.of(NodesSpecification
+                    .requiredFromSharedParents(context.getDeployState().zone().environment().isProduction() ? 3 : 1,
+                                               NodeResources.unspecified(),
+                                               contentElement,
+                                               context)
+                    .makeClusterSpec(ClusterSpec.Type.admin,
+                                     CLUSTER_CONTROLLERS_CLUSTER_ID,
+                                     true,
+                                     context.clusterInfo().build()));
+        }
+
         /**
          * Creates the cluster controllers (normal case), unless there is one already on admin.
          * Updates admin, cluster controllers, and the content cluster with information about each other.
          */
-        public static void ensureClusterControllers(ConfigModelContext context, Admin admin, ContentCluster contentCluster, Element xml) {
-            ModelElement contentElement = new ModelElement(xml);
+        public static void ensureClusterControllers(ConfigModelContext context, Admin admin, ContentCluster contentCluster, Element w3cContentElement) {
+            ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
 
-            final ClusterControllerContainerCluster clusterControllers;
-            final String clusterName = "cluster-controllers";
             if (context.properties().hostedVespa()) {
-                clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState, clusterName);
+                collectCCAllocationRequest(contentElement, Optional.of(admin), context)
+                        .map(clusterSpec -> createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
+                                                                     admin.hostSystem().allocateHosts(clusterSpec, deployState).keySet(),
+                                                                     true,
+                                                                     context.getDeployState()))
+                        .ifPresent(clusterControllers -> admin.setClusterControllers(clusterControllers, deployState));
             }
             else if (admin.multitenant()) { // system tests: cluster controllers on logserver host
                 if (admin.getClusterControllers() == null) {
                     Objects.requireNonNull(admin.getLogserver(), "logserver cannot be null");
                     List<HostResource> host = List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
-                                                                         host, clusterName, true, deployState),
+                                                                         host, true, deployState),
                                                 deployState);
                 }
-                clusterControllers = admin.getClusterControllers();
             }
             else { // self-hosted: Put cluster controller on config servers or use explicit cluster controllers
                 if (admin.getClusterControllers() == null) {
@@ -329,15 +390,10 @@ public class Content extends ConfigModel {
                                       "it is recommended to configure cluster controllers explicitly.";
                         deployState.getDeployLogger().logApplicationPackage(Level.INFO, message);
                     }
-                    admin.setClusterControllers(createClusterControllers(admin,
-                                                                         hosts,
-                                                                         "cluster-controllers",
-                                                                         false,
-                                                                         deployState),
-                                                deployState);
+                    admin.setClusterControllers(createClusterControllers(admin, hosts, false, deployState), deployState);
                 }
-                clusterControllers = admin.getClusterControllers();
             }
+            ClusterControllerContainerCluster clusterControllers = admin.getClusterControllers();
             contentCluster.setSingleClusterController(clusterControllers.getContainers().size() == 1);
 
             // Update node count so we can keep track of how many content nodes there are in total
@@ -350,38 +406,12 @@ public class Content extends ConfigModel {
             }
         }
 
-        private static ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement,
-                                                                                       Admin admin,
-                                                                                       ConfigModelContext context,
-                                                                                       DeployState deployState,
-                                                                                       String clusterName) {
-            if (admin.getClusterControllers() == null) {
-                ClusterSpec clusterSpec = NodesSpecification
-                        .requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
-                                                   NodeResources.unspecified(),
-                                                   contentElement,
-                                                   context)
-                        .makeClusterSpec(ClusterSpec.Type.admin,
-                                         ClusterSpec.Id.from(clusterName),
-                                         true,
-                                         context.clusterInfo().build());
-                Collection<HostResource> hosts = admin.hostSystem().allocateHosts(clusterSpec, deployState).keySet();
-                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
-                                                                     hosts,
-                                                                     clusterName,
-                                                                     true,
-                                                                     context.getDeployState()),
-                                            deployState);
-            }
-            return admin.getClusterControllers();
-        }
-
         private static ClusterControllerContainerCluster createClusterControllers(TreeConfigProducer<?> parent,
                                                                                   Collection<HostResource> hosts,
-                                                                                  String name,
                                                                                   boolean runStandaloneZooKeeper,
                                                                                   DeployState deployState) {
-            var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
+            var clusterControllers = new ClusterControllerContainerCluster(parent, CLUSTER_CONTROLLERS_CLUSTER_ID.value(),
+                                                                           CLUSTER_CONTROLLERS_CLUSTER_ID.value(), deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
             int index = 0;
             for (HostResource host : hosts) {
