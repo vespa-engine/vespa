@@ -234,10 +234,12 @@ void DocumentStore::compactSpread(uint64_t syncToken) {
 }
 
 void DocumentStore::flush(uint64_t syncToken) {
+    // Called by flush thread
     _backingStore.flush(syncToken);
 }
 
 uint64_t DocumentStore::initFlush(uint64_t syncToken) {
+    // Called by document db summary executor.
     return _backingStore.initFlush(syncToken);
 }
 

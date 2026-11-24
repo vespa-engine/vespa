@@ -77,12 +77,12 @@ public:
     virtual void remove(uint64_t serialNum, uint32_t lid) = 0;
 
     /**
-     * Flush in-memory data to disk.
+     * Flush in-memory data to disk. Called by flush thread.
      **/
     virtual void flush(uint64_t syncToken) = 0;
 
     /*
-     * Prepare for flushing in-memory data to disk.
+     * Prepare for flushing in-memory data to disk. Called by document db summary executor.
      */
     virtual uint64_t initFlush(uint64_t syncToken) = 0;
 
