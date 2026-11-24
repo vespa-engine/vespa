@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/dual_merge_director.h>
 
 #include <atomic>
+#include <optional>
 
 namespace search {
 namespace engine {
@@ -48,8 +49,8 @@ public:
          * sort spec, feature_binding_failed is set; the hits cannot be ordered
          * as requested and the query must fail.
          **/
-        Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac, const std::string& ss,
-             INumericSortValueProvider* sort_value_provider);
+        Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac,
+             const search::common::sortspec::ParsedSortSpec* ss, INumericSortValueProvider* sort_value_provider);
         ~Sort();
         bool hasSortData() const noexcept { return (sorter == (const FastS_IResultSorter*)&sortSpec); }
         bool feature_binding_failed() const noexcept { return _feature_binding_failed; }
@@ -98,16 +99,20 @@ private:
     SessionManager&                   _sessionMgr;
     GroupingContext&                  _groupingContext;
     std::unique_ptr<GroupingSession>  _groupingSession;
-    const std::string&                _sortSpec;
-    size_t                            _offset;
-    size_t                            _hits;
-    bool                              _wasMerged;
-    std::atomic<bool>                 _sort_feature_failed;
+    // Unset when the query does not sort. A spec that failed to parse is kept as an empty
+    // ParsedSortSpec, which installs a sorter with no levels, as FastS_SortSpec::Init does.
+    std::optional<search::common::sortspec::ParsedSortSpec> _sortSpec;
+    size_t                                                  _offset;
+    size_t                                                  _hits;
+    bool                                                    _wasMerged;
+    std::atomic<bool>                                       _sort_feature_failed;
 
 public:
+    // sortSpec is unset when the query does not sort. A sort spec that failed to parse
+    // is passed as an empty ParsedSortSpec.
     ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
                     SessionManager& sessionMgr, GroupingContext& groupingContext, const std::string& sessionId,
-                    const std::string& sortSpec, size_t offset, size_t hits);
+                    std::optional<search::common::sortspec::ParsedSortSpec> sortSpec, size_t offset, size_t hits);
     ~ResultProcessor();
 
     void prepareThreadContextCreation(size_t num_threads);

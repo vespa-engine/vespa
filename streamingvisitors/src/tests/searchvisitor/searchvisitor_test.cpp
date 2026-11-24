@@ -405,6 +405,16 @@ TEST_F(SearchVisitorTest, sorting_works) {
                   {"Sorting by a map value is not supported in streaming search (field 'm{\"k\"}')"});
     check_sorting(*this, "+m{\"k\"} +id", {{4, 14.0}, {5, 15.0}, {7, 17.0}},
                   {"Sorting by a map value is not supported in streaming search (field 'm{\"k\"}')"});
+    // A spec with only spaces has no levels; the hits stay in rank order.
+    check_sorting(*this, "   ", {{7, 17.0}, {5, 15.0}, {4, 14.0}}, {});
+}
+
+TEST_F(SearchVisitorTest, malformed_sort_spec_is_reported_and_hits_stay_in_rank_order) {
+    // The container allows '-' in sort field names, the backend parser does not.
+    check_sorting(*this, "+id-x", {{7, 17.0}, {5, 15.0}, {4, 14.0}},
+                  {"Failed parsing sortspec '+id-x': Unexpected '-x' after sort level in '+id-x'"});
+    check_sorting(*this, "+id +[foo]", {{7, 17.0}, {5, 15.0}, {4, 14.0}},
+                  {"Failed parsing sortspec '+id +[foo]': Bad bracketed name in sort spec: [foo]"});
 }
 
 } // namespace streaming

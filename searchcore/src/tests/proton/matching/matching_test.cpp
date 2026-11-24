@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
@@ -72,6 +73,7 @@ using namespace search::queryeval;
 using namespace search;
 
 using search::attribute::test::MockAttributeContext;
+using search::common::sortspec::ParsedSortSpec;
 using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
 using search::fef::indexproperties::hitcollector::HeapSize;
 using search::fef::indexproperties::hitcollector::SecondPhaseRankScoreDropLimit;
@@ -1546,6 +1548,32 @@ TEST_F(MatchingTest, require_that_attribute_sort_with_rank_still_reranks) {
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid);
 }
 
+TEST_F(MatchingTest, require_that_sort_spec_with_only_spaces_is_handled_as_no_sort_spec) {
+    auto search = [this](const std::string& sort_spec, uint32_t& docs_ranked) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = sort_spec;
+        SearchReply::UP reply = world.performSearch(*request, 1);
+        docs_ranked = world.matchingStats.docsRanked();
+        return reply;
+    };
+    uint32_t        ranked_unsorted = 0;
+    uint32_t        ranked_spaces = 0;
+    SearchReply::UP unsorted = search("", ranked_unsorted);
+    SearchReply::UP spaces = search("   ", ranked_spaces);
+    EXPECT_EQ(9u, ranked_unsorted);
+    EXPECT_EQ(ranked_unsorted, ranked_spaces);
+    EXPECT_TRUE(unsorted->sortData.empty());
+    EXPECT_TRUE(spaces->sortData.empty());
+    ASSERT_EQ(unsorted->hits.size(), spaces->hits.size());
+    for (size_t i = 0; i < unsorted->hits.size(); ++i) {
+        EXPECT_EQ(unsorted->hits[i].gid, spaces->hits[i].gid);
+        EXPECT_EQ(unsorted->hits[i].metric, spaces->hits[i].metric);
+    }
+}
+
 TEST_F(MatchingTest, require_that_unknown_sort_feature_fails_closed) {
     MyWorld world(shared_state());
     world.basicSetup();
@@ -2588,7 +2616,8 @@ struct FakeSortValueProvider : INumericSortValueProvider {
 TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
     MockAttributeContext  ac;
     FakeSortValueProvider provider({"by_a1"});
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", &provider);
+    ParsedSortSpec        spec("-feature(by_a1)");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, &provider);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_TRUE(sort.hasSortData());
 }
@@ -2596,30 +2625,79 @@ TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
 TEST(SortBindingTest, feature_sort_binding_fails_when_a_value_is_unavailable) {
     MockAttributeContext  ac;
     FakeSortValueProvider provider({"by_a1"});
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1) +feature(gone)", &provider);
+    ParsedSortSpec        spec("-feature(by_a1) +feature(gone)");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, &provider);
     EXPECT_TRUE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
 }
 
 TEST(SortBindingTest, feature_sort_binding_fails_without_a_provider) {
     MockAttributeContext  ac;
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", nullptr);
+    ParsedSortSpec        spec("-feature(by_a1)");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_TRUE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
 }
 
 TEST(SortBindingTest, sort_without_features_needs_no_provider) {
     MockAttributeContext  ac;
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+[rank]", nullptr);
+    ParsedSortSpec        spec("+[rank]");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_TRUE(sort.hasSortData());
 }
 
 TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
     MockAttributeContext  ac;
-    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+no_such_attribute", nullptr);
+    ParsedSortSpec        spec("+no_such_attribute");
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, &spec, nullptr);
     EXPECT_FALSE(sort.feature_binding_failed());
     EXPECT_FALSE(sort.hasSortData());
+}
+
+namespace {
+
+// Records the thread taking each stable enum guard.
+class RecordingAttributeContext : public MockAttributeContext {
+public:
+    mutable std::vector<std::pair<std::string, std::thread::id>> stable_enum_lookups;
+    const IAttributeVector* getAttributeStableEnum(std::string_view name) const override {
+        stable_enum_lookups.emplace_back(std::string(name), std::this_thread::get_id());
+        return MockAttributeContext::getAttributeStableEnum(name);
+    }
+};
+
+} // namespace
+
+TEST(ResultProcessorTest, map_key_enum_guard_is_taken_before_dispatch_for_any_thread_count) {
+    // The guard holds a shared lock, which must be released by the thread that took it, so it
+    // is taken here and not in a match thread, also when there is only one match thread.
+    for (size_t num_threads : {1, 4}) {
+        SCOPED_TRACE(num_threads);
+        RecordingAttributeContext          ac;
+        DocumentMetaStore                  meta_store(std::make_shared<bucketdb::BucketDBOwner>());
+        SessionManager                     session_mgr(10);
+        auto                               valid_lids = search::BitVector::create(0, 10);
+        std::atomic<vespalib::steady_time> now(vespalib::steady_clock::now());
+        search::grouping::GroupingContext  grouping(*valid_lids, now, vespalib::steady_time::max());
+        ResultProcessor rp(ac, meta_store, session_mgr, grouping, "", ParsedSortSpec("+m{\"k\"} +a"), 0, 10);
+        rp.prepareThreadContextCreation(num_threads);
+        ASSERT_EQ(1u, ac.stable_enum_lookups.size());
+        EXPECT_EQ("m.key", ac.stable_enum_lookups[0].first);
+        EXPECT_EQ(std::this_thread::get_id(), ac.stable_enum_lookups[0].second);
+    }
+}
+
+TEST(ResultProcessorTest, no_enum_guard_is_taken_without_a_sort_spec) {
+    RecordingAttributeContext          ac;
+    DocumentMetaStore                  meta_store(std::make_shared<bucketdb::BucketDBOwner>());
+    SessionManager                     session_mgr(10);
+    auto                               valid_lids = search::BitVector::create(0, 10);
+    std::atomic<vespalib::steady_time> now(vespalib::steady_clock::now());
+    search::grouping::GroupingContext  grouping(*valid_lids, now, vespalib::steady_time::max());
+    ResultProcessor                    rp(ac, meta_store, session_mgr, grouping, "", std::nullopt, 0, 10);
+    rp.prepareThreadContextCreation(1);
+    EXPECT_TRUE(ac.stable_enum_lookups.empty());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
