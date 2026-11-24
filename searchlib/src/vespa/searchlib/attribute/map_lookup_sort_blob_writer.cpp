@@ -149,7 +149,7 @@ void report_missing_read_view(const IAttributeVector& attr, const char* role) {
 
 template <typename T>
 std::unique_ptr<ISortBlobWriter>
-make_numeric_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
+make_numeric_writer(Stash&& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
                     const IMultiValueAttribute& value_mva, const FieldSortSpec& field_sort_spec) {
     auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayTag<T>(), stash);
     if (values == nullptr) {
@@ -165,7 +165,7 @@ make_numeric_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttrib
                                                                       field_sort_spec._missing_policy, missing_value);
 }
 
-std::unique_ptr<ISortBlobWriter> make_string_writer(Stash& stash, const StringEnumKeyFinder& keys,
+std::unique_ptr<ISortBlobWriter> make_string_writer(Stash&& stash, const StringEnumKeyFinder& keys,
                                                     const IAttributeVector&     value_attr,
                                                     const IMultiValueAttribute& value_mva,
                                                     const FieldSortSpec&        field_sort_spec) {
@@ -241,19 +241,19 @@ std::unique_ptr<ISortBlobWriter> make_map_lookup_sort_blob_writer(const IAttribu
     try {
         switch (value_attr.getBasicType()) {
         case BasicType::INT8:
-            return make_numeric_writer<int8_t>(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_numeric_writer<int8_t>(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         case BasicType::INT16:
-            return make_numeric_writer<int16_t>(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_numeric_writer<int16_t>(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         case BasicType::INT32:
-            return make_numeric_writer<int32_t>(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_numeric_writer<int32_t>(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         case BasicType::INT64:
-            return make_numeric_writer<int64_t>(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_numeric_writer<int64_t>(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         case BasicType::FLOAT:
-            return make_numeric_writer<float>(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_numeric_writer<float>(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         case BasicType::DOUBLE:
-            return make_numeric_writer<double>(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_numeric_writer<double>(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         case BasicType::STRING:
-            return make_string_writer(stash, keys, value_attr, value_mva, field_sort_spec);
+            return make_string_writer(std::move(stash), keys, value_attr, value_mva, field_sort_spec);
         default:
             Issue::report("make_map_lookup_sort_blob_writer: Map value attribute vector '%s' has basic type %s, "
                           "which is not supported",
