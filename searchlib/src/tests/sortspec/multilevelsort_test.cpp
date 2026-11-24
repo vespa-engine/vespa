@@ -729,7 +729,10 @@ struct MapSortFixture {
         mgr.add(values);
         mgr.add(other);
     }
+    ~MapSortFixture();
 };
+
+MapSortFixture::~MapSortFixture() = default;
 
 std::vector<uint32_t> sorted_docids(FastS_SortSpec& sorter) {
     RankedHit hits[4] = {RankedHit(3, 0.0), RankedHit(1, 0.0), RankedHit(4, 0.0), RankedHit(2, 0.0)};
