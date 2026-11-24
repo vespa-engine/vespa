@@ -72,9 +72,16 @@ class ContentChannelOutputStreamTest {
         assertEquals(List.of(8101), channel.sizes());
         assertEquals(List.of(8192), channel.arraySizes());
         assertArrayEquals(concat(bytes(100, 1), new byte[] { 'x' }, bytes(8000, 2)), channel.content());
-        out.write(new byte[0]);
+    }
+
+    @Test
+    void empty_writes_and_a_flush_with_nothing_buffered_send_nothing() throws Exception {
         out.flush();
-        assertEquals(List.of(8101), channel.sizes(), "an empty flush sends nothing");
+        out.write(new byte[0]);
+        out.write(new byte[10], 10, 0);
+        out.nonCopyingWrite(new byte[0]);
+        out.flush();
+        assertEquals(List.of(), channel.sizes());
     }
 
     @Test
@@ -114,6 +121,15 @@ class ContentChannelOutputStreamTest {
         assertEquals(List.of(8192, 65536, 8192), channel.arraySizes());
     }
 
+    @Test
+    void a_flush_right_when_a_buffer_is_full_starts_again_with_an_8_KiB_buffer() throws Exception {
+        out.write(bytes(8192, 1)); // the first buffer is full when flush holds it
+        out.flush();
+        out.write(bytes(10, 2));
+        out.flush();
+        assertEquals(List.of(8192, 8192), channel.arraySizes());
+    }
+
     // Long responses: 64 KiB buffers once a buffer has filled
 
     @Test
@@ -148,30 +164,10 @@ class ContentChannelOutputStreamTest {
         assertArrayEquals(expected.toByteArray(), channel.content(), "sent arrays are not written to again");
     }
 
-    @Test
-    void a_filled_buffer_followed_by_a_copied_whole_write_leads_to_64_KiB_buffers() throws Exception {
-        out.write(bytes(8192, 1)); // fills the first buffer exactly
-        out.write(bytes(65536, 2));
-        out.write(3);
-        out.flush();
-        assertEquals(List.of(8192, 65536, 65536), channel.arraySizes());
-        assertEquals(List.of(8192, 65536, 1), channel.sizes());
-        assertArrayEquals(concat(bytes(8192, 1), bytes(65536, 2), new byte[] { 3 }), channel.content());
-    }
+    // Writes of 64 KiB or more: copied into the buffers like any other write
 
     @Test
-    void a_partly_filled_buffer_held_before_a_whole_write_does_not_lead_to_64_KiB_buffers() throws Exception {
-        out.write(bytes(10, 1));
-        out.write(bytes(70_000, 2));
-        out.write(bytes(3, 3));
-        out.flush();
-        assertEquals(List.of(8192, 70_000, 8192), channel.arraySizes());
-    }
-
-    // Writes of 64 KiB or more: a buffer of their own
-
-    @Test
-    void a_copied_write_of_64_KiB_or_more_is_sent_whole_and_a_smaller_one_is_split_into_buffers() throws Exception {
+    void a_write_of_64_KiB_or_more_is_copied_into_the_buffers() throws Exception {
         byte[] under = bytes(65535, 15);
         byte[] exact = bytes(65536, 16);
         byte[] over = bytes(70_000, 17);
@@ -182,7 +178,8 @@ class ContentChannelOutputStreamTest {
         exact[0]++;
         over[100]++;
         out.flush();
-        assertEquals(List.of(8192, 57343, 65536, 65537), channel.sizes());
+        assertEquals(List.of(8192, 65536, 65536, 65536), channel.arraySizes());
+        assertEquals(List.of(8192, 65536, 65536, 57344), channel.sizes());
         var expected = new ByteArrayOutputStream();
         expected.writeBytes(bytes(65535, 15));
         expected.writeBytes(bytes(65536, 16));
@@ -191,7 +188,27 @@ class ContentChannelOutputStreamTest {
     }
 
     @Test
-    void a_transferring_write_is_copied_like_any_other_write() throws Exception {
+    void small_writes_between_large_writes_share_the_64_KiB_buffers() throws Exception {
+        var expected = new ByteArrayOutputStream();
+        byte[] start = bytes(10_000, 1); // fills the first buffer, so the next ones are 64 KiB
+        out.write(start);
+        expected.writeBytes(start);
+        for (int i = 0; i < 3; i++) {
+            byte[] large = bytes(100 * 1024, 10 + i);
+            byte[] small = bytes(200, 20 + i);
+            out.write(large);
+            out.write(small);
+            expected.writeBytes(large);
+            expected.writeBytes(small);
+        }
+        out.flush();
+        assertEquals(List.of(8192, 65536, 65536, 65536, 65536, 47464), channel.sizes(),
+                     "every buffer but the last is full: none is sent holding only a small write");
+        assertArrayEquals(expected.toByteArray(), channel.content());
+    }
+
+    @Test
+    void nonCopyingWrite_copies_the_data_like_write() throws Exception {
         byte[] small = bytes(100, 11);
         byte[] large = bytes(70_000, 12);
         out.nonCopyingWrite(small);
@@ -199,7 +216,7 @@ class ContentChannelOutputStreamTest {
         small[0]++; // the caller changes its arrays afterwards
         large[500]++;
         out.flush();
-        assertEquals(List.of(100, 65536), channel.sizes());
+        assertEquals(List.of(8192, 57444), channel.sizes());
         assertArrayEquals(concat(bytes(100, 11), Arrays.copyOfRange(bytes(70_000, 12), 500, 500 + 65536)), channel.content());
     }
 
@@ -215,64 +232,38 @@ class ContentChannelOutputStreamTest {
                           "the change to the reused array is not sent");
     }
 
-    // Holding: data is sent at flush, or once the held arrays would take more than 256 KiB
+    // Holding: data is sent at flush, or before a new buffer would take the held arrays over 256 KiB
 
     @Test
-    void data_is_held_until_flush_or_until_the_held_arrays_take_more_than_256_KiB() throws Exception {
-        for (int i = 0; i < 4; i++) out.nonCopyingWrite(bytes(65536, i));
-        assertEquals(List.of(), channel.sizes(), "exactly 256 KiB is held");
-        out.nonCopyingWrite(bytes(65536, 4));
-        assertEquals(repeat(65536, 5), channel.sizes(), "the held data is sent once it takes more than 256 KiB");
+    void data_is_held_until_flush_or_until_a_new_buffer_would_take_the_held_arrays_over_256_KiB() throws Exception {
+        byte[] data = bytes(8192 + 3 * 65536, 1);
+        out.write(data);
+        assertEquals(List.of(), channel.sizes(), "an 8 KiB and three 64 KiB buffers, 200 KiB, are held");
+        out.write(7);
+        assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(),
+                     "a fourth 64 KiB buffer would take the held arrays to 264 KiB, so they are sent first");
         out.flush();
-        assertEquals(5 * 65536, channel.content().length);
+        assertEquals(List.of(8192, 65536, 65536, 65536, 1), channel.sizes());
+        assertArrayEquals(concat(data, new byte[] { 7 }), channel.content());
     }
 
     @Test
-    void a_new_buffer_counts_toward_the_256_KiB() throws Exception {
-        for (int i = 0; i < 4; i++) out.nonCopyingWrite(bytes(65536, i)); // exactly 256 KiB held
-        out.write(1); // needs a new 8 KiB buffer
-        assertEquals(repeat(65536, 4), channel.sizes(), "the held data is sent before the new buffer is made");
+    void after_the_first_send_four_64_KiB_buffers_are_held_and_then_sent_together() throws Exception {
+        out.write(bytes(8192 + 7 * 65536, 1)); // the 8 KiB buffer and seven full 64 KiB buffers
+        assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(), "the 8 KiB and the first three 64 KiB buffers were sent");
+        out.write(7);
+        assertEquals(repeat(65536, 4), channel.sizes().subList(4, 8),
+                     "four 64 KiB buffers, exactly 256 KiB, were held until a fifth was needed");
+        byte[] large = bytes(1024 * 1024, 2);
+        out.write(large); // fills the rest of the buffer holding the 7, and 15 more, plus one byte in a 17th
+        assertEquals(repeat(65536, 16), channel.sizes().subList(8, 24), "sent four at a time; the last buffer, with one byte, is held");
         out.flush();
-        assertEquals(List.of(65536, 65536, 65536, 65536, 1), channel.sizes());
+        assertEquals(List.of(1), channel.sizes().subList(24, 25));
+        assertArrayEquals(concat(bytes(8192 + 7 * 65536, 1), new byte[] { 7 }, large), channel.content());
     }
 
     @Test
-    void a_new_64_KiB_buffer_counts_toward_the_256_KiB() throws Exception {
-        out.write(bytes(8192, 1)); // fills the first buffer, so the next one is 64 KiB
-        for (int i = 0; i < 3; i++) out.nonCopyingWrite(bytes(65536, i)); // 8 KiB + 192 KiB held
-        out.write(1);
-        assertEquals(List.of(8192, 65536, 65536, 65536), channel.sizes(), "the held data is sent before the new buffer is made");
-        out.flush();
-        assertEquals(List.of(8192, 65536, 65536, 65536, 65536), channel.arraySizes());
-    }
-
-    @Test
-    void a_new_buffer_that_brings_the_held_arrays_to_exactly_256_KiB_does_not_send() throws Exception {
-        out.write(bytes(256 * 1024 - 8192, 1)); // a 248 KiB buffer of its own
-        out.write(1); // + an 8 KiB buffer = exactly 256 KiB
-        assertEquals(List.of(), channel.sizes());
-
-        var overChannel = new RecordingChannel();
-        var over = new ContentChannelOutputStream(overChannel);
-        over.write(bytes(256 * 1024 - 8192 + 1, 1));
-        over.write(1); // one byte over 256 KiB
-        assertEquals(List.of(256 * 1024 - 8192 + 1), overChannel.sizes());
-    }
-
-    @Test
-    void the_held_limit_counts_the_whole_array_not_only_the_data_in_it() throws Exception {
-        out.write(bytes(8192, 1)); // fills the first buffer, so the next ones are 64 KiB
-        out.write(1); // a 64 KiB buffer with one byte in it
-        out.write(bytes(65536, 2)); // a buffer of its own
-        out.write(1);
-        assertEquals(List.of(), channel.sizes(), "8 KiB and two 64 KiB arrays are held, and a third is being filled");
-        out.write(bytes(65536, 3));
-        assertEquals(List.of(8192, 1, 65536, 1, 65536), channel.sizes(),
-                     "the arrays take 264 KiB, so they are sent, though they hold only about 136 KiB of data");
-    }
-
-    @Test
-    void every_buffer_is_sent_through_send_so_a_subclass_can_limit_pending_data() throws Exception {
+    void every_buffer_is_sent_through_send_which_a_subclass_can_override() throws Exception {
         var sent = new ArrayList<ByteBuffer>();
         var subclassed = new ContentChannelOutputStream(channel) {
             @Override public void send(ByteBuffer src) throws IOException {
@@ -280,72 +271,101 @@ class ContentChannelOutputStreamTest {
                 super.send(src);
             }
         };
-        for (int i = 0; i < 5; i++) subclassed.nonCopyingWrite(bytes(65536, i)); // sent by the write, over 256 KiB
-        subclassed.write(bytes(10, 5));
+        subclassed.write(bytes(5 * 65536, 1)); // more than 256 KiB, so some is sent by the write itself
+        subclassed.write(bytes(10, 2));
         subclassed.flush();
         assertEquals(6, sent.size());
         assertEquals(channel.writes, sent);
     }
 
     @Test
-    void a_transferring_write_goes_through_write_so_a_subclass_sees_it() throws Exception {
-        var written = new ArrayList<Integer>();
+    void a_subclass_whose_write_calls_nonCopyingWrite_does_not_loop() throws Exception {
         var subclassed = new ContentChannelOutputStream(channel) {
             @Override public void write(byte[] b, int off, int len) throws IOException {
-                written.add(len);
-                super.write(b, off, len);
+                nonCopyingWrite(b.clone(), off, len); // worked on master, where write called nonCopyingWrite
             }
         };
-        subclassed.nonCopyingWrite(bytes(100, 1));
-        subclassed.nonCopyingWrite(bytes(65536, 2));
-        assertEquals(List.of(100, 65536), written);
+        subclassed.write(bytes(100, 1), 0, 100);
+        subclassed.nonCopyingWrite(bytes(10, 2));
+        subclassed.flush();
+        assertArrayEquals(concat(bytes(100, 1), bytes(10, 2)), channel.content());
+    }
+
+    @Test
+    void a_subclass_whose_nonCopyingWrite_calls_write_does_not_loop() throws Exception {
+        var subclassed = new ContentChannelOutputStream(channel) {
+            @Override public void nonCopyingWrite(byte[] b, int off, int len) throws IOException {
+                write(b, off, len);
+            }
+        };
+        subclassed.nonCopyingWrite(bytes(100, 1), 0, 100);
+        subclassed.write(bytes(10, 2));
+        subclassed.nonCopyingWrite(bytes(5, 3));
+        subclassed.flush();
+        assertArrayEquals(concat(bytes(100, 1), bytes(10, 2), bytes(5, 3)), channel.content());
+    }
+
+    @Test
+    void a_subclass_whose_range_methods_call_the_whole_array_methods_does_not_loop() throws Exception {
+        var subclassed = new ContentChannelOutputStream(channel) {
+            // worked on master, where the whole array methods did not call the range methods
+            @Override public void write(byte[] b, int off, int len) throws IOException {
+                super.write(Arrays.copyOfRange(b, off, off + len));
+            }
+            @Override public void nonCopyingWrite(byte[] b, int off, int len) throws IOException {
+                super.nonCopyingWrite(Arrays.copyOfRange(b, off, off + len));
+            }
+        };
+        subclassed.write(bytes(100, 1), 0, 100);
+        subclassed.nonCopyingWrite(bytes(10, 2), 0, 10);
+        subclassed.write(bytes(5, 3));
+        subclassed.nonCopyingWrite(bytes(4, 4));
+        subclassed.flush();
+        assertArrayEquals(concat(bytes(100, 1), bytes(10, 2), bytes(5, 3), bytes(4, 4)), channel.content());
     }
 
     // A send that throws: the rest of the held data is dropped, never sent twice
 
     @Test
     void when_a_send_at_flush_throws_the_rest_of_the_held_data_is_never_sent() throws Exception {
-        byte[] first = bytes(70_000, 7);
-        byte[] second = bytes(70_000, 8);
-        byte[] third = bytes(70_000, 9);
-        out.nonCopyingWrite(first);
-        out.nonCopyingWrite(second);
-        out.nonCopyingWrite(third);
+        byte[] data = bytes(140_000, 7); // an 8 KiB, two full 64 KiB and one part full 64 KiB buffer
+        out.write(data);
         channel.failAtWrite = 2; // the channel takes the second buffer, then throws
         assertThrows(IOException.class, out::flush);
-        assertEquals(2, channel.writes.size(), "the third buffer is not tried");
+        assertEquals(List.of(8192, 65536), channel.sizes(), "the last two buffers are not tried");
         out.flush();
         assertEquals(2, channel.writes.size(), "a later flush sends none of the held data again");
         out.write(bytes(5, 10));
         out.flush();
-        assertEquals(3, channel.writes.size());
-        assertArrayEquals(concat(first, second, bytes(5, 10)), channel.content(), "new data is sent after a failure");
+        assertArrayEquals(concat(Arrays.copyOf(data, 8192 + 65536), bytes(5, 10)), channel.content(),
+                          "new data is sent after a failure");
     }
 
     @Test
     void when_a_send_started_by_a_write_throws_the_rest_of_the_held_data_is_never_sent() throws Exception {
-        var arrays = new ArrayList<byte[]>();
-        for (int i = 0; i < 5; i++) arrays.add(bytes(65536, i));
-        for (int i = 0; i < 4; i++) out.nonCopyingWrite(arrays.get(i));
+        byte[] data = bytes(8192 + 3 * 65536 + 1, 1); // the last byte needs a fourth 64 KiB buffer
         channel.failAtWrite = 2; // the channel takes the second buffer, then throws
-        assertThrows(IOException.class, () -> out.nonCopyingWrite(arrays.get(4)));
+        assertThrows(IOException.class, () -> out.write(data));
         out.flush(); // a retry, as ThreadedHttpRequestHandler does after an IOException
-        assertEquals(2, channel.writes.size(), "the other three buffers are never sent");
-        out.write(bytes(5, 1));
+        assertEquals(List.of(8192, 65536), channel.sizes(), "the other two buffers and the last byte are never sent");
+        out.write(bytes(5, 2));
         out.flush();
-        assertArrayEquals(concat(arrays.get(0), arrays.get(1), bytes(5, 1)), channel.content(), "new data is sent after a failure");
+        assertArrayEquals(concat(Arrays.copyOf(data, 8192 + 65536), bytes(5, 2)), channel.content(),
+                          "new data is sent after a failure");
     }
 
     @Test
-    void when_a_send_started_by_a_new_buffer_throws_the_unsent_held_data_is_dropped_and_the_byte_is_not_written() throws Exception {
-        for (int i = 0; i < 4; i++) out.nonCopyingWrite(bytes(65536, i)); // exactly 256 KiB held
+    void after_a_send_throws_data_is_held_again_from_zero() throws Exception {
+        byte[] lost = bytes(8192 + 3 * 65536, 1); // an 8 KiB and three full 64 KiB buffers
+        out.write(lost);
         channel.failAtWrite = 2; // the channel takes the second buffer, then throws
-        assertThrows(IOException.class, () -> out.write(1));
-        out.nonCopyingWrite(bytes(65536, 9));
-        assertEquals(2, channel.writes.size(), "after a failure, data is held again from zero");
+        assertThrows(IOException.class, () -> out.write(1)); // a fourth 64 KiB buffer is needed, so the held data is sent first
+        byte[] after = bytes(3 * 65536 + 1, 2);
+        out.write(after);
+        assertEquals(2, channel.writes.size(), "four 64 KiB buffers, exactly 256 KiB, are held without sending");
         out.flush();
-        assertEquals(List.of(65536, 65536, 65536), channel.sizes(), "the other two buffers and the byte are dropped");
-        assertArrayEquals(concat(bytes(65536, 0), bytes(65536, 1), bytes(65536, 9)), channel.content());
+        assertEquals(List.of(8192, 65536, 65536, 65536, 65536, 1), channel.sizes(), "the other two buffers and the byte are dropped");
+        assertArrayEquals(concat(Arrays.copyOf(lost, 8192 + 65536), after), channel.content());
     }
 
     @Test
@@ -356,7 +376,17 @@ class ContentChannelOutputStreamTest {
         assertThrows(IOException.class, out::flush);
         out.write(bytes(10, 3));
         out.flush();
-        assertEquals(8192, channel.arraySizes().get(channel.writes.size() - 1));
+        assertEquals(List.of(8192, 8192), channel.arraySizes(), "the 64 KiB buffer is dropped, and the next buffer is 8 KiB");
+    }
+
+    @Test
+    void a_runtime_exception_from_a_subclass_send_is_an_io_exception_and_the_held_data_is_dropped() throws Exception {
+        var subclassed = new ContentChannelOutputStream(channel) {
+            @Override public void send(ByteBuffer src) { throw new IllegalStateException("rejected"); }
+        };
+        subclassed.write(bytes(100, 1));
+        assertThrows(IOException.class, subclassed::flush);
+        subclassed.flush(); // would throw again if the held data were kept
     }
 
     // Invalid input
@@ -369,7 +399,7 @@ class ContentChannelOutputStreamTest {
     }
 
     @Test
-    void an_invalid_range_or_a_null_array_in_a_transferring_write_is_an_io_exception() {
+    void an_invalid_range_or_a_null_array_in_nonCopyingWrite_is_an_io_exception() {
         assertThrows(IOException.class, () -> out.nonCopyingWrite(new byte[2000], 1500, 1000));
         assertThrows(IOException.class, () -> out.nonCopyingWrite(new byte[100_000], 50_000, 70_000));
         assertThrows(IOException.class, () -> out.nonCopyingWrite(null));
