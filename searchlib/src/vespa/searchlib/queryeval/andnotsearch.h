@@ -5,7 +5,6 @@
 #include "multisearch.h"
 
 #include <vespa/searchlib/attribute/attributeiterators.h>
-#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 
 namespace search::queryeval {
 

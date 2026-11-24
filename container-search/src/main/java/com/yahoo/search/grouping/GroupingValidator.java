@@ -77,8 +77,6 @@ public class GroupingValidator extends Searcher {
         return switch (datatype) {
             case STRING -> "string";
             case BOOL -> "bool";
-            case UINT2 -> "uint2";
-            case UINT4 -> "uint4";
             case INT8 -> "byte";
             case INT16 -> "short";
             case INT32 -> "int";

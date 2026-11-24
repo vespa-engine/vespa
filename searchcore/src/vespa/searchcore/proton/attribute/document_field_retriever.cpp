@@ -159,8 +159,6 @@ void DocumentFieldRetriever::populate(DocumentIdT lid, Document& doc, const docu
     switch (attr.getBasicType()) {
     case BasicType::BOOL:
         return setValue<IAttributeVector::largeint_t, bool, document::BoolFieldValue>(lid, doc, field, attr);
-    case BasicType::UINT2:
-    case BasicType::UINT4:
     case BasicType::INT8:
         return setValue<IAttributeVector::largeint_t, int8_t, document::ByteFieldValue>(lid, doc, field, attr);
     case BasicType::INT16:

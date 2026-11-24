@@ -30,8 +30,6 @@ AttributeVector::SP AttributeFactory::createArrayFastSearch(std::string name, co
     AttributeVector::SP ret;
     switch (info.basicType().type()) {
     case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
         break;
     case BasicType::INT8:
         ret = std::make_shared<FlagAttribute>(name, info);

@@ -51,9 +51,8 @@ private:
 
     static uint32_t asMask(DataType dataType) { return (1u << static_cast<unsigned int>(dataType)); }
     static uint32_t numericTypesMask() {
-        return (asMask(DataType::BOOL) | asMask(DataType::UINT2) | asMask(DataType::UINT4) | asMask(DataType::INT8) |
-                asMask(DataType::INT16) | asMask(DataType::INT32) | asMask(DataType::INT64) |
-                asMask(DataType::FLOAT) | asMask(DataType::DOUBLE));
+        return (asMask(DataType::BOOL) | asMask(DataType::INT8) | asMask(DataType::INT16) | asMask(DataType::INT32) |
+                asMask(DataType::INT64) | asMask(DataType::FLOAT) | asMask(DataType::DOUBLE));
     }
     static uint32_t primitiveTypesMask() { return (numericTypesMask() | asMask(DataType::STRING)); }
     static uint32_t allTypesMask() {

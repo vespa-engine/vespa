@@ -25,9 +25,6 @@ AttributeVector::SP AttributeFactory::createSingleFastSearch(std::string name, c
     switch (info.basicType().type()) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
-    case BasicType::UINT2:
-    case BasicType::UINT4:
-        break;
     case BasicType::INT8:
         return std::make_shared<INTPOSTING(int8_t)>(name, info);
     case BasicType::INT16:

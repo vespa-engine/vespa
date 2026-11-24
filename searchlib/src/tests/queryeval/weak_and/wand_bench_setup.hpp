@@ -14,6 +14,7 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
 
 using namespace search::fef;
 using namespace search::queryeval;

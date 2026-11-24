@@ -31,8 +31,6 @@ AttributeVector::SP AttributeFactory::createSetFastSearch(std::string name, cons
     AttributeVector::SP ret;
     switch (info.basicType().type()) {
     case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
         break;
     case BasicType::INT8:
         ret.reset(CREATEINTSET(int8_t, name, info));

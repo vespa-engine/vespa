@@ -24,8 +24,6 @@ AttributeVector::SP AttributeFactory::createSetStd(std::string name, const Confi
     AttributeVector::SP ret;
     switch (info.basicType().type()) {
     case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
         break;
     case BasicType::INT8:
         ret.reset(CREATEINTSET(int8_t, name, info));

@@ -6,7 +6,6 @@
 #include "single_raw_attribute.h"
 #include "singleboolattribute.h"
 #include "singlenumericattribute.h"
-#include "singlesmallnumericattribute.h"
 #include "singlestringattribute.h"
 
 #include <vespa/check_require.h>
@@ -24,10 +23,6 @@ AttributeVector::SP AttributeFactory::createSingleStd(std::string name, const Co
     switch (info.basicType().type()) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
-    case BasicType::UINT2:
-        return std::make_shared<SingleValueSemiNibbleNumericAttribute>(name, info.getGrowStrategy());
-    case BasicType::UINT4:
-        return std::make_shared<SingleValueNibbleNumericAttribute>(name, info.getGrowStrategy());
     case BasicType::INT8:
         return std::make_shared<SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t>>>(name, info);
     case BasicType::INT16:
