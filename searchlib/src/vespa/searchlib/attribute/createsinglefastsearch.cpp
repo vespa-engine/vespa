@@ -1,53 +1,55 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefactory.h"
-#include "defines.h"
-#include "floatbase.h"
-#include "integerbase.h"
+#include "numeric_attribute_template.h"
 #include "singleboolattribute.h"
 #include "singlenumericpostattribute.h"
 #include "singlestringpostattribute.h"
+#include "typify_basic_type.h"
 
 #include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 
-#define INTPOSTING(T) SingleValueNumericPostingAttribute<ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>)>
-#define FLOATPOSTING(T) SingleValueNumericPostingAttribute<ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>)>
+#include <type_traits>
 
 namespace search {
 
 using attribute::BasicType;
+using attribute::TypifyBasicType;
+
+namespace {
+
+struct CreateSingleFastSearch {
+    template <typename T> static AttributeVector::SP invoke(const std::string& name, const attribute::Config& info) {
+        if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
+            return std::make_shared<SingleValueStringPostingAttribute>(name, info);
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::Unsupported>) {
+            return {};
+        } else {
+            using A = SingleValueNumericPostingAttribute<EnumAttribute<NumericAttributeTemplate<T>>>;
+            return std::make_shared<A>(name, info);
+        }
+    }
+};
+
+} // namespace
 
 AttributeVector::SP AttributeFactory::createSingleFastSearch(std::string name, const Config& info) {
     CHECK(info.collectionType().type() == attribute::CollectionType::SINGLE);
     CHECK(info.fastSearch());
-    switch (info.basicType().type()) {
+    auto type = info.basicType().type();
+    switch (type) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
-    case BasicType::INT8:
-        return std::make_shared<INTPOSTING(int8_t)>(name, info);
-    case BasicType::INT16:
-        return std::make_shared<INTPOSTING(int16_t)>(name, info);
-    case BasicType::INT32:
-        return std::make_shared<INTPOSTING(int32_t)>(name, info);
-    case BasicType::INT64:
-        return std::make_shared<INTPOSTING(int64_t)>(name, info);
-    case BasicType::FLOAT:
-        return std::make_shared<FLOATPOSTING(float)>(name, info);
-    case BasicType::DOUBLE:
-        return std::make_shared<FLOATPOSTING(double)>(name, info);
-    case BasicType::STRING:
-        return std::make_shared<SingleValueStringPostingAttribute>(name, info);
     case BasicType::TENSOR:
         if (!info.tensorType().is_dense()) {
             return std::make_shared<tensor::DirectTensorAttribute>(name, info);
         }
-        break;
+        return {};
     default:
-        break;
+        return vespalib::typify_invoke<1, TypifyBasicType, CreateSingleFastSearch>(type, name, info);
     }
-    return AttributeVector::SP();
 }
 
 } // namespace search
