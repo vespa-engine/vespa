@@ -13,7 +13,7 @@ class ExecutorThreadingServiceStats;
  * accepted/rejected, queue len for each executor in a document db.
  */
 struct ExecutorThreadingServiceMetrics : metrics::MetricSet {
-    ExecutorMetrics master;
+    ExecutorMetrics main;
     ExecutorMetrics index;
     ExecutorMetrics summary;
     ExecutorMetrics indexFieldInverter;

@@ -12,7 +12,7 @@ namespace proton::test {
 class ThreadingServiceObserver : public searchcorespi::index::IThreadingService {
 private:
     searchcorespi::index::IThreadingService& _service;
-    SyncableThreadServiceObserver            _master;
+    SyncableThreadServiceObserver            _main;
     ThreadServiceObserver                    _index;
     ThreadExecutorObserver                   _summary;
     vespalib::Executor&                      _shared;
@@ -21,20 +21,20 @@ private:
 public:
     ThreadingServiceObserver(searchcorespi::index::IThreadingService& service);
     ~ThreadingServiceObserver() override;
-    const SyncableThreadServiceObserver& masterObserver() const { return _master; }
-    const ThreadServiceObserver& indexObserver() const { return _index; }
-    const ThreadExecutorObserver& summaryObserver() const { return _summary; }
+    [[nodiscard]] const SyncableThreadServiceObserver& main_observer() const noexcept { return _main; }
+    [[nodiscard]] const ThreadServiceObserver& index_observer() const noexcept { return _index; }
+    [[nodiscard]] const ThreadExecutorObserver& summary_observer() const noexcept { return _summary; }
 
-    void blocking_master_execute(vespalib::Executor::Task::UP task) override {
-        _service.blocking_master_execute(std::move(task));
+    void blocking_main_execute(vespalib::Executor::Task::UP task) noexcept override {
+        _service.blocking_main_execute(std::move(task));
     }
 
-    searchcorespi::index::ISyncableThreadService& master() override { return _master; }
-    searchcorespi::index::IThreadService& index() override { return _index; }
-    vespalib::ThreadExecutor& summary() override { return _summary; }
-    vespalib::Executor& shared() override { return _shared; }
-    FNET_Transport& transport() override { return _service.transport(); }
-    vespalib::ISequencedTaskExecutor& field_writer() override { return _field_writer; }
+    [[nodiscard]] searchcorespi::index::ISyncableThreadService& main() noexcept override { return _main; }
+    [[nodiscard]] searchcorespi::index::IThreadService& index() noexcept override { return _index; }
+    [[nodiscard]] vespalib::ThreadExecutor& summary() noexcept override { return _summary; }
+    [[nodiscard]] vespalib::Executor& shared() noexcept override { return _shared; }
+    [[nodiscard]] FNET_Transport& transport() noexcept override { return _service.transport(); }
+    [[nodiscard]] vespalib::ISequencedTaskExecutor& field_writer() noexcept override { return _field_writer; }
 };
 
 } // namespace proton::test

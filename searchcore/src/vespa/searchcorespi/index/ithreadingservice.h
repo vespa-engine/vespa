@@ -15,7 +15,7 @@ namespace searchcorespi::index {
  *
  * We have multiple write threads:
  *
- *  1. The "master" write thread used for the majority of write tasks.
+ *  1. The "main" write thread used for the majority of write tasks.
  *
  *  2. The "index" write thread used for doing changes to the memory
  *     index, either directly (for data not bound to a field) or via
@@ -35,7 +35,7 @@ namespace searchcorespi::index {
  *     Each attribute is always handled by the same thread,
  *     and scheduled tasks for the same attribute are executed in sequence.
  *
- * The master write thread is always the one giving tasks to the other write threads above.
+ * The main write thread is always the one giving tasks to the other write threads above.
  *
  * In addition this interface exposes the "shared" executor that is used by all document databases.
  * This is among others used for compressing / de-compressing documents in the document store,
@@ -54,17 +54,20 @@ struct IThreadingService {
     virtual ~IThreadingService() = default;
 
     /**
-     * Block the calling thread until the master thread has capacity to handle more tasks,
-     * and then execute the given task in the master thread.
+     * Block the calling thread until the main thread has capacity to handle more tasks,
+     * and then execute the given task in the main thread.
      */
-    virtual void blocking_master_execute(vespalib::Executor::Task::UP task) = 0;
+    virtual void blocking_main_execute(std::unique_ptr<vespalib::Executor::Task> task) noexcept = 0;
 
-    virtual ISyncableThreadService& master() = 0;
-    virtual IThreadService& index() = 0;
-    virtual vespalib::ThreadExecutor& summary() = 0;
-    virtual vespalib::Executor& shared() = 0;
-    virtual FNET_Transport& transport() = 0;
-    virtual vespalib::ISequencedTaskExecutor& field_writer() = 0;
+    [[nodiscard]] virtual ISyncableThreadService& main() noexcept = 0;
+    [[nodiscard]] virtual IThreadService& index() noexcept = 0;
+    [[nodiscard]] virtual vespalib::ThreadExecutor& summary() noexcept = 0;
+    [[nodiscard]] virtual vespalib::Executor& shared() noexcept = 0;
+    [[nodiscard]] virtual FNET_Transport& transport() noexcept = 0;
+    [[nodiscard]] virtual vespalib::ISequencedTaskExecutor& field_writer() noexcept = 0;
+
+    // Temporary compat shim
+    [[nodiscard]] ISyncableThreadService& master() noexcept { return main(); }
 };
 
 } // namespace searchcorespi::index

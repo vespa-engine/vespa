@@ -22,7 +22,7 @@ public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 private:
-    uint32_t           _master_task_limit;
+    uint32_t           _main_task_limit;
     uint32_t           _defaultTaskLimit;
     bool               _is_task_limit_hard;
     OptimizeFor        _optimize;
@@ -30,20 +30,20 @@ private:
     vespalib::duration _reactionTime; // Maximum reaction time to new tasks
 
 private:
-    ThreadingServiceConfig(uint32_t master_task_limit_, int32_t defaultTaskLimit_, OptimizeFor optimize_,
-                           uint32_t kindOfWatermark_, vespalib::duration reactionTime_);
+    ThreadingServiceConfig(uint32_t main_task_limit_in, int32_t defaultTaskLimit_, OptimizeFor optimize_,
+                           uint32_t kindOfWatermark_, vespalib::duration reactionTime_) noexcept;
 
 public:
-    static ThreadingServiceConfig make(const ProtonConfig& cfg);
-    static ThreadingServiceConfig make();
-    void update(const ThreadingServiceConfig& cfg);
-    uint32_t master_task_limit() const { return _master_task_limit; }
-    uint32_t defaultTaskLimit() const { return _defaultTaskLimit; }
-    bool is_task_limit_hard() const { return _is_task_limit_hard; }
-    OptimizeFor optimize() const { return _optimize; }
-    uint32_t kindOfwatermark() const { return _kindOfWatermark; }
-    vespalib::duration reactionTime() const { return _reactionTime; }
-    bool operator==(const ThreadingServiceConfig& rhs) const;
+    static ThreadingServiceConfig make(const ProtonConfig& cfg) noexcept;
+    static ThreadingServiceConfig make() noexcept;
+    void update(const ThreadingServiceConfig& cfg) noexcept;
+    [[nodiscard]] uint32_t main_task_limit() const noexcept { return _main_task_limit; }
+    [[nodiscard]] uint32_t defaultTaskLimit() const noexcept { return _defaultTaskLimit; }
+    [[nodiscard]] bool is_task_limit_hard() const noexcept { return _is_task_limit_hard; }
+    [[nodiscard]] OptimizeFor optimize() const noexcept { return _optimize; }
+    [[nodiscard]] uint32_t kindOfwatermark() const noexcept { return _kindOfWatermark; }
+    [[nodiscard]] vespalib::duration reactionTime() const noexcept { return _reactionTime; }
+    [[nodiscard]] bool operator==(const ThreadingServiceConfig& rhs) const noexcept;
 };
 
 } // namespace proton

@@ -8,7 +8,7 @@ namespace proton {
 
 ExecutorThreadingServiceMetrics::ExecutorThreadingServiceMetrics(const std::string& name, metrics::MetricSet* parent)
     : metrics::MetricSet(name, {}, "Instance specific threading service metrics", parent),
-      master("master", this),
+      main("master", this),
       index("index", this),
       summary("summary", this),
       indexFieldInverter("index_field_inverter", this),
@@ -19,9 +19,9 @@ ExecutorThreadingServiceMetrics::ExecutorThreadingServiceMetrics(const std::stri
 ExecutorThreadingServiceMetrics::~ExecutorThreadingServiceMetrics() = default;
 
 void ExecutorThreadingServiceMetrics::update(const ExecutorThreadingServiceStats& stats) {
-    master.update(stats.getMasterExecutorStats());
-    index.update(stats.getIndexExecutorStats());
-    summary.update(stats.getSummaryExecutorStats());
+    main.update(stats.main_executor_stats());
+    index.update(stats.index_executor_stats());
+    summary.update(stats.summary_executor_stats());
     vespalib::ExecutorStats empty_stats;
     indexFieldInverter.update(empty_stats);
     indexFieldWriter.update(empty_stats);

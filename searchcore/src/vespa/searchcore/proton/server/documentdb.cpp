@@ -434,7 +434,7 @@ void DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum seri
     if (_state->getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
-    _writeService.set_task_limits(_writeServiceConfig.master_task_limit(), _writeServiceConfig.defaultTaskLimit(),
+    _writeService.set_task_limits(_writeServiceConfig.main_task_limit(), _writeServiceConfig.defaultTaskLimit(),
                                   _writeServiceConfig.defaultTaskLimit());
     if (params.shouldSubDbsChange()) {
         applySubDBConfig(*configSnapshot, serialNum, params, *prepared_reconfig);

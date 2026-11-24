@@ -42,7 +42,7 @@ TEST_F(ExecutorThreadingServiceTest, shared_field_writer_specified_from_the_outs
 
 TEST_F(ExecutorThreadingServiceTest, tasks_limits_can_be_updated) {
     service->set_task_limits(5, 7, 11);
-    EXPECT_EQ(5, service->master_task_limit());
+    EXPECT_EQ(5, service->main_task_limit());
     EXPECT_EQ(7, service->index().getTaskLimit());
     EXPECT_EQ(11, service->summary().getTaskLimit());
     EXPECT_EQ(7, field_writer()->first_executor()->getTaskLimit());

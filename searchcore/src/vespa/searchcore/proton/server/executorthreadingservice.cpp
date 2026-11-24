@@ -23,8 +23,8 @@ namespace proton {
 
 namespace {
 
-std::unique_ptr<SyncableThreadExecutor> createExecutorWithOneThread(const ThreadingServiceConfig&  cfg,
-                                                                    vespalib::Runnable::init_fun_t init_function) {
+[[nodiscard]] std::unique_ptr<SyncableThreadExecutor>
+createExecutorWithOneThread(const ThreadingServiceConfig& cfg, vespalib::Runnable::init_fun_t init_function) {
     uint32_t taskLimit = cfg.defaultTaskLimit();
     if (cfg.optimize() == OptimizeFor::THROUGHPUT) {
         uint32_t watermark = (cfg.kindOfwatermark() == 0) ? taskLimit / 10 : cfg.kindOfwatermark();
@@ -39,7 +39,7 @@ std::unique_ptr<SyncableThreadExecutor> createExecutorWithOneThread(const Thread
     }
 }
 
-VESPA_THREAD_STACK_TAG(master_executor)
+VESPA_THREAD_STACK_TAG(main_executor)
 VESPA_THREAD_STACK_TAG(index_executor)
 VESPA_THREAD_STACK_TAG(summary_executor)
 
@@ -57,11 +57,11 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExe
 
     : _sharedExecutor(sharedExecutor),
       _transport(transport),
-      _masterExecutor(1, CpuUsage::wrap(master_executor, CpuUsage::Category::WRITE)),
-      _master_task_limit(cfg.master_task_limit()),
+      _main_executor(1, CpuUsage::wrap(main_executor, CpuUsage::Category::WRITE)),
+      _main_task_limit(cfg.main_task_limit()),
       _indexExecutor(createExecutorWithOneThread(cfg, CpuUsage::wrap(index_executor, CpuUsage::Category::WRITE))),
       _summaryExecutor(createExecutorWithOneThread(cfg, CpuUsage::wrap(summary_executor, CpuUsage::Category::WRITE))),
-      _masterService(_masterExecutor),
+      _main_service(_main_executor),
       _indexService(*_indexExecutor),
       _field_writer(field_writer),
       _invokeRegistrations() {
@@ -75,16 +75,16 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExe
 
 ExecutorThreadingService::~ExecutorThreadingService() = default;
 
-void ExecutorThreadingService::blocking_master_execute(vespalib::Executor::Task::UP task) {
-    uint32_t limit = master_task_limit();
+void ExecutorThreadingService::blocking_main_execute(std::unique_ptr<vespalib::Executor::Task> task) noexcept {
+    uint32_t limit = main_task_limit();
     if (limit > 0) {
-        _masterExecutor.wait_for_task_count(limit);
+        _main_executor.wait_for_task_count(limit);
     }
-    _masterExecutor.execute(std::move(task));
+    _main_executor.execute(std::move(task));
 }
 
 void ExecutorThreadingService::shutdown() {
-    _masterExecutor.shutdown().sync();
+    _main_executor.shutdown().sync();
     _field_writer.sync_all();
     _summaryExecutor->shutdown().sync();
     _indexExecutor->shutdown().sync();
@@ -92,22 +92,22 @@ void ExecutorThreadingService::shutdown() {
     _field_writer.sync_all();
 }
 
-void ExecutorThreadingService::set_task_limits(uint32_t master_task_limit, uint32_t field_task_limit,
+void ExecutorThreadingService::set_task_limits(uint32_t main_task_limit, uint32_t field_task_limit,
                                                uint32_t summary_task_limit) {
-    _master_task_limit.store(master_task_limit, std::memory_order_release);
+    _main_task_limit.store(main_task_limit, std::memory_order_release);
     _indexExecutor->setTaskLimit(field_task_limit);
     _summaryExecutor->setTaskLimit(summary_task_limit);
     _field_writer.setTaskLimit(field_task_limit);
 }
 
-ExecutorThreadingServiceStats ExecutorThreadingService::getStats() {
-    auto master_stats = _masterExecutor.getStats();
+[[nodiscard]] ExecutorThreadingServiceStats ExecutorThreadingService::getStats() {
+    auto main_stats = _main_executor.getStats();
     auto index_stats = _indexExecutor->getStats();
     auto summary_stats = _summaryExecutor->getStats();
-    return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats);
+    return ExecutorThreadingServiceStats(main_stats, index_stats, summary_stats);
 }
 
-vespalib::ISequencedTaskExecutor& ExecutorThreadingService::field_writer() {
+[[nodiscard]] vespalib::ISequencedTaskExecutor& ExecutorThreadingService::field_writer() noexcept {
     return _field_writer;
 }
 
