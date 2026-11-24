@@ -19,6 +19,7 @@ import com.yahoo.processing.processors.RequestPropertyTracer;
 import com.yahoo.processing.rendering.ProcessingRenderer;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.ErrorMessage;
+import com.yahoo.processing.response.ArrayDataList;
 import com.yahoo.processing.response.Data;
 import com.yahoo.processing.test.ProcessorLibrary;
 import org.junit.jupiter.api.AfterEach;
@@ -280,6 +281,27 @@ public class ProcessingHandlerTestCase {
             responseHandler = driver.sendRequest("http://localhost/?chain=default").awaitResponse();
             Response response = responseHandler.getResponse();
             assertEquals(200, response.getStatus());
+        }
+        finally {
+            if (responseHandler != null)
+                responseHandler.readAll();
+        }
+    }
+
+    /**
+     * The status and headers are read from the response data when the first write is sent to the client.
+     * Here they are in a list rendered after about 20 KB of other data, before the first flush,
+     * so the response stream must hold that data instead of sending it as soon as a buffer is full.
+     */
+    @Test
+    void testResponseDataStatusAndHeadersAfterLongDataBeforeTheFirstFlush() throws InterruptedException {
+        ProcessingTestDriver.MockResponseHandler responseHandler = null;
+        try {
+            driver = new ProcessingTestDriver(List.of(new Chain<>("default", new LateStatusAndHeadersSetter(429))));
+            responseHandler = driver.sendRequest("http://localhost/?chain=default").awaitResponse();
+            Response response = responseHandler.getResponse();
+            assertEquals(429, response.getStatus());
+            assertEquals(List.of("late"), response.headers().get("X-Late"));
         }
         finally {
             if (responseHandler != null)
@@ -804,6 +826,30 @@ public class ProcessingHandlerTestCase {
         public com.yahoo.processing.Response process(com.yahoo.processing.Request request, Execution execution) {
             com.yahoo.processing.Response response = execution.process(request);
             response.data().add(new ResponseHeaders(responseHeaders, request));
+            return response;
+        }
+
+    }
+
+    /** Adds 20 strings of 1,000 characters, then a list whose not yet rendered data holds a status and a header */
+    @SuppressWarnings("unchecked")
+    public static class LateStatusAndHeadersSetter extends Processor {
+
+        private final int code;
+
+        public LateStatusAndHeadersSetter(int code) {
+            this.code = code;
+        }
+
+        @Override
+        public com.yahoo.processing.Response process(com.yahoo.processing.Request request, Execution execution) {
+            com.yahoo.processing.Response response = execution.process(request);
+            for (int i = 0; i < 20; i++)
+                response.data().add(new ProcessorLibrary.StringData(request, "x".repeat(1000)));
+            ArrayDataList<Data> late = ArrayDataList.createAsync(request);
+            late.incoming().add(new ResponseStatus(code, request));
+            late.incoming().addLast(new ResponseHeaders(Map.of("X-Late", List.of("late")), request));
+            response.data().add(late);
             return response;
         }
 
