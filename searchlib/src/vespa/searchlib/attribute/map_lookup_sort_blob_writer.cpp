@@ -83,8 +83,12 @@ public:
         auto pos = _keys.position(docid);
         if (pos != npos) {
             auto values = _values->get_values(docid);
+            // The key and value arrays are separate attributes and a concurrent update may be visible in
+            // one but not yet the other. The bounds check prevents out of bounds reads; the selected value
+            // may transiently belong to another key (same as map lookup in grouping).
             // A selected undefined value counts as missing, matching single value attribute sorting.
-            // isUndefined() also covers NaN for float and double.
+            // isUndefined() also covers NaN for float and double. It is needed even though candidate()
+            // ignores NaN, since candidate() does not treat undefined integer values as missing.
             if (pos < values.size() && !isUndefined(values[pos])) {
                 _writer.candidate(values[pos]);
             }
@@ -122,6 +126,7 @@ public:
         auto pos = _keys.position(docid);
         if (pos != npos) {
             auto handles = _values->get_values(docid);
+            // See NumericMapLookupSortBlobWriter::write() about key/value misalignment during concurrent updates.
             if (pos < handles.size()) {
                 const char* value = _value_attr.getStringFromEnum(handles[pos].load_acquire().ref());
                 // isUndefined(const char*) is null or empty, matching single value string attribute sorting.
@@ -160,9 +165,10 @@ make_numeric_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttrib
                                                                       field_sort_spec._missing_policy, missing_value);
 }
 
-std::unique_ptr<ISortBlobWriter>
-make_string_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
-                   const IMultiValueAttribute& value_mva, const FieldSortSpec& field_sort_spec) {
+std::unique_ptr<ISortBlobWriter> make_string_writer(Stash& stash, const StringEnumKeyFinder& keys,
+                                                    const IAttributeVector&     value_attr,
+                                                    const IMultiValueAttribute& value_mva,
+                                                    const FieldSortSpec&        field_sort_spec) {
     auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayEnumTag(), stash);
     if (values == nullptr) {
         report_missing_read_view(value_attr, "value array enum");
@@ -180,8 +186,9 @@ make_string_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttribu
 
 bool is_supported_component(const IAttributeVector& attr, const char* role) {
     if (attr.isImported()) {
-        Issue::report("make_map_lookup_sort_blob_writer: %s attribute vector '%s' is imported, which is not supported",
-                      role, attr.getName().c_str());
+        Issue::report(
+            "make_map_lookup_sort_blob_writer: %s attribute vector '%s' is imported, which is not supported", role,
+            attr.getName().c_str());
         return false;
     }
     if (attr.getCollectionType() != CollectionType::ARRAY) {
