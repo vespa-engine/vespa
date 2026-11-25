@@ -15,8 +15,9 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DocumentSubDbInitializer::DocumentSubDbInitializer(IDocumentSubDB& subDB, searchcorespi::index::IThreadService& main)
-    : InitTask(), _result(), _documentMetaStoreInitTask(), _subDB(subDB), _main(main) {
+DocumentSubDbInitializer::DocumentSubDbInitializer(IDocumentSubDB&                       subDB,
+                                                   searchcorespi::index::IThreadService& main_thread_service)
+    : InitTask(), _result(), _documentMetaStoreInitTask(), _subDB(subDB), _main_thread_service(main_thread_service) {
 }
 
 void DocumentSubDbInitializer::addDocumentMetaStoreInitTask(InitTask::SP documentMetaStoreInitTask) {
@@ -35,7 +36,7 @@ void DocumentSubDbInitializer::run() {
     auto               scope = tracer->WithActiveSpan(span);
     std::promise<void> promise;
     auto               future = promise.get_future();
-    _main.execute(makeLambdaTask([&, tracer(std::move(tracer)), span]() mutable {
+    _main_thread_service.execute(makeLambdaTask([&, tracer(std::move(tracer)), span]() mutable {
         auto scope2 = tracer->WithActiveSpan(span);
         _subDB.setup(_result);
         promise.set_value();
