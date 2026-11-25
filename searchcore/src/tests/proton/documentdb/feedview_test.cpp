@@ -897,8 +897,8 @@ TEST(FeedViewTest, require_that_remove_notifies_gid_to_lid_change_handler) {
 namespace {
 
 std::tuple<uint32_t, uint32_t, uint32_t> get_execute_counts(const test::ThreadingServiceObserver& observer) {
-    return std::make_tuple(observer.masterObserver().getExecuteCnt(), observer.indexObserver().getExecuteCnt(),
-                           observer.summaryObserver().getExecuteCnt());
+    return std::make_tuple(observer.main_observer().getExecuteCnt(), observer.index_observer().getExecuteCnt(),
+                           observer.summary_observer().getExecuteCnt());
 }
 
 } // namespace

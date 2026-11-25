@@ -8,23 +8,23 @@
 namespace proton {
 
 /*
- * This class contains executor stats for the executors used by a
- * document db.
+ * This class contains executor stats for the executors used by a document db.
  */
 class ExecutorThreadingServiceStats {
 private:
     using Stats = vespalib::ExecutorStats;
-    Stats _masterExecutorStats;
-    Stats _indexExecutorStats;
-    Stats _summaryExecutorStats;
+    Stats _main_executor_stats;
+    Stats _index_executor_stats;
+    Stats _summary_executor_stats;
 
 public:
-    ExecutorThreadingServiceStats(Stats masterExecutorStats, Stats indexExecutorStats, Stats summaryExecutorStats);
+    ExecutorThreadingServiceStats(Stats main_executor_stats_in, Stats index_executor_stats_in,
+                                  Stats summary_executor_stats_in);
     ~ExecutorThreadingServiceStats();
 
-    const Stats& getMasterExecutorStats() const { return _masterExecutorStats; }
-    const Stats& getIndexExecutorStats() const { return _indexExecutorStats; }
-    const Stats& getSummaryExecutorStats() const { return _summaryExecutorStats; }
+    [[nodiscard]] const Stats& main_executor_stats() const noexcept { return _main_executor_stats; }
+    [[nodiscard]] const Stats& index_executor_stats() const noexcept { return _index_executor_stats; }
+    [[nodiscard]] const Stats& summary_executor_stats() const noexcept { return _summary_executor_stats; }
 };
 
 } // namespace proton

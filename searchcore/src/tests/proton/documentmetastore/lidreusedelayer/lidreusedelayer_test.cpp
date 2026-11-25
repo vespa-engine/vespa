@@ -21,18 +21,18 @@ namespace proton {
 
 namespace {
 
-bool assertThreadObserver(uint32_t masterExecuteCnt, uint32_t indexExecuteCnt, uint32_t summaryExecuteCnt,
+bool assertThreadObserver(uint32_t main_execute_cnt, uint32_t indexExecuteCnt, uint32_t summaryExecuteCnt,
                           const test::ThreadingServiceObserver& observer) {
     bool failed = false;
-    EXPECT_EQ(masterExecuteCnt, observer.masterObserver().getExecuteCnt()) << (failed = true, "");
+    EXPECT_EQ(main_execute_cnt, observer.main_observer().getExecuteCnt()) << (failed = true, "");
     if (failed) {
         return false;
     }
-    EXPECT_EQ(summaryExecuteCnt, observer.summaryObserver().getExecuteCnt()) << (failed = true, "");
+    EXPECT_EQ(summaryExecuteCnt, observer.summary_observer().getExecuteCnt()) << (failed = true, "");
     if (failed) {
         return false;
     }
-    EXPECT_EQ(indexExecuteCnt, observer.indexObserver().getExecuteCnt()) << (failed = true, "");
+    EXPECT_EQ(indexExecuteCnt, observer.index_observer().getExecuteCnt()) << (failed = true, "");
     return !failed;
 }
 

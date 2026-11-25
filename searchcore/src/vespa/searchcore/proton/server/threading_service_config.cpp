@@ -11,10 +11,10 @@ namespace proton {
 using ProtonConfig = ThreadingServiceConfig::ProtonConfig;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 
-ThreadingServiceConfig::ThreadingServiceConfig(uint32_t master_task_limit_, int32_t defaultTaskLimit_,
+ThreadingServiceConfig::ThreadingServiceConfig(uint32_t main_task_limit_in, int32_t defaultTaskLimit_,
                                                OptimizeFor optimize_, uint32_t kindOfWatermark_,
-                                               vespalib::duration reactionTime_)
-    : _master_task_limit(master_task_limit_),
+                                               vespalib::duration reactionTime_) noexcept
+    : _main_task_limit(main_task_limit_in),
       _defaultTaskLimit(std::abs(defaultTaskLimit_)),
       _is_task_limit_hard(defaultTaskLimit_ >= 0),
       _optimize(optimize_),
@@ -24,7 +24,7 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t master_task_limit_, int3
 
 namespace {
 
-OptimizeFor selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
+OptimizeFor selectOptimization(ProtonConfig::Indexing::Optimize optimize) noexcept {
     using CfgOptimize = ProtonConfig::Indexing::Optimize;
     switch (optimize) {
     case CfgOptimize::LATENCY:
@@ -39,23 +39,23 @@ OptimizeFor selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
 
 } // namespace
 
-ThreadingServiceConfig ThreadingServiceConfig::make(const ProtonConfig& cfg) {
+ThreadingServiceConfig ThreadingServiceConfig::make(const ProtonConfig& cfg) noexcept {
     return ThreadingServiceConfig(cfg.feeding.masterTaskLimit, cfg.indexing.tasklimit,
                                   selectOptimization(cfg.indexing.optimize), cfg.indexing.kindOfWatermark,
                                   vespalib::from_s(cfg.indexing.reactiontime));
 }
 
-ThreadingServiceConfig ThreadingServiceConfig::make() {
+ThreadingServiceConfig ThreadingServiceConfig::make() noexcept {
     return ThreadingServiceConfig(0, 100, OptimizeFor::LATENCY, 0, 10ms);
 }
 
-void ThreadingServiceConfig::update(const ThreadingServiceConfig& cfg) {
-    _master_task_limit = cfg._master_task_limit;
+void ThreadingServiceConfig::update(const ThreadingServiceConfig& cfg) noexcept {
+    _main_task_limit = cfg._main_task_limit;
     _defaultTaskLimit = cfg._defaultTaskLimit;
 }
 
-bool ThreadingServiceConfig::operator==(const ThreadingServiceConfig& rhs) const {
-    return _master_task_limit == rhs._master_task_limit && _defaultTaskLimit == rhs._defaultTaskLimit &&
+bool ThreadingServiceConfig::operator==(const ThreadingServiceConfig& rhs) const noexcept {
+    return _main_task_limit == rhs._main_task_limit && _defaultTaskLimit == rhs._defaultTaskLimit &&
            _is_task_limit_hard == rhs._is_task_limit_hard && _optimize == rhs._optimize &&
            _kindOfWatermark == rhs._kindOfWatermark && _reactionTime == rhs._reactionTime;
 }

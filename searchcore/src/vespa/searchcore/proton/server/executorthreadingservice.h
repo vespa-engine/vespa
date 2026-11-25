@@ -23,11 +23,11 @@ private:
     using Registration = std::unique_ptr<vespalib::IDestructorCallback>;
     vespalib::Executor&                               _sharedExecutor;
     FNET_Transport&                                   _transport;
-    vespalib::ThreadStackExecutor                     _masterExecutor;
-    std::atomic<uint32_t>                             _master_task_limit;
+    vespalib::ThreadStackExecutor                     _main_executor;
+    std::atomic<uint32_t>                             _main_task_limit;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _summaryExecutor;
-    SyncableExecutorThreadService                     _masterService;
+    SyncableExecutorThreadService                     _main_service;
     ExecutorThreadService                             _indexService;
     vespalib::ISequencedTaskExecutor&                 _field_writer;
     std::vector<Registration>                         _invokeRegistrations;
@@ -45,22 +45,22 @@ public:
                              const ThreadingServiceConfig& cfg);
     ~ExecutorThreadingService() override;
 
-    void blocking_master_execute(vespalib::Executor::Task::UP task) override;
+    void blocking_main_execute(vespalib::Executor::Task::UP task) noexcept override;
 
     void shutdown();
 
-    uint32_t master_task_limit() const { return _master_task_limit.load(std::memory_order_relaxed); }
-    void set_task_limits(uint32_t master_task_limit, uint32_t field_task_limit, uint32_t summary_task_limit);
+    [[nodiscard]] uint32_t main_task_limit() const { return _main_task_limit.load(std::memory_order_relaxed); }
+    void set_task_limits(uint32_t main_task_limit, uint32_t field_task_limit, uint32_t summary_task_limit);
 
-    searchcorespi::index::ISyncableThreadService& master() override { return _masterService; }
-    searchcorespi::index::IThreadService& index() override { return _indexService; }
+    [[nodiscard]] searchcorespi::index::ISyncableThreadService& main() noexcept override { return _main_service; }
+    [[nodiscard]] searchcorespi::index::IThreadService& index() noexcept override { return _indexService; }
 
-    vespalib::ThreadExecutor& summary() override { return *_summaryExecutor; }
-    vespalib::Executor& shared() override { return _sharedExecutor; }
+    [[nodiscard]] vespalib::ThreadExecutor& summary() noexcept override { return *_summaryExecutor; }
+    [[nodiscard]] vespalib::Executor& shared() noexcept override { return _sharedExecutor; }
 
-    vespalib::ISequencedTaskExecutor& field_writer() override;
-    FNET_Transport& transport() override { return _transport; }
-    ExecutorThreadingServiceStats getStats();
+    [[nodiscard]] vespalib::ISequencedTaskExecutor& field_writer() noexcept override;
+    [[nodiscard]] FNET_Transport& transport() noexcept override { return _transport; }
+    [[nodiscard]] ExecutorThreadingServiceStats getStats();
 };
 
 } // namespace proton

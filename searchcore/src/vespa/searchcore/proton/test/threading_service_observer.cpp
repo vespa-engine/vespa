@@ -6,7 +6,7 @@ namespace proton::test {
 
 ThreadingServiceObserver::ThreadingServiceObserver(searchcorespi::index::IThreadingService& service)
     : _service(service),
-      _master(_service.master()),
+      _main(_service.main()),
       _index(service.index()),
       _summary(service.summary()),
       _shared(service.shared()),
