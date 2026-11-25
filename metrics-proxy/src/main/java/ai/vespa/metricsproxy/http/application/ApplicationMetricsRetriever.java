@@ -190,6 +190,8 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
     @SuppressWarnings("deprecation")
     static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder.create()
+                // Inflating as data arrives would hold every in-flight body decompressed; NodeMetricsClient inflates when parsing
+                .disableContentCompression()
                 .setIOReactorConfig(IOReactorConfig.custom()
                         .setSoTimeout(Timeout.ofMilliseconds(HTTP_SOCKET_TIMEOUT))
                         .setIoThreadCount(2)
