@@ -9,14 +9,17 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Replaces model id references in configs by their url.
+ * Replaces model id references in configs by their url,
+ * and adds model defaults to a typed component that names a model by model id.
  *
  * @author lesters
  * @author bratseth
@@ -121,15 +124,57 @@ public class ModelIdResolver {
         return Map.copyOf(m);
     }
 
-    private record ProvidedModel(String modelId, URI uri, Set<String> tags) {
+    private record ProvidedModel(String modelId, URI uri, Set<String> tags, Optional<ModelDefaults> modelDefaults) {
         ProvidedModel { tags = Set.copyOf(tags); }
     }
 
+    /**
+     * Parameters that a component of the given type gets for a model it names by model id, unless it sets them itself.
+     * Released model defaults must never change, since a change alters the output of every application using the model.
+     */
+    private record ModelDefaults(String componentType, Map<String, String> parameters) {
+        ModelDefaults { parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters)); }
+    }
+
+    private static Map<String, String> parameters(String... namesAndValues) {
+        var parameters = new LinkedHashMap<String, String>();
+        for (int i = 0; i < namesAndValues.length; i += 2)
+            parameters.put(namesAndValues[i], namesAndValues[i + 1]);
+        return parameters;
+    }
+
     private static void register(Map<String, ProvidedModel> models, String modelId, String uri, Set<String> tags) {
-        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags));
+        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags, Optional.empty()));
+    }
+
+    private static void register(Map<String, ProvidedModel> models, String modelId, String uri, Set<String> tags,
+                                 ModelDefaults modelDefaults) {
+        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags, Optional.of(modelDefaults)));
     }
 
     private static final Map<String, ProvidedModel> providedModels = setupProvidedModels();
+
+    /**
+     * Adds model defaults to a component whose transformer-model names a model by model-id.
+     * Keeps the parameters that the component sets itself.
+     * Applies only in hosted Vespa, since only hosted Vespa resolves model ids.
+     * Applies only to components of the type that the defaults are for.
+     */
+    public static void addModelDefaults(Element component, boolean hosted) {
+        if ( ! hosted) return;
+        Element model = XML.getChild(component, "transformer-model");
+        if (model == null || ! model.hasAttribute("model-id")) return;
+        var provided = providedModels.get(model.getAttribute("model-id"));
+        if (provided == null || provided.modelDefaults().isEmpty()) return;
+        var defaults = provided.modelDefaults().get();
+        if ( ! defaults.componentType().equals(component.getAttribute("type"))) return;
+        for (var parameter : defaults.parameters().entrySet()) {
+            if (XML.getChild(component, parameter.getKey()) != null) continue;
+            Element child = component.getOwnerDocument().createElement(parameter.getKey());
+            child.setTextContent(parameter.getValue());
+            component.appendChild(child);
+        }
+    }
 
     /**
      * Finds any config values of type 'model' below the given config element and

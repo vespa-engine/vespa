@@ -382,6 +382,13 @@ public class EmbedderTestCase {
         }
     }
 
+    @Test
+    void modelDefaults_areNotAddedForAModelWithoutThem() throws IOException, SAXException {
+        var withoutModelDefaults = createElement("<component id='e' type='colbert-embedder'><transformer-model model-id='e5-base-v2'/></component>");
+        ModelIdResolver.addModelDefaults(withoutModelDefaults, true);
+        assertEquals(1, XML.getChildren(withoutModelDefaults).size());
+    }
+
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {
         FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromDir(path.toFile(), Map.of());
         TestProperties properties = new TestProperties().setHostedVespa(hosted);
