@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-22
+Last updated: 2026-11-25
 
 ---
 
@@ -220,39 +220,6 @@ Last updated: 2026-11-22
 
 ---
 
-## com.github.luben 1.5.7-25 — BSD 2
-
-
----
-
-## com.google.errorprone 2.51.0 — Apache 2.0
-
-- Homepage: <https://www.google.com>
-- Copyright 2015 The Error Prone Authors
-- Copyright The Error Prone
-
----
-
-## com.google.guava 1.0.3 — Apache 2.0
-
-- Homepage: <https://github.com/google/guava>
-- Copyright 2024 The Guava Authors
-
----
-
-## com.google.guava 33.7.2-jre — Apache 2.0
-
-- Copyright 2008 The Guava Authors
-
----
-
-## com.google.j2objc 3.1 — Apache 2.0
-
-- Homepage: <https://github.com/google/j2objc/>
-- Copyright 2012 Google Inc
-
----
-
 ## com.vladsch.flexmark 0.64.8 — BSD 2
 
 - Homepage: <https://github.com/vsch/flexmark-java>
@@ -263,21 +230,6 @@ Last updated: 2026-11-22
 
 - Homepage: <https://github.com/wooorm/comma-separated-tokens#readme>
 - Copyright 2016 Titus Wormer <tituswormer@gmail.com>
-
----
-
-## commons-codec 1.23.0 — Apache 2.0
-
-- Homepage: <https://www.apache.org/>
-- Copyright 2002-2026 The Apache Software Foundation
-- The Apache Software Foundation
-
----
-
-## commons-io 2.22.0 — Apache 2.0
-
-- Homepage: <https://commons.apache.org/proper/commons-io/>
-- The Apache Software Foundation
 
 ---
 
@@ -677,13 +629,6 @@ Last updated: 2026-11-22
 
 ---
 
-## javax.inject 1 — Apache 2.0
-
-- Homepage: <http://code.google.com/p/atinject/>
-- Copyright 2009 The JSR-330 Expert Group
-
----
-
 ## jekyll 4.4.1 — MIT
 
 - Homepage: <https://jekyllrb.com>
@@ -878,46 +823,10 @@ Last updated: 2026-11-22
 
 ---
 
-## org.apache.commons 1.28.0 — Apache 2.0
-
-- Homepage: <https://commons.apache.org/proper/commons-compress/>
-- The Apache Software Foundation
-
----
-
-## org.apache.commons 3.21.0 — Apache 2.0
-
-- Homepage: <https://www.apache.org/>
-- Copyright 2001-2026 The Apache Software Foundation
-- The Apache Software Foundation
-
----
-
-## org.apache.commons 4.4 — Apache 2.0
-
-- Homepage: <https://commons.apache.org/proper/commons-collections/>
-- The Apache Software Foundation
-
----
-
-## org.apache.maven 3.6.6 — Apache 2.0
-
-- Homepage: <https://maven.apache.org/shared/>
-- The Apache Software Foundation
-
----
-
 ## org.apache.maven.plugin-tools 3.16.0 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/plugin-tools>
 - Copyright 2004-2026 The Apache Software Foundation
-- The Apache Software Foundation
-
----
-
-## org.apache.maven.plugins 3.5.3 — Apache 2.0
-
-- Homepage: <https://www.apache.org/>
 - The Apache Software Foundation
 
 ---
@@ -944,58 +853,9 @@ Last updated: 2026-11-22
 
 ---
 
-## org.codehaus.plexus 1.30.0 — Apache 2.0
-
-- Homepage: <https://codehaus-plexus.github.io/plexus-pom/>
-- Codehaus Plexus
-
----
-
-## org.codehaus.plexus 3.8.0 — Apache 2.0
-
-- Homepage: <https://codehaus-plexus.github.io/>
-- Codehaus Plexus
-
----
-
-## org.codehaus.plexus 4.1.0 — Apache 2.0
-
-- Homepage: <https://codehaus-plexus.github.io/plexus-utils/>
-- Copyright 2001-2003 ThoughtWorks, Inc
-- Copyright 2002 Extreme!
-- Copyright 2006 Javolution http://javolution.org
-- Codehaus Plexus
-- Copyright The Codehaus Foundation
-
----
-
-## org.codehaus.plexus 4.14.0 — Apache 2.0
-
-- Homepage: <https://codehaus-plexus.github.io/plexus-archiver/>
-- Codehaus Plexus
-
----
-
-## org.codehaus.plexus 4.2.0 — Apache 2.0
-
-- Homepage: <https://codehaus-plexus.github.io/plexus-xml/>
-- Copyright 2002 Extreme!
-- Copyright 2006 Javolution http://javolution.org
-- Codehaus Plexus
-- Copyright The Codehaus Foundation
-
----
-
 ## org.eclipse.lsp4j 0.24.0 — Eclipse 2.0
 
 - Homepage: <https://github.com/eclipse-lsp4j/lsp4j>
-
----
-
-## org.jdom 2.0.6.1 — JDOM
-
-- Homepage: <http://www.jdom.org>
-- Copyright 2000-2012 Jason Hunter
 
 ---
 
@@ -1020,19 +880,6 @@ Last updated: 2026-11-22
 
 - Homepage: <http://www.qos.ch>
 - QOS.ch
-
----
-
-## org.tukaani 1.12 — BSD Zero
-
-- Homepage: <https://tukaani.org/xz/java.html>
-
----
-
-## org.twdata.maven 2.4.1 — Apache 2.0
-
-- Homepage: <https://mojo-executor.github.io/mojo-executor/>
-- Copyright 2008-2013 Don Brown
 
 ---
 
