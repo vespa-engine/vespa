@@ -118,7 +118,10 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     /**
      * Writes like {@link #write(byte[], int, int)}: the data is copied, so the array may be reused.
      * A bad range or a null array is an IOException.
+     *
+     * @deprecated use {@link #write(byte[], int, int)}
      */
+    @Deprecated // TODO: Remove on Vespa 9
     public void nonCopyingWrite(byte[] b, int off, int len) throws IOException {
         try {
             Objects.checkFromIndexSize(off, len, b.length);
@@ -131,7 +134,10 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     /**
      * Writes like {@link #write(byte[])}: the data is copied, so the array may be reused.
      * A null array is an IOException.
+     *
+     * @deprecated use {@link #write(byte[])}
      */
+    @Deprecated // TODO: Remove on Vespa 9
     public void nonCopyingWrite(byte[] b) throws IOException {
         if (b == null) throw new IOException("The array to write is null");
         copyIntoBuffers(b, 0, b.length);

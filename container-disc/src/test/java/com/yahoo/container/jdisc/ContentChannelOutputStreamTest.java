@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@SuppressWarnings("deprecation") // tests the deprecated nonCopyingWrite methods
 class ContentChannelOutputStreamTest {
 
     private final RecordingChannel channel = new RecordingChannel();
