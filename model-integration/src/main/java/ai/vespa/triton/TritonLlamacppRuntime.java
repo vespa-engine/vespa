@@ -31,7 +31,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,7 +48,7 @@ import java.util.logging.Logger;
  * Both runtimes share Triton and its model repository, so each cleans up only its own leftovers,
  * telling the models apart by the backend in their configs, see {@link #isLlamacppModel}.
  * There should be only one instance, as for TritonOnnxRuntime, enforced by
- * RestartOnDeployForTritonOnnxRuntimeValidator.
+ * RestartOnDeployForTritonRuntimeValidator.
  *
  * @author ingridhabrekke
  */
@@ -62,14 +61,14 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     private static final String CONFIG_FILE_NAME = "config.pbtxt";
     // Each llamacpp.<flag> parameter becomes the llama-server flag --<flag>, an empty value a switch.
     private static final String FLAG_PREFIX = "llamacpp.";
-    // llama-server's micro-batch size when none is given, which the backend also assumes for its checks.
-    private static final int LLAMA_SERVER_DEFAULT_UBATCH = 512;
+    // The llama.cpp backend binds a Unix socket at a path that contains the model name, and Linux limits such a path
+    // to 107 bytes. A model name keeps at most this many characters of the file name, so that it fits in that path.
+    static final int MAX_BASE_NAME_LENGTH = 40;
 
     private final TritonModelRepositoryClient repositoryClient;
     private final TritonLlamacppClient llamacppClient;
     private final boolean isModelControlExplicit;
     private final Path modelRepositoryPath;
-    private final String llamacppEndpoint;
 
     // The number of evaluators using each model, by model name.
     // The map's per-key compute serializes loading and cleanup of the same model.
@@ -86,7 +85,6 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         this.llamacppClient = llamacppClient;
         this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         this.modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
-        this.llamacppEndpoint = config.llamacppEndpoint();
         log.info("Creating Triton llama.cpp runtime with endpoint " + config.llamacppEndpoint());
 
         if (isModelControlExplicit) {
@@ -96,29 +94,9 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
 
     @Override
     public LlamacppEvaluator evaluatorOf(String modelPath, LlamacppOptions options) {
-        // llama-server's OpenAI embeddings endpoint, which Triton relays to, returns only pooled embeddings.
-        // A model whose own default is no pooling fails its requests with llama-server's explanation instead.
-        if (options.pooling().equals(Optional.of(LlamacppOptions.Pooling.NONE)))
-            throw new IllegalArgumentException("Pooling type NONE is not supported for GGUF models in Triton: " +
-                                               "set a pooling type, or leave it unspecified for a model that has one");
         var modelName = generateModelName(modelPath, options);
-        warnIfStandaloneServerGetsAnotherModel(modelName, modelPath);
         var modelReference = referenceModel(modelName, modelPath, options);
         return new TritonLlamacppEvaluator(modelName, modelReference, llamacppClient, repositoryClient, isModelControlExplicit);
-    }
-
-    /**
-     * A standalone llama-server serves only the model it was started with, whatever model name a request has,
-     * so a second model would silently get the first model's embeddings. This only warns, since the old and
-     * new embedders of a reconfiguration that changes the model briefly coexist.
-     */
-    private void warnIfStandaloneServerGetsAnotherModel(String modelName, String modelPath) {
-        if (isModelControlExplicit) return;
-        var others = referenceCounts.keySet().stream().filter(name -> ! name.equals(modelName)).toList();
-        if ( ! others.isEmpty())
-            log.warning("GGUF model " + modelPath + " uses the same llama-server at " + llamacppEndpoint +
-                        " as models " + others + ": a standalone llama-server serves only the model it was started " +
-                        "with, so use one GGUF model per container with a standalone llama-server");
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if this is its first reference.
@@ -219,13 +197,14 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         var fileName = Paths.get(modelPath).getFileName().toString();
         var extensionIndex = fileName.lastIndexOf('.');
         var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
+        if (baseName.length() > MAX_BASE_NAME_LENGTH) baseName = baseName.substring(0, MAX_BASE_NAME_LENGTH);
         var identity = ByteBuffer.allocate(2 * Long.BYTES)
                 .putLong(ModelPathOrData.of(modelPath).calculateHash())
                 .putLong(hashOptions(options));
         return baseName + "_" + Long.toHexString(hash(identity.array()));
     }
 
-    // An explicit encoding, as in TritonOnnxRuntime, so that names don't change with the record's toString().
+    // An explicit encoding, so that names don't change with the record's toString().
     private static long hashOptions(LlamacppOptions options) {
         var encoding = "LlamacppOptions[parallel=" + options.parallel() +
                        ", contextSize=" + options.contextSize() +
@@ -249,10 +228,8 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
      * The backend runs one llama-server per model with one slot per model instance, so concurrency comes from
      * the instance count. Its ctx-size is per slot, while the option is the total, as for llama.cpp itself.
      * Values the options leave unset are left to llama-server, except the GPU layers, where 0 means CPU only.
-     * See docs/llamacpp.md in the tritonserver repository.
      */
     static String createModelConfig(String modelName, LlamacppOptions options) {
-        validateSlots(options);
         var builder = ModelConfig.newBuilder()
                 .setName(modelName)
                 .setBackend(BACKEND)
@@ -267,7 +244,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         if (options.seed() > -1) putFlag(builder, "seed", Integer.toString(options.seed()));
         if (options.threads() > 0) putFlag(builder, "threads", Integer.toString(options.threads()));
         if (options.batchThreads() > 0) putFlag(builder, "threads-batch", Integer.toString(options.batchThreads()));
-        // llama-server batches continuously by default, as llama.cpp's Java bindings do.
+        // llama-server batches continuously by default.
         return builder.build().toString();
     }
 
@@ -281,25 +258,6 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     private static ModelInstanceGroup instanceGroup(LlamacppOptions options) {
         var group = ModelInstanceGroup.newBuilder().setCount(options.parallel());
         return group.setKind(options.gpuLayers() == 0 ? Kind.KIND_CPU : Kind.KIND_AUTO).build();
-    }
-
-    /**
-     * Rejects the options that the llama.cpp backend would refuse to load for an embedding model,
-     * with the names of the embedder's config: a slot must hold a whole input, and the slots must divide the
-     * micro-batch, which llama-server otherwise aborts on. See docs/llamacpp.md in the tritonserver repository.
-     */
-    static void validateSlots(LlamacppOptions options) {
-        int ubatch = options.physicalMaxBatchSize() > 0 ? options.physicalMaxBatchSize() : LLAMA_SERVER_DEFAULT_UBATCH;
-        String ubatchSource = options.physicalMaxBatchSize() > 0 ? "physicalMaxBatchSize " + ubatch
-                                                                 : "llama.cpp's default physicalMaxBatchSize " + ubatch;
-        if (options.contextSize() > 0 && options.contextSize() / options.parallel() < ubatch)
-            throw new IllegalArgumentException("contextSize " + options.contextSize() + " gives " +
-                                               options.contextSize() / options.parallel() + " per parallel sequence (parallel " +
-                                               options.parallel() + "), which is below " + ubatchSource +
-                                               ": each sequence must hold a whole input");
-        if (ubatch % options.parallel() != 0)
-            throw new IllegalArgumentException("parallel " + options.parallel() + " must divide " + ubatchSource +
-                                               " for llama.cpp in Triton");
     }
 
     private static void putFlag(ModelConfig.Builder builder, String flag, String value) {

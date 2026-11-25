@@ -22,12 +22,12 @@ import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange.
  * Ensures that application container clusters are restarted when a Triton runtime component (TritonOnnxRuntime or
  * TritonLlamacppRuntime) is added or removed, or when their config changes.
  * The runtimes hold state shared across reconfigurations, which is only correct when their config never changes
- * while the container serves. Adding or removing one also changes the capabilities the cluster asks of the Triton
- * sidecar, e.g. a Triton image with llama.cpp, which the sidecar only gets when the nodes restart.
+ * while the container serves. Adding or removing one also changes the inference backends the cluster needs in the
+ * Triton sidecar, which the sidecar only gets when the nodes restart.
  *
  * @author glebashnik
  */
-public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValidator {
+public class RestartOnDeployForTritonRuntimeValidator implements ChangeValidator {
 
     // The Triton runtime components, by class name, with the name used in restart messages.
     private static final Map<String, String> RUNTIMES = new LinkedHashMap<>();

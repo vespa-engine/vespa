@@ -2,10 +2,12 @@
 package ai.vespa.triton;
 
 import org.slf4j.LoggerFactory;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.SelinuxContext;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
@@ -26,6 +28,8 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
     private static final int METRICS_PORT = 8002;
     private static final int OPENAI_PORT = 9000;
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("nvcr.io/nvidia/tritonserver:26.08-py3");
+    // Starts Triton in an image whose default command does not, such as NVIDIA's images.
+    private static final String[] TRITON_COMMAND = {"tritonserver", "--model-repository=/models", "--model-control-mode=explicit"};
 
     // Overrides the image, e.g. to test against Vespa's Triton images: -DVESPA_TRITON_IMAGE=localhost/tritonserver:<tag>
     private static final String IMAGE_NAME_PROPERTY = "VESPA_TRITON_IMAGE";
@@ -48,12 +52,23 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         addEnv("ORT_LOGGING_LEVEL_FATAL", "4");
         addExposedPorts(GRPC_PORT, HTTP_PORT, METRICS_PORT);
         addFileSystemBind(modelRepositoryPath.toString(), "/models", BindMode.READ_ONLY, SelinuxContext.NONE);
-        setCommandParts(new String[]{"tritonserver", "--model-repository=/models", "--model-control-mode=explicit"});
+        if ( ! defaultCommandStartsTriton(imageName)) setCommandParts(TRITON_COMMAND);
     }
 
     /**
-     * Returns a container of the configured image that runs Triton's OpenAI frontend with its KServe frontends,
-     * as llama.cpp models need. Requires a Vespa Triton image with llama.cpp, e.g. cpu-onnx-llamacpp.
+     * Returns whether the default command of the image starts Triton: the tritonserver binary, or Triton's OpenAI
+     * frontend in /opt/tritonserver. Vespa Cloud runs such an image with its default command, so the tests do too.
+     */
+    private static boolean defaultCommandStartsTriton(DockerImageName imageName) {
+        var resolvedImageName = new RemoteDockerImage(imageName).get(); // Pulls the image if it is missing
+        var command = DockerClientFactory.instance().client().inspectImageCmd(resolvedImageName).exec().getConfig().getCmd();
+        return command != null && String.join(" ", command).contains("tritonserver");
+    }
+
+    /**
+     * Returns a container of the configured image for llama.cpp models.
+     * Requires an image with a llama.cpp backend for Triton, whose default command starts Triton's OpenAI frontend
+     * with its KServe frontends.
      */
     public static TritonServerContainer withLlamacpp() throws IOException {
         var container = new TritonServerContainer();
@@ -61,10 +76,6 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         // OpenAI requests reach llama.cpp through Triton's Python backend, whose shared memory in /dev/shm
         // must hold the largest bodies of every instance; the container default of 64 MiB is too small.
         container.withSharedMemorySize(1024L * 1024 * 1024);
-        // The images with llama.cpp start the same by default; given here so older images work too.
-        container.setCommandParts(new String[]{"python3", "/opt/tritonserver/python/openai/openai_frontend/main.py",
-                                               "--model-repository=/models", "--model-control-mode=explicit",
-                                               "--enable-kserve-frontends"});
         return container;
     }
 
@@ -73,7 +84,7 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         return System.getProperty(IMAGE_NAME_PROPERTY) != null;
     }
 
-    // Vespa's Triton images with llama.cpp are tagged with it, e.g. <version>-cpu-onnx-llamacpp.
+    // An image with a llama.cpp backend is recognized by "llamacpp" in its name.
     public static boolean isLlamacppImageConfigured() {
         var imageName = System.getProperty(IMAGE_NAME_PROPERTY);
         return imageName != null && imageName.contains("llamacpp");

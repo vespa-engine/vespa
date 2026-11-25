@@ -2715,9 +2715,9 @@ public class ModelProvisioningTest {
             }
             @Override
             public List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
-                                                 NodeResources minNodeResources, Set<String> neededSidecars) {
+                                                 NodeResources minNodeResources, Set<String> sidecarNames) {
                 applicationSeenByProvider.set(application);
-                return neededSidecars.contains(SidecarProvider.TRITON_SIDECAR_NAME) ? List.of(sidecar) : List.of();
+                return sidecarNames.contains(SidecarProvider.TRITON_SIDECAR_NAME) ? List.of(sidecar) : List.of();
             }
         };
         var deployStateBuilder = deployStateWithClusterEndpoints("container1")

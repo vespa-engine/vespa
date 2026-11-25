@@ -15,16 +15,17 @@ import io.grpc.stub.AbstractStub;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * What the clients of Triton's gRPC API share: creating and closing a channel, and translating failures.
+ * Creates, invokes and closes blocking stubs of Triton's gRPC API.
+ * Invoking a stub translates gRPC failures to Vespa's exceptions.
  *
  * @author bjorncs
  * @author glebashnik
  */
-final class TritonGrpc {
+final class TritonGrpcStubs {
 
     private static final int MAX_INBOUND_MESSAGE_SIZE_MIB = 128;
 
-    private TritonGrpc() { }
+    private TritonGrpcStubs() { }
 
     @FunctionalInterface
     interface GrpcInvocation<T, S extends AbstractBlockingStub<S>> {

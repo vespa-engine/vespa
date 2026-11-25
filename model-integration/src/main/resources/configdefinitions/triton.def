@@ -2,7 +2,7 @@
 package=ai.vespa.llm.clients
 
 # All fields require a container restart on change,
-# enforced by RestartOnDeployForTritonOnnxRuntimeValidator in the config model.
+# enforced by RestartOnDeployForTritonRuntimeValidator in the config model.
 # TritonOnnxRuntime and TritonLlamacppRuntime hold state shared across reconfigurations,
 # which is only correct when this config never changes while the container serves.
 
@@ -10,10 +10,8 @@ package=ai.vespa.llm.clients
 target string default="triton:8001" restart
 
 # Endpoint of Triton's OpenAI-compatible frontend, which serves the GGUF models of TritonLlamacppRuntime.
-# Requires a Triton image with the llama.cpp backend, started with the OpenAI frontend and its KServe frontends,
+# Requires a Triton server with the llama.cpp backend that runs the OpenAI frontend together with its KServe frontends,
 # so that models are still loaded and unloaded through target.
-# With modelControlMode other than EXPLICIT, this may instead be a standalone llama-server serving the one GGUF model,
-# started with --embeddings: TritonLlamacppRuntime then only sends it inference requests.
 llamacppEndpoint string default="http://triton:9000" restart
 
 # Model repository path where ONNX and GGUF models are copied to.

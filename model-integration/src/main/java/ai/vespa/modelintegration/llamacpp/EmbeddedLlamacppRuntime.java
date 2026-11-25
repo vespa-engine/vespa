@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.modelintegration.llamacpp;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.text.Text;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
@@ -16,7 +17,7 @@ import java.util.Optional;
  * @author bjorncs
  * @author ingridhabrekke
  */
-public class EmbeddedLlamacppRuntime implements LlamacppRuntime {
+public class EmbeddedLlamacppRuntime extends AbstractComponent implements LlamacppRuntime {
 
     @Override
     public LlamacppEvaluator evaluatorOf(String modelPath, LlamacppOptions options) {

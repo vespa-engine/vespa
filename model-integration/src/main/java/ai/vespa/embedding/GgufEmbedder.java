@@ -8,9 +8,7 @@ import ai.vespa.modelintegration.llamacpp.LlamacppOptions;
 import ai.vespa.modelintegration.llamacpp.LlamacppRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.OverloadException;
 import com.yahoo.language.process.TimeoutException;
@@ -27,8 +25,7 @@ import java.util.logging.Logger;
 
 /**
  * Embedder using GGUF file format through llama.cpp.
- * The model runs in the container, or in a Triton Inference Server sidecar when the config model
- * provides a Triton llama.cpp runtime.
+ * The injected LlamacppRuntime runs the model, in the container or in a Triton Inference Server sidecar.
  *
  * @author bjorncs
  */
@@ -44,30 +41,12 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         public Exception(Throwable cause) { super(cause.getMessage(), cause); }
     }
 
-    /**
-     * Runs the model in the llama.cpp runtime of the container cluster, if it has one, else in the container.
-     * The runtime comes as a registry because it is optional: the config model adds a runtime component,
-     * e.g. TritonLlamacppRuntime, only to some clusters, and injecting a single component would fail without one.
-     */
-    @Inject
-    public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, ComponentRegistry<LlamacppRuntime> runtimes) {
-        this(config, helper, runtimeOf(runtimes, EmbeddedLlamacppRuntime::new));
-    }
-
-    /** Returns the only runtime in the registry, or the fallback if it has none. */
-    static LlamacppRuntime runtimeOf(ComponentRegistry<LlamacppRuntime> runtimes, Supplier<LlamacppRuntime> fallback) {
-        var runtimesById = runtimes.allComponentsById();
-        if (runtimesById.size() > 1)
-            throw new IllegalArgumentException("Expected at most one llama.cpp runtime component, but got " +
-                                               runtimesById.keySet().stream().map(ComponentId::stringValue).sorted().toList());
-        return runtimesById.isEmpty() ? fallback.get() : runtimesById.values().iterator().next();
-    }
-
     public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper) {
         this(config, helper, new EmbeddedLlamacppRuntime());
     }
 
-    GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, LlamacppRuntime runtime) {
+    @Inject
+    public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, LlamacppRuntime runtime) {
         log.fine(() -> Text.format("Config: %s", config));
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
         model = runtime.evaluatorOf(modelPath, options(config));
@@ -156,7 +135,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         return wrapLlamaException(() -> model.embed(prompt, deadline(context)));
     }
 
-    // The request deadline, or empty to use the runtime's default timeout. A runtime in the container ignores it.
+    // The request deadline, or empty to use the runtime's default timeout.
     private static Optional<Instant> deadline(Context context) {
         return context.getDeadline().map(deadline -> deadline.asInstant());
     }

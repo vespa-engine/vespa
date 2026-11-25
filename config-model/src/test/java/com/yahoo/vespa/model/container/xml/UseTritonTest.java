@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.SidecarProvider.TRITON_LLAMACPP_CAPABILITY;
 import static com.yahoo.config.model.api.SidecarProvider.TRITON_ONNX_CAPABILITY;
@@ -76,6 +77,17 @@ public class UseTritonTest {
                   <config name="ai.vespa.embedding.config.gguf-embedder">
                     <embeddingModel url="https://example.invalid/model.gguf"/>
                   </config>
+                </component>
+                %s
+              </container>
+            </services>
+            """.formatted(NODES);
+
+    private static final String GGUF_EMBEDDER_TYPE_SERVICES = """
+            <services version="1.0">
+              <container id="container" version="1.0">
+                <component id="embedder" type="gguf-embedder">
+                  <transformer-model url="https://example.invalid/model.gguf"/>
                 </component>
                 %s
               </container>
@@ -271,8 +283,18 @@ public class UseTritonTest {
         assertEquals(List.of(TRITON_SIDECAR), cluster.getSpec().sidecars());
         assertFalse(hasTritonRuntime(cluster));
         assertTrue(cluster.usesTritonForLlamacpp());
-        assertTrue(hasTritonLlamacppRuntime(cluster));
-        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.neededSidecars);
+        assertEquals(Set.of(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
+        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
+    }
+
+    @Test
+    void cluster_with_gguf_embedder_type_runs_it_in_triton(@TempDir Path appDir) {
+        write(appDir.resolve("services.xml"), GGUF_EMBEDDER_TYPE_SERVICES);
+        var cluster = containerCluster(appDir);
+        assertEquals(List.of(TRITON_SIDECAR), cluster.getSpec().sidecars());
+        assertTrue(cluster.usesTritonForLlamacpp());
+        assertEquals(Set.of(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
+        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
     }
 
     @Test
@@ -281,8 +303,8 @@ public class UseTritonTest {
         var cluster = containerCluster(appDir);
         assertUsesTriton(cluster);
         assertTrue(cluster.usesTritonForLlamacpp());
-        assertTrue(hasTritonLlamacppRuntime(cluster));
-        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_ONNX_CAPABILITY, TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.neededSidecars);
+        assertEquals(Set.of(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
+        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_ONNX_CAPABILITY, TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
     }
 
     @Test
@@ -291,21 +313,34 @@ public class UseTritonTest {
         var cluster = containerCluster(appDir, false);
         assertDoesNotUseTriton(cluster);
         assertFalse(cluster.usesTritonForLlamacpp());
-        assertFalse(hasTritonLlamacppRuntime(cluster));
+        assertEquals(Set.of(ContainerModelEvaluation.EMBEDDED_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
     }
 
     @Test
-    void cluster_with_onnx_embedder_has_no_llamacpp_runtime(@TempDir Path appDir) {
+    void cluster_with_onnx_embedder_runs_llamacpp_in_the_container(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), EMBEDDER_SERVICES);
         var cluster = containerCluster(appDir);
         assertUsesTriton(cluster);
         assertFalse(cluster.usesTritonForLlamacpp());
-        assertFalse(hasTritonLlamacppRuntime(cluster));
-        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_ONNX_CAPABILITY)), sidecarProvider.neededSidecars);
+        assertEquals(Set.of(ContainerModelEvaluation.EMBEDDED_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
+        assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_ONNX_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
     }
 
-    private static boolean hasTritonLlamacppRuntime(ApplicationContainerCluster cluster) {
-        return cluster.getComponentsMap().containsKey(ComponentId.fromString(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS));
+    @Test
+    void cluster_without_models_has_the_embedded_llamacpp_runtime(@TempDir Path appDir) {
+        write(appDir.resolve("services.xml"), NO_ONNX_SERVICES);
+        var cluster = containerCluster(appDir);
+        assertEquals(Set.of(ContainerModelEvaluation.EMBEDDED_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
+    }
+
+    // The llama.cpp runtime components of the cluster, by class name
+    private static Set<String> llamacppRuntimes(ApplicationContainerCluster cluster) {
+        var runtimeClasses = Set.of(ContainerModelEvaluation.EMBEDDED_LLAMACPP_RUNTIME_CLASS,
+                                    ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS);
+        return cluster.getAllComponents().stream()
+                      .map(component -> component.getClassId().getName())
+                      .filter(runtimeClasses::contains)
+                      .collect(Collectors.toSet());
     }
 
     private static void assertUsesTriton(ApplicationContainerCluster cluster) {
@@ -371,19 +406,19 @@ public class UseTritonTest {
         }
 
         /** The sidecars and capabilities requested last. */
-        Map<String, Set<String>> neededSidecars;
+        Map<String, Set<String>> sidecarNamesWithCapabilities;
 
         @Override
         public List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
-                                             NodeResources minNodeResources, Set<String> neededSidecars) {
+                                             NodeResources minNodeResources, Set<String> sidecarNames) {
             throw new AssertionError("The config model should invoke the capability-aware method");
         }
 
         @Override
         public List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
-                                             NodeResources minNodeResources, Map<String, Set<String>> neededSidecars) {
-            this.neededSidecars = neededSidecars;
-            return neededSidecars.containsKey(TRITON_SIDECAR_NAME) ? List.of(TRITON_SIDECAR) : List.of();
+                                             NodeResources minNodeResources, Map<String, Set<String>> sidecarNamesWithCapabilities) {
+            this.sidecarNamesWithCapabilities = sidecarNamesWithCapabilities;
+            return sidecarNamesWithCapabilities.containsKey(TRITON_SIDECAR_NAME) ? List.of(TRITON_SIDECAR) : List.of();
         }
     }
 }

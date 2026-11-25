@@ -3,6 +3,7 @@ package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.llamacpp.EmbeddedLlamacppRuntime;
 import ai.vespa.modelintegration.llamacpp.LlamacppOptions;
 import com.yahoo.language.process.InvalidInputException;
 import org.junit.jupiter.api.AfterAll;
@@ -10,9 +11,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Tests TritonLlamacppRuntime against Vespa's Triton image with llama.cpp (Triton 26.11 or later), e.g.
- * -DVESPA_USE_TRITON=true -DVESPA_TRITON_IMAGE=localhost/tritonserver:<tag>-cpu-onnx-llamacpp
+ * Tests TritonLlamacppRuntime against a Triton image with a llama.cpp backend, given with
+ * -DVESPA_USE_TRITON=true -DVESPA_TRITON_IMAGE=<image with llamacpp in its name>
  *
  * @author ingridhabrekke
  */
@@ -46,7 +49,7 @@ class TritonLlamacppRuntimeTest {
 
     @BeforeAll
     static void setupTritonContainer() throws IOException {
-        assumeTrue(TritonServerContainer.isLlamacppImageConfigured(), "Needs a Vespa Triton image with llama.cpp");
+        assumeTrue(TritonServerContainer.isLlamacppImageConfigured(), "Needs a Triton image with llama.cpp");
         tritonContainer = TritonServerContainer.withLlamacpp();
         tritonContainer.start();
     }
@@ -62,7 +65,7 @@ class TritonLlamacppRuntimeTest {
         try (var evaluator = runtime.evaluatorOf(GGUF_MODEL_PATH, options(1))) {
             var embedding = evaluator.embed("This is a test", Optional.empty());
             assertEquals(64, embedding.length);
-            assertTrue(norm(embedding) > 1.5, "Not normalized: " + norm(embedding));
+            assertEquals(1.0, norm(embedding), 1e-4);
 
             // Detokenized text may differ in leading whitespace, depending on the tokenizer.
             var tokens = evaluator.tokenize("This is a test", Optional.empty());
@@ -73,11 +76,40 @@ class TritonLlamacppRuntimeTest {
         }
     }
 
+    // The llama.cpp versions in Triton and in the container may differ, which changes the values slightly.
+    @Test
+    void embeds_like_the_runtime_in_the_container() {
+        var text = "This is a test";
+        var runtime = new TritonLlamacppRuntime(config());
+        try (var inTriton = runtime.evaluatorOf(GGUF_MODEL_PATH, options(5));
+             var inContainer = new EmbeddedLlamacppRuntime().evaluatorOf(GGUF_MODEL_PATH, options(5))) {
+            var tritonEmbedding = inTriton.embed(text, Optional.empty());
+            var containerEmbedding = inContainer.embed(text, Optional.empty());
+            assertEquals(norm(containerEmbedding), norm(tritonEmbedding), 1e-4);
+            assertTrue(cosine(containerEmbedding, tritonEmbedding) > 0.99,
+                       "Cosine similarity " + cosine(containerEmbedding, tritonEmbedding));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
     @Test
     void input_longer_than_the_context_is_invalid_input() {
         var runtime = new TritonLlamacppRuntime(config());
         try (var evaluator = runtime.evaluatorOf(GGUF_MODEL_PATH, options(2))) {
             assertThrows(InvalidInputException.class, () -> evaluator.embed("This is a test. ".repeat(1000), Optional.empty()));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void embeds_with_a_model_whose_file_name_is_long(@TempDir Path directory) throws IOException {
+        var modelPath = directory.resolve("an-embedding-model-with-a-file-name-much-longer-than-most-".repeat(2) + "q8_0.gguf");
+        Files.copy(Path.of(GGUF_MODEL_PATH), modelPath);
+        var runtime = new TritonLlamacppRuntime(config());
+        try (var evaluator = runtime.evaluatorOf(modelPath.toString(), options(6))) {
+            assertEquals(64, evaluator.embed("This is a test", Optional.empty()).length);
         } finally {
             runtime.deconstruct();
         }
@@ -152,6 +184,12 @@ class TritonLlamacppRuntimeTest {
         double sum = 0;
         for (float value : vector) sum += value * value;
         return Math.sqrt(sum);
+    }
+
+    private static double cosine(float[] a, float[] b) {
+        double dot = 0;
+        for (int i = 0; i < a.length; i++) dot += a[i] * b[i];
+        return dot / (norm(a) * norm(b));
     }
 
     private static TritonConfig config() {

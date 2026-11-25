@@ -23,7 +23,7 @@ import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLoc
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForContainerThreadpoolChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForSidecarValidator;
-import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForTritonOnnxRuntimeValidator;
+import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForTritonRuntimeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
@@ -124,6 +124,7 @@ public class Validation {
         new MaxDocumentSizeValidator().validate(execution);
         new QuantizedTensorValidator().validate(execution);
         new PaddingBucketsValidator().validate(execution);
+        new TritonLlamacppOptionsValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
@@ -147,7 +148,7 @@ public class Validation {
         new MinimumNodeCountValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
-        new RestartOnDeployForTritonOnnxRuntimeValidator().validate(execution);
+        new RestartOnDeployForTritonRuntimeValidator().validate(execution);
         new DataplaneTokenRemovalValidator().validate(execution);
         new DataplaneProxyChangeValidator().validate(execution);
         new RestartOnDeployForSidecarValidator().validate(execution);

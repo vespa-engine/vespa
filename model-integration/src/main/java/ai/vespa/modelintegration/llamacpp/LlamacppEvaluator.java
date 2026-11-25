@@ -13,7 +13,8 @@ import java.util.Optional;
 public interface LlamacppEvaluator extends AutoCloseable {
 
     /**
-     * Returns the embedding of the text, as the model pools it, without normalization.
+     * Returns the embedding of the text, as the model pools it.
+     * llama.cpp normalizes a pooled embedding to unit length (L2 norm).
      *
      * @throws IllegalArgumentException if the text is too long for the model's batch or context size
      */

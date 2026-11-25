@@ -5,8 +5,6 @@ import ai.vespa.embedding.config.GgufEmbedderConfig;
 import ai.vespa.modelintegration.llamacpp.LlamacppEvaluator;
 import ai.vespa.modelintegration.llamacpp.LlamacppOptions;
 import ai.vespa.modelintegration.llamacpp.LlamacppRuntime;
-import com.yahoo.component.ComponentId;
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ModelReference;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvalidInputException;
@@ -24,7 +22,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -122,21 +119,6 @@ class GgufEmbedderRuntimeTest {
 
         var e = assertThrows(GgufEmbedder.Exception.class, () -> embedder.embed("text", new Embedder.Context("test"), TYPE));
         assertEquals("engine failed", e.getMessage());
-    }
-
-    @Test
-    void runtime_is_the_only_one_in_the_registry_or_the_fallback() {
-        var fallback = new FakeRuntime();
-        var runtimes = new ComponentRegistry<LlamacppRuntime>();
-        assertSame(fallback, GgufEmbedder.runtimeOf(runtimes, () -> fallback));
-
-        var triton = new FakeRuntime();
-        runtimes.register(ComponentId.fromString("triton"), triton);
-        assertSame(triton, GgufEmbedder.runtimeOf(runtimes, () -> fallback));
-
-        runtimes.register(ComponentId.fromString("other"), new FakeRuntime());
-        var e = assertThrows(IllegalArgumentException.class, () -> GgufEmbedder.runtimeOf(runtimes, () -> fallback));
-        assertEquals("Expected at most one llama.cpp runtime component, but got [other, triton]", e.getMessage());
     }
 
     private static GgufEmbedderConfig.Builder config() {

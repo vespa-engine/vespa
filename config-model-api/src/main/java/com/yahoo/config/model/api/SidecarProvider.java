@@ -43,8 +43,8 @@ public interface SidecarProvider {
      * Application and vespaVersion are added to support corresponding dimensions in feature flags.
      */
     default List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
-                                          NodeResources minNodeResources, Set<String> neededSidecars) {
-        return getSidecars(clusterId, minNodeResources, neededSidecars.contains(TRITON_SIDECAR_NAME));
+                                          NodeResources minNodeResources, Set<String> sidecarNames) {
+        return getSidecars(clusterId, minNodeResources, sidecarNames.contains(TRITON_SIDECAR_NAME));
     }
 
     /**
@@ -53,8 +53,8 @@ public interface SidecarProvider {
      * defined by each sidecar's provider. Providers that don't know capabilities get the sidecar names only.
      */
     default List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
-                                          NodeResources minNodeResources, Map<String, Set<String>> neededSidecars) {
-        return getSidecars(application, vespaVersion, clusterId, minNodeResources, neededSidecars.keySet());
+                                          NodeResources minNodeResources, Map<String, Set<String>> sidecarNamesWithCapabilities) {
+        return getSidecars(application, vespaVersion, clusterId, minNodeResources, sidecarNamesWithCapabilities.keySet());
     }
 
 }

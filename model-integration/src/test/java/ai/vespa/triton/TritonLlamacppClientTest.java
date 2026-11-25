@@ -49,7 +49,7 @@ class TritonLlamacppClientTest {
     }
 
     @Test
-    void embeds_one_text_without_normalization() throws Exception {
+    void embeds_one_text_with_llama_servers_default_normalization() throws Exception {
         server.enqueue(json(200, """
                 {"model":"m","object":"list","usage":{"prompt_tokens":2,"total_tokens":2},
                  "data":[{"embedding":[-1.5,1.25,0.5],"index":0,"object":"embedding"}]}"""));
@@ -59,7 +59,7 @@ class TritonLlamacppClientTest {
         var request = server.takeRequest();
         assertEquals("/v1/embeddings", request.getPath());
         assertEquals(objectMapper.readTree("""
-                {"model":"m","input":["hello world"],"embd_normalize":-1}"""),
+                {"model":"m","input":["hello world"]}"""),
                      objectMapper.readTree(request.getBody().readUtf8()));
     }
 

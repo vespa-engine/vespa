@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -46,6 +45,20 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertEquals(Map.of("llamacpp.embeddings", "", "llamacpp.n-gpu-layers", "0"), parameters(config));
     }
 
+    // llama-server batches the requests of its slots continuously, so Triton must not batch them as well.
+    @Test
+    void triton_does_not_batch_and_llama_server_batches_continuously() throws IOException {
+        for (boolean continuousBatching : List.of(false, true)) {
+            var options = new LlamacppOptions(4, 8192, 2048, 1024, 0, Optional.empty(), -1, 0, 0, continuousBatching);
+            var config = parse(TritonLlamacppRuntime.createModelConfig("model_abc", options));
+
+            assertEquals(0, config.getMaxBatchSize());
+            assertFalse(config.hasDynamicBatching());
+            assertFalse(config.hasSequenceBatching());
+            assertFalse(parameters(config).containsKey("llamacpp.no-cont-batching"));
+        }
+    }
+
     @Test
     void gpu_layers_give_instances_on_a_gpu_if_there_is_one() throws IOException {
         var options = new LlamacppOptions(2, 0, -1, -1, 99, Optional.empty(), -1, 0, 0, false);
@@ -54,22 +67,6 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertEquals(Kind.KIND_AUTO, group.getKind());
         assertEquals(List.of(), group.getGpusList()); // Triton refuses GPUs on a host without them
         assertEquals(2, group.getCount());
-    }
-
-    @Test
-    void slots_must_hold_an_input_and_divide_the_micro_batch() {
-        // 4096 / 8 = 512 per slot holds llama.cpp's default micro-batch of 512, which 8 slots divide
-        TritonLlamacppRuntime.validateSlots(new LlamacppOptions(8, 4096, -1, -1, 0, Optional.empty(), -1, 0, 0, false));
-
-        var tooSmallSlots = assertThrows(IllegalArgumentException.class, () -> TritonLlamacppRuntime.validateSlots(
-                new LlamacppOptions(4, 2048, -1, 1024, 0, Optional.empty(), -1, 0, 0, false)));
-        assertEquals("contextSize 2048 gives 512 per parallel sequence (parallel 4), which is below " +
-                     "physicalMaxBatchSize 1024: each sequence must hold a whole input", tooSmallSlots.getMessage());
-
-        var notDividing = assertThrows(IllegalArgumentException.class, () -> TritonLlamacppRuntime.validateSlots(
-                new LlamacppOptions(3, 0, -1, -1, 0, Optional.empty(), -1, 0, 0, false)));
-        assertEquals("parallel 3 must divide llama.cpp's default physicalMaxBatchSize 512 for llama.cpp in Triton",
-                     notDividing.getMessage());
     }
 
     @Test
@@ -103,6 +100,20 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertNotEquals(hashOf(name), hashOf(TritonLlamacppRuntime.generateModelName(otherModel.toString(), DEFAULT_OPTIONS)));
     }
 
+    @Test
+    void model_name_keeps_the_start_of_a_long_file_name(@TempDir Path directory) throws IOException {
+        var prefix = "an-embedding-model-with-a-long-file-name-";
+        var model = Files.writeString(directory.resolve(prefix + "q8_0.gguf"), "model contents");
+        var otherModel = Files.writeString(directory.resolve(prefix + "q4_k_m.gguf"), "other contents");
+
+        var name = TritonLlamacppRuntime.generateModelName(model.toString(), DEFAULT_OPTIONS);
+        var otherName = TritonLlamacppRuntime.generateModelName(otherModel.toString(), DEFAULT_OPTIONS);
+        assertTrue(name.startsWith(prefix.substring(0, TritonLlamacppRuntime.MAX_BASE_NAME_LENGTH) + "_"), name);
+        var hashSuffixLength = "_".length() + 16; // An underscore and up to 16 hex digits
+        assertTrue(name.length() <= TritonLlamacppRuntime.MAX_BASE_NAME_LENGTH + hashSuffixLength, name);
+        assertNotEquals(name, otherName);
+    }
+
     private static String hashOf(String modelName) {
         return modelName.substring(modelName.lastIndexOf('_') + 1);
     }
@@ -119,19 +130,6 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertFalse(TritonLlamacppRuntime.isLlamacppModel(brokenModel));
         assertFalse(TritonLlamacppRuntime.isLlamacppModel(modelWithoutConfig.getParent()));
         assertFalse(TritonLlamacppRuntime.isLlamacppModel(repository.resolve("missing")));
-    }
-
-    @Test
-    void no_pooling_is_rejected_since_triton_returns_only_pooled_embeddings() {
-        var runtime = new TritonLlamacppRuntime(new ai.vespa.llm.clients.TritonConfig.Builder()
-                                                     .modelControlMode(ai.vespa.llm.clients.TritonConfig.ModelControlMode.NONE).build());
-        var options = new LlamacppOptions(1, 0, -1, -1, 0, Optional.of(LlamacppOptions.Pooling.NONE), -1, 0, 0, false);
-        try {
-            var e = assertThrows(IllegalArgumentException.class, () -> runtime.evaluatorOf("model.gguf", options));
-            assertTrue(e.getMessage().startsWith("Pooling type NONE is not supported"), e.getMessage());
-        } finally {
-            runtime.deconstruct();
-        }
     }
 
     private static Path writeConfig(Path repository, String modelName, String config) throws IOException {

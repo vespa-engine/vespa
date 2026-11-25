@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author glebashnik
  */
-public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
+public class RestartOnDeployForTritonRuntimeValidatorTest {
 
     // An ONNX embedder, so that the cluster uses Triton when the flag is on.
     private static final String EMBEDDER = """
@@ -246,7 +246,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
         return ValidationTester.validateChanges(
-                new RestartOnDeployForTritonOnnxRuntimeValidator(),
+                new RestartOnDeployForTritonRuntimeValidator(),
                 next,
                 deployStateBuilder(false, false, false)
                         .properties(new TestProperties().setHostedVespa(true))

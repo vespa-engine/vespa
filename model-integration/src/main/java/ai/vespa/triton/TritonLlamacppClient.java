@@ -52,13 +52,11 @@ class TritonLlamacppClient implements AutoCloseable {
     }
 
     /**
-     * Returns the model's embedding of the text, without normalization, so that the caller decides.
-     * llama-server normalizes OpenAI embeddings unless embd_normalize is -1.
+     * Returns the model's embedding of the text.
+     * llama-server normalizes a pooled embedding to unit length by default, as LlamacppEvaluator.embed specifies.
      */
     float[] embed(String modelName, String text, Optional<Instant> deadline) {
-        var response = post("/v1/embeddings",
-                             Map.of("model", modelName, "input", new String[] { text }, "embd_normalize", -1),
-                             deadline);
+        var response = post("/v1/embeddings", Map.of("model", modelName, "input", new String[] { text }), deadline);
         var embedding = response.path("data").path(0).path("embedding");
         if ( ! embedding.isArray())
             throw new TritonException("No embedding in the response of model " + modelName + ": " + response);

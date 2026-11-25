@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * ONNX Runtime implementation that uses Triton Inference Server for inference.
  * It is responsible for managing model repository and owns reference-counted models loaded in Triton.
  * There should be only one instance of TritonOnnxRuntime component, enforced by
- * RestartOnDeployForTritonOnnxRuntimeValidator.
+ * RestartOnDeployForTritonRuntimeValidator.
  *
  * @author bjorncs
  * @author glebashnik

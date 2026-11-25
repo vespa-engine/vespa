@@ -56,7 +56,7 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
      * so this asks Triton after any failure other than invalid input and timeouts.
      * A model that Triton has, but whose llama-server is restarting, is not reloaded:
      * the backend restarts llama-server itself.
-     * As in TritonOnnxEvaluator, the retry keeps the request's deadline, so a retry after a slow reload times out.
+     * The retry keeps the request's deadline, so a retry after a slow reload times out.
      */
     private <T> T withReload(Supplier<T> request) {
         try {

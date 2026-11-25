@@ -48,7 +48,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     @Inject
     public TritonOnnxClient(TritonConfig config) {
-        this.grpcInferenceStub = TritonGrpc.newStub(config);
+        this.grpcInferenceStub = TritonGrpcStubs.newStub(config);
         this.defaultTimeout = Duration.ofMillis(config.timeout());
     }
 
@@ -76,7 +76,7 @@ public class TritonOnnxClient implements AutoCloseable {
     public ModelMetadata getModelMetadata(String modelName) {
         var request =
                 GrpcService.ModelMetadataRequest.newBuilder().setName(modelName).build();
-        var response = TritonGrpc.invoke(grpcInferenceStub.withDeadlineAfter(defaultTimeout),
+        var response = TritonGrpcStubs.invoke(grpcInferenceStub.withDeadlineAfter(defaultTimeout),
                 s -> s.modelMetadata(request), "Failed to get model metadata");
         var inputs = toTensorTypes(response.getInputsList());
         var outputs = toTensorTypes(response.getOutputsList());
@@ -147,7 +147,7 @@ public class TritonOnnxClient implements AutoCloseable {
                         .build()));
 
         var stub = grpcInferenceStub.withDeadlineAfter(timeout.toMillis(), MILLISECONDS);
-        var response = TritonGrpc.invoke(stub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
+        var response = TritonGrpcStubs.invoke(stub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
 
         Map<String, Tensor> outputs = new HashMap<>();
         for (int i = 0; i < response.getOutputsCount(); i++) {
@@ -165,7 +165,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     @Override
     public void close() {
-        TritonGrpc.close(grpcInferenceStub);
+        TritonGrpcStubs.close(grpcInferenceStub);
     }
 
     private static void addInputToBuilder(

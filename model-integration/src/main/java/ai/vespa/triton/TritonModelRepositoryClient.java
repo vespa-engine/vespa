@@ -43,13 +43,13 @@ public class TritonModelRepositoryClient implements AutoCloseable {
     private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcStub;
 
     public TritonModelRepositoryClient(TritonConfig config) {
-        this.grpcStub = TritonGrpc.newStub(config);
+        this.grpcStub = TritonGrpcStubs.newStub(config);
     }
 
     public boolean isModelReady(String modelName) {
         var request =
                 GrpcService.ModelReadyRequest.newBuilder().setName(modelName).build();
-        var response = TritonGrpc.invoke(
+        var response = TritonGrpcStubs.invoke(
                 statusStub(), invocation -> invocation.modelReady(request), "Failed to check model ready");
         return response.getReady();
     }
@@ -87,7 +87,7 @@ public class TritonModelRepositoryClient implements AutoCloseable {
 
     private List<GrpcService.RepositoryIndexResponse.ModelIndex> getRepositoryIndex() {
         var request = GrpcService.RepositoryIndexRequest.newBuilder().build();
-        var response = TritonGrpc.invoke(statusStub(), s -> s.repositoryIndex(request), "Failed to get repository index");
+        var response = TritonGrpcStubs.invoke(statusStub(), s -> s.repositoryIndex(request), "Failed to get repository index");
         return response.getModelsList();
     }
 
@@ -96,7 +96,7 @@ public class TritonModelRepositoryClient implements AutoCloseable {
         var request = GrpcService.RepositoryModelLoadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        TritonGrpc.invoke(grpcStub.withDeadlineAfter(LOAD_TIMEOUT),
+        TritonGrpcStubs.invoke(grpcStub.withDeadlineAfter(LOAD_TIMEOUT),
                 s -> s.repositoryModelLoad(request), "Failed to load model");
     }
 
@@ -105,7 +105,7 @@ public class TritonModelRepositoryClient implements AutoCloseable {
         var request = GrpcService.RepositoryModelUnloadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        TritonGrpc.invoke(grpcStub.withDeadlineAfter(UNLOAD_TIMEOUT),
+        TritonGrpcStubs.invoke(grpcStub.withDeadlineAfter(UNLOAD_TIMEOUT),
                 s -> s.repositoryModelUnload(request), "Failed to unload model");
     }
 
@@ -233,7 +233,7 @@ public class TritonModelRepositoryClient implements AutoCloseable {
 
     @Override
     public void close() {
-        TritonGrpc.close(grpcStub);
+        TritonGrpcStubs.close(grpcStub);
     }
 
 }
