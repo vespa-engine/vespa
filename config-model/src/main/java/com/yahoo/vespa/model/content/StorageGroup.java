@@ -250,13 +250,13 @@ public class StorageGroup {
             this.clusterSpec = clusterSpec;
         }
 
-        /** Returns the clusters to allocate hosts to for this content cluster: exactly one if hosted, otherwise none. */
-        public List<ClusterSpec> collectAllocationRequests() {
-            return clusterSpec.stream().toList();
+        /** Returns the cluster to allocate hosts to for this content cluster: one if hosted, otherwise none. */
+        public Optional<ClusterSpec> collectAllocationRequest() {
+            return clusterSpec;
         }
 
         /**
-         * Allocates hosts to the cluster returned by {@link #collectAllocationRequests}, if any, builds the subgroups
+         * Allocates hosts to the cluster returned by {@link #collectAllocationRequest}, if any, builds the subgroups
          * and nodes of the root group, and sets the redundancy of the owner. This can only be called once.
          */
         public StorageGroup build(ContentCluster owner, Boolean isStreaming) {

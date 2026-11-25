@@ -45,7 +45,36 @@ public class EarlyProvisioningTest {
                           """;
 
         // TODO: Remove the cluster IDs below as collectAllocationRequests() is implemented for their builders
-        assertEarlyProvisioning(services, 10, "cluster-controllers", "foo");
+        assertEarlyProvisioning(services, 10, "foo");
+    }
+
+    @Test
+    void clusterControllersAreCollectedOnceWithSeveralContentClusters() {
+        String services = """
+                          <?xml version='1.0' encoding='utf-8' ?>
+                          <services>
+                            <container version='1.0' id='foo'>
+                              <nodes count='2'/>
+                            </container>
+                            <content version='1.0' id='bar'>
+                              <redundancy>2</redundancy>
+                              <documents>
+                                <document type='type1' mode='index'/>
+                              </documents>
+                              <nodes count='2'/>
+                            </content>
+                            <content version='1.0' id='baz'>
+                              <redundancy>2</redundancy>
+                              <documents>
+                                <document type='type1' mode='index'/>
+                              </documents>
+                              <nodes count='2'/>
+                            </content>
+                          </services>
+                          """;
+
+        // TODO: Remove the cluster IDs below as collectAllocationRequests() is implemented for their builders
+        assertEarlyProvisioning(services, 10, "foo");
     }
 
     @Test
