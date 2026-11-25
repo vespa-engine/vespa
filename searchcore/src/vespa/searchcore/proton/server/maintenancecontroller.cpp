@@ -37,7 +37,7 @@ public:
 
 MaintenanceController::MaintenanceController(FNET_Transport& transport, ISyncableThreadService& masterThread,
                                              MonitoredRefCount& refCount, const DocTypeName& docTypeName)
-    : _masterThread(masterThread),
+    : _main_thread_service(masterThread),
       _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
@@ -54,9 +54,9 @@ MaintenanceController::~MaintenanceController() {
 }
 
 void MaintenanceController::registerJob(IMaintenanceJob::UP job) {
-    // Called by master write thread
+    // Called by document db main executor thread
     Guard guard(_jobsLock);
-    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(_masterThread, std::move(job)));
+    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(_main_thread_service, std::move(job)));
 }
 
 void MaintenanceController::killJobs() {
@@ -64,10 +64,10 @@ void MaintenanceController::killJobs() {
         _state = State::PAUSED;
     }
     // Called by document db main executor thread
-    CHECK(_masterThread.isCurrentThread());
+    CHECK(_main_thread_service.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", as_zu(std::this_thread::get_id()));
     _periodicTaskHandles.clear();
-    // No need to take _jobsLock as modification of _jobs also happens in master write thread.
+    // No need to take _jobsLock as modification of _jobs also happens in document db main executor thread.
     for (auto& job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
     }
@@ -77,7 +77,8 @@ void MaintenanceController::killJobs() {
         tmpJobs.swap(_jobs);
     }
     // Hold jobs until existing tasks have been drained
-    _masterThread.execute(makeLambdaTask([this, jobs = std::move(tmpJobs)]() { performHoldJobs(std::move(jobs)); }));
+    _main_thread_service.execute(
+        makeLambdaTask([this, jobs = std::move(tmpJobs)]() { performHoldJobs(std::move(jobs)); }));
 }
 
 void MaintenanceController::updateMetrics(DocumentDBTaggedMetrics& metrics) {
@@ -88,23 +89,23 @@ void MaintenanceController::updateMetrics(DocumentDBTaggedMetrics& metrics) {
 }
 
 void MaintenanceController::performHoldJobs(JobList jobs) {
-    // Called by master write thread
+    // Called by document db main executor thread
     LOG(debug, "performHoldJobs(): threadId=%zu", as_zu(std::this_thread::get_id()));
     (void)jobs;
 }
 
 void MaintenanceController::stop() {
-    CHECK(!_masterThread.isCurrentThread());
-    _masterThread.execute(makeLambdaTask([this]() {
+    CHECK(!_main_thread_service.isCurrentThread());
+    _main_thread_service.execute(makeLambdaTask([this]() {
         _state = State::STOPPING;
         killJobs();
     }));
-    _masterThread.sync(); // Wait for killJobs()
-    _masterThread.sync(); // Wait for already scheduled maintenance jobs and performHoldJobs
+    _main_thread_service.sync(); // Wait for killJobs()
+    _main_thread_service.sync(); // Wait for already scheduled maintenance jobs and performHoldJobs
 }
 
-searchcorespi::index::IThreadService& MaintenanceController::masterThread() {
-    return _masterThread;
+[[nodiscard]] searchcorespi::index::IThreadService& MaintenanceController::main_thread_service() noexcept {
+    return _main_thread_service;
 }
 
 void MaintenanceController::kill() {
@@ -115,14 +116,14 @@ void MaintenanceController::kill() {
 }
 
 void MaintenanceController::start() {
-    // Called by master write thread
+    // Called by document db main executor thread
     CHECK(_state == State::INITIALIZING);
     _state = State::STARTED;
     restart();
 }
 
 void MaintenanceController::restart() {
-    // Called by master write thread
+    // Called by document db main executor thread
     if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
@@ -131,7 +132,7 @@ void MaintenanceController::restart() {
 
 void MaintenanceController::addJobsToPeriodicTimer() {
     _periodicTaskHandles.clear();
-    // No need to take _jobsLock as modification of _jobs also happens in master write thread.
+    // No need to take _jobsLock as modification of _jobs also happens in document db main executor thread.
     for (const auto& jw : _jobs) {
         const IMaintenanceJob& job = jw->getJob();
         LOG(debug, "addJobsToPeriodicTimer(): docType='%s', job.name='%s', job.delay=%f, job.interval=%f",
@@ -147,7 +148,7 @@ void MaintenanceController::addJobsToPeriodicTimer() {
 }
 
 void MaintenanceController::newConfig() {
-    // Called by master write thread
+    // Called by document db main executor thread
     restart();
 }
 
@@ -165,7 +166,7 @@ void assert_equal_meta_store_instances(const MaintenanceDocumentSubDB& old_db,
 void MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB& readySubDB,
                                        const MaintenanceDocumentSubDB& remSubDB,
                                        const MaintenanceDocumentSubDB& notReadySubDB) {
-    // Called by master write thread
+    // Called by document db main executor thread
     bool oldValid = _readySubDB.valid();
     CHECK(readySubDB.valid());
     CHECK(remSubDB.valid());

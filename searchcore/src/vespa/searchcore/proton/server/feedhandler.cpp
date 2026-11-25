@@ -136,8 +136,8 @@ DaisyChainedFeedToken::~DaisyChainedFeedToken() = default;
 } // namespace
 
 void FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op) {
-    CHECK(_writeService.master().isCurrentThread());
-    // Since _feedState is only modified in the master thread we can skip the lock here.
+    CHECK(_writeService.main().isCurrentThread());
+    // Since _feedState is only modified in the document db main executor thread we can skip the lock here.
     _feedState->handleOperation(std::move(token), std::move(op));
 }
 
@@ -275,7 +275,7 @@ void FeedHandler::performJoin(FeedToken token, JoinBucketsOperation& op) {
 }
 
 void FeedHandler::performEof() {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     _activeFeedView->forceCommitAndWait(CommitParam(load_relaxed(_serialNum), CommitParam::UpdateStats::SKIP));
     LOG(debug, "Visiting done for transaction log domain '%s', eof received", _tlsMgr.getDomainName().c_str());
     // Replay must be complete
@@ -291,7 +291,7 @@ void FeedHandler::performEof() {
 }
 
 void FeedHandler::performFlushDone(SerialNum flushedSerial) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     // XXX: flushedSerial can go backwards when attribute vectors are
     // resurrected.  This can be avoided if resurrected attribute vectors
     // pretends to have been flushed at resurrect time.
@@ -331,12 +331,12 @@ std::shared_ptr<FeedState> FeedHandler::getFeedState() const {
 }
 
 void FeedHandler::changeFeedState(FeedStateSP newState) {
-    if (_writeService.master().isCurrentThread()) {
+    if (_writeService.main().isCurrentThread()) {
         doChangeFeedState(std::move(newState));
     } else {
-        _writeService.master().execute(
+        _writeService.main().execute(
             makeLambdaTask([this, newState = std::move(newState)]() { doChangeFeedState(std::move(newState)); }));
-        _writeService.master().sync();
+        _writeService.main().sync();
     }
 }
 
@@ -431,8 +431,8 @@ void FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNu
 
 void FeedHandler::flushDone(SerialNum flushedSerial) {
     // Called by flush scheduler thread after flush worker thread has completed a flush task
-    _writeService.master().execute(makeLambdaTask([this, flushedSerial]() { performFlushDone(flushedSerial); }));
-    _writeService.master().sync();
+    _writeService.main().execute(makeLambdaTask([this, flushedSerial]() { performFlushDone(flushedSerial); }));
+    _writeService.main().sync();
 }
 
 void FeedHandler::changeToNormalFeedState() {
@@ -465,14 +465,14 @@ void FeedHandler::onCommitDone(size_t numOperations, vespalib::steady_time start
 }
 
 void FeedHandler::enqueCommitTask() {
-    _writeService.master().execute(
+    _writeService.main().execute(
         makeLambdaTask([this, start_time(vespalib::steady_clock::now())]() { initiateCommit(start_time); }));
 }
 
 void FeedHandler::initiateCommit(vespalib::steady_time start_time) {
     auto onCommitDoneContext = std::make_shared<OnCommitDone>(
-        _writeService.master(), makeLambdaTask([this, operations = _numOperations.operationsSinceLastCommitStart(),
-                                                start_time]() { onCommitDone(operations, start_time); }));
+        _writeService.main(), makeLambdaTask([this, operations = _numOperations.operationsSinceLastCommitStart(),
+                                              start_time]() { onCommitDone(operations, start_time); }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
     _numOperations.startCommit();
     if (_activeFeedView) {
@@ -598,7 +598,7 @@ void FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op) {
 
 IDocumentMoveHandler::MoveResult FeedHandler::handleMove(MoveOperation&                    op,
                                                          vespalib::IDestructorCallback::SP moveDoneCtx) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     if (!_activeFeedView->isMoveStillValid(op)) {
         return MoveResult::FAILURE;
     }
@@ -614,7 +614,7 @@ IDocumentMoveHandler::MoveResult FeedHandler::handleMove(MoveOperation&         
 }
 
 void FeedHandler::heartBeat() {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     _heart_beat_time.store(vespalib::steady_clock::now());
     _activeFeedView->heartBeat(load_relaxed(_serialNum), vespalib::IDestructorCallback::SP());
 }
@@ -623,14 +623,14 @@ FeedHandler::RPC::Result FeedHandler::receive(const Packet& packet) {
     // Called directly when replaying transaction log (by fnet thread).
     FeedStateSP state = getFeedState();
     auto        wrap = make_shared<PacketWrapper>(packet, _tlsReplayProgress.get());
-    state->receive(wrap, _writeService.master());
+    state->receive(wrap, _writeService.main());
     wrap->gate.await();
     return wrap->result;
 }
 
 void FeedHandler::eof() {
     // Only called by visit, subscription gets one or more inSync() callbacks.
-    _writeService.master().execute(makeLambdaTask([this]() { performEof(); }));
+    _writeService.main().execute(makeLambdaTask([this]() { performEof(); }));
 }
 
 void FeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation& pruneOp) {

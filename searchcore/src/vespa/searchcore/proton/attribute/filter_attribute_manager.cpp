@@ -157,28 +157,24 @@ const std::vector<search::AttributeVector*>& FilterAttributeManager::getWritable
 }
 
 void FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const {
-    // Run by document db master thread
+    // Run by document db main executor
     std::vector<AttributeGuard> completeList;
     _mgr->getAttributeList(completeList);
     vespalib::ISequencedTaskExecutor& attributeFieldWriter = getAttributeFieldWriter();
     for (auto& guard : completeList) {
         search::AttributeVector::SP attrsp = guard.getSP();
-        // Name must be extracted in document db master thread or attribute
-        // writer thread
         attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                      [attrsp, func]() { (*func)(*attrsp); });
     }
 }
 
 void FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const {
-    // Run by document db master thread
+    // Run by document db main executor
     std::vector<AttributeGuard> completeList;
     _mgr->getAttributeList(completeList);
     vespalib::ISequencedTaskExecutor& attributeFieldWriter = getAttributeFieldWriter();
     for (auto& guard : completeList) {
         search::AttributeVector::SP attrsp = guard.getSP();
-        // Name must be extracted in document db master thread or attribute
-        // writer thread
         attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                      [attrsp, func, onDone]() {
                                          (void)onDone;

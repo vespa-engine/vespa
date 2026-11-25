@@ -30,7 +30,7 @@ void injectLidSpaceCompactionJobs(
     for (auto& lidHandler : lscHandlers) {
         auto job = lidspace::CompactionJob::create(
             config.getLidSpaceCompactionConfig(), controller.retainDB(), std::move(lidHandler), opStorer,
-            controller.masterThread(), bucketExecutor, resource_usage_notifier, config.getBlockableJobConfig(),
+            controller.main_thread_service(), bucketExecutor, resource_usage_notifier, config.getBlockableJobConfig(),
             clusterStateChangedNotifier, calc && calc->node_retired_or_maintenance(), bucketSpace,
             maintenance_job_token_source);
         controller.registerJob(trackJob(tracker, std::move(job)));
@@ -47,7 +47,7 @@ void injectBucketMoveJob(MaintenanceController& controller, const DocumentDBMain
                          std::shared_ptr<IBucketStateCalculator> calc, DocumentDBJobTrackers& jobTrackers,
                          IResourceUsageNotifier& resource_usage_notifier) {
     auto bmj = BucketMoveJob::create(std::move(calc), controller.retainDB(), moveHandler, bucketModifiedHandler,
-                                     controller.masterThread(), bucketExecutor, controller.getReadySubDB(),
+                                     controller.main_thread_service(), bucketExecutor, controller.getReadySubDB(),
                                      controller.getNotReadySubDB(), bucketCreateNotifier, clusterStateChangedNotifier,
                                      bucketStateChangedNotifier, resource_usage_notifier,
                                      config.getBlockableJobConfig(), docTypeName, bucketSpace);
@@ -74,8 +74,8 @@ void MaintenanceJobsInjector::injectJobs(
         if (visibility_delay < 100ms) {
             visibility_delay = 100ms;
         }
-        controller.registerJob(std::make_unique<ClearImportedAttributeSearchCacheJob>(readyAttributeManager,
-                                                                                      visibility_delay));
+        controller.registerJob(
+            std::make_unique<ClearImportedAttributeSearchCacheJob>(readyAttributeManager, visibility_delay));
     }
 
     const auto&                     docTypeName = controller.getDocTypeName().getName();
@@ -85,7 +85,7 @@ void MaintenanceJobsInjector::injectJobs(
         jobTrackers.getRemovedDocumentsPrune(),
         PruneRemovedDocumentsJob::create(config.getPruneRemovedDocumentsConfig(), controller.retainDB(),
                                          *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(), bucketSpace, docTypeName,
-                                         prdHandler, controller.masterThread(), bucketExecutor)));
+                                         prdHandler, controller.main_thread_service(), bucketExecutor)));
 
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         ILidSpaceCompactionHandler::Vector lidSpaceCompactionHandlers;

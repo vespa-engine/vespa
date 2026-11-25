@@ -37,7 +37,7 @@ private:
 
     const IDocumentMetaStore&      _metaStore; // external ownership
     IPruneRemovedDocumentsHandler& _handler;
-    IThreadService&                _master;
+    IThreadService&                _main_thread_service;
     BucketExecutor&                _bucketExecutor;
     const std::string              _docTypeName;
     vespalib::RetainGuard          _dbRetainer;
@@ -52,17 +52,18 @@ private:
     PruneRemovedDocumentsJob(const DocumentDBPruneConfig& config, vespalib::RetainGuard dbRetainer,
                              const IDocumentMetaStore& metaStore, uint32_t subDbId, document::BucketSpace bucketSpace,
                              const std::string& docTypeName, IPruneRemovedDocumentsHandler& handler,
-                             IThreadService& master, BucketExecutor& bucketExecutor);
+                             IThreadService& main_thread_service, BucketExecutor& bucketExecutor);
     bool run() override;
 
 public:
     static std::shared_ptr<PruneRemovedDocumentsJob>
     create(const Config& config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore& metaStore,
            uint32_t subDbId, document::BucketSpace bucketSpace, const std::string& docTypeName,
-           IPruneRemovedDocumentsHandler& handler, IThreadService& master, BucketExecutor& bucketExecutor) {
+           IPruneRemovedDocumentsHandler& handler, IThreadService& main_thread_service,
+           BucketExecutor& bucketExecutor) {
         return std::shared_ptr<PruneRemovedDocumentsJob>(
             new PruneRemovedDocumentsJob(config, std::move(dbRetainer), metaStore, subDbId, bucketSpace, docTypeName,
-                                         handler, master, bucketExecutor));
+                                         handler, main_thread_service, bucketExecutor));
     }
 };
 

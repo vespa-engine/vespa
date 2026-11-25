@@ -38,10 +38,10 @@ class IBucketCreateNotifier;
  * not ready sub databases based on the readiness of buckets according to the cluster state.
  * It will first compute the set of buckets to be moved. Then N of these buckets will be iterated in parallel and
  * the documents scheduled for move. The movment will happen in 3 phases.
- * 1 - Collect meta info for documents. Must happend in master thread
+ * 1 - Collect meta info for documents. Must happend in document db main executor thread
  * 2 - Acquire bucket lock and fetch documents and very against metadata. This is done in BucketExecutor threads.
- * 3 - Actual movement is then done in master thread while still holding bucket lock. Once bucket has fully moved
- *     bucket modified notification is sent.
+ * 3 - Actual movement is then done in document db main executor thread while still holding bucket lock. Once bucket
+ *     has fully moved bucket modified notification is sent.
  */
 class BucketMoveJob final : public BlockableMaintenanceJob,
                             public IClusterStateChangedHandler,
@@ -67,7 +67,7 @@ private:
     vespalib::RetainGuard                   _dbRetainer;
     IDocumentMoveHandler&                   _moveHandler;
     IBucketModifiedHandler&                 _modifiedHandler;
-    IThreadService&                         _master;
+    IThreadService&                         _main_thread_service;
     BucketExecutor&                         _bucketExecutor;
     const MaintenanceDocumentSubDB          _ready;
     const MaintenanceDocumentSubDB          _notReady;
@@ -96,9 +96,10 @@ private:
         bool hasNotReadyBucketDocs() const noexcept { return _state.getNotReadyCount() != 0; }
     };
     BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc, vespalib::RetainGuard dbRetainer,
-                  IDocumentMoveHandler& moveHandler, IBucketModifiedHandler& modifiedHandler, IThreadService& master,
-                  BucketExecutor& bucketExecutor, const MaintenanceDocumentSubDB& ready,
-                  const MaintenanceDocumentSubDB& notReady, bucketdb::IBucketCreateNotifier& bucketCreateNotifier,
+                  IDocumentMoveHandler& moveHandler, IBucketModifiedHandler& modifiedHandler,
+                  IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
+                  const MaintenanceDocumentSubDB& ready, const MaintenanceDocumentSubDB& notReady,
+                  bucketdb::IBucketCreateNotifier&     bucketCreateNotifier,
                   IClusterStateChangedNotifier&        clusterStateChangedNotifier,
                   IBucketStateChangedNotifier&         bucketStateChangedNotifier,
                   IResourceUsageNotifier&              resource_usage_notifier,
@@ -127,8 +128,8 @@ private:
 public:
     static std::shared_ptr<BucketMoveJob>
     create(std::shared_ptr<IBucketStateCalculator> calc, vespalib::RetainGuard dbRetainer,
-           IDocumentMoveHandler& moveHandler, IBucketModifiedHandler& modifiedHandler, IThreadService& master,
-           BucketExecutor& bucketExecutor, const MaintenanceDocumentSubDB& ready,
+           IDocumentMoveHandler& moveHandler, IBucketModifiedHandler& modifiedHandler,
+           IThreadService& main_thread_service, BucketExecutor& bucketExecutor, const MaintenanceDocumentSubDB& ready,
            const MaintenanceDocumentSubDB& notReady, bucketdb::IBucketCreateNotifier& bucketCreateNotifier,
            IClusterStateChangedNotifier& clusterStateChangedNotifier,
            IBucketStateChangedNotifier& bucketStateChangedNotifier, IResourceUsageNotifier& resource_usage_notifier,

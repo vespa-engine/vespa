@@ -72,7 +72,7 @@ public:
     const MaintenanceDocumentSubDB& getReadySubDB() const { return _readySubDB; }
     const MaintenanceDocumentSubDB& getRemSubDB() const { return _remSubDB; }
     const MaintenanceDocumentSubDB& getNotReadySubDB() const { return _notReadySubDB; }
-    IThreadService& masterThread();
+    [[nodiscard]] IThreadService& main_thread_service() noexcept;
     const DocTypeName& getDocTypeName() const { return _docTypeName; }
     vespalib::RetainGuard retainDB() { return vespalib::RetainGuard(_refCount); }
 
@@ -81,7 +81,7 @@ private:
     using Guard = std::lock_guard<Mutex>;
     using TaskHandle = std::unique_ptr<vespalib::IDestructorCallback>;
 
-    ISyncableThreadService&             _masterThread;
+    ISyncableThreadService&             _main_thread_service;
     vespalib::MonitoredRefCount&        _refCount;
     MaintenanceDocumentSubDB            _readySubDB;
     MaintenanceDocumentSubDB            _remSubDB;

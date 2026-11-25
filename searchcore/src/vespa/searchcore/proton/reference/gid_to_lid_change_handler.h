@@ -21,7 +21,7 @@ namespace proton {
 /*
  * Class for registering listeners that get notification when
  * gid to lid mapping changes. Also handles notifications which have
- * to be executed by master thread service.
+ * to be executed by document db main thread service.
  */
 class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChangeHandler>,
                               public IGidToLidChangeHandler {
