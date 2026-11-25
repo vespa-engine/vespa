@@ -12,14 +12,15 @@ namespace search::attribute {
 /*
  * Typifier (see vespalib/util/typify.h) resolving an attribute basic type into a type:
  * the C++ value type for numeric basic types (int8_t, int16_t, int32_t, int64_t, float, double),
- * TypifyBasicType::String for strings and TypifyBasicType::Unsupported for anything else.
+ * TypifyBasicType::String for strings and TypifyBasicType::ComplexBasicType for anything else.
+ * Note that "bool" is considered Complex - it needs special handling when it's handled at all.
  *
- * Unsupported is a regular result rather than an error, so the typify_invoke target can
+ * ComplexBasicType is a regular result rather than an error, so the typify_invoke target can
  * decide how to handle it (typically with if constexpr).
  */
 struct TypifyBasicType {
     struct String {};
-    struct Unsupported {};
+    struct ComplexBasicType {};
     template <typename T> using Result = vespalib::TypifyResultType<T>;
     template <typename F> static decltype(auto) resolve(BasicType::Type value, F&& f) {
         switch (value) {
@@ -38,7 +39,7 @@ struct TypifyBasicType {
         case BasicType::STRING:
             return f(Result<String>());
         default:
-            return f(Result<Unsupported>());
+            return f(Result<ComplexBasicType>());
         }
     }
 };

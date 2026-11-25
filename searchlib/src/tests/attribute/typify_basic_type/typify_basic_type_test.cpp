@@ -17,7 +17,7 @@ using vespalib::TypifyValue;
 namespace {
 
 using String = TypifyBasicType::String;
-using Unsupported = TypifyBasicType::Unsupported;
+using ComplexBasicType = TypifyBasicType::ComplexBasicType;
 
 struct GetType {
     template <typename T> static std::type_index invoke() { return std::type_index(typeid(T)); }
@@ -46,12 +46,12 @@ TEST(TypifyBasicTypeTest, string_type_resolves_to_string_tag) {
     EXPECT_EQ(type_of<String>(), resolved_type(BasicType::STRING));
 }
 
-TEST(TypifyBasicTypeTest, other_types_resolve_to_unsupported_tag) {
+TEST(TypifyBasicTypeTest, other_types_resolve_to_complex_basic_type_tag) {
     for (auto type : {BasicType::NONE, BasicType::BOOL, BasicType::PREDICATE, BasicType::TENSOR, BasicType::REFERENCE,
                       BasicType::RAW, BasicType::MAX_TYPE})
     {
         SCOPED_TRACE(static_cast<int>(type)); // asString() is out of bounds for MAX_TYPE
-        EXPECT_EQ(type_of<Unsupported>(), resolved_type(type));
+        EXPECT_EQ(type_of<ComplexBasicType>(), resolved_type(type));
     }
 }
 

@@ -29,7 +29,7 @@ struct CreateSingleStd {
     template <typename T> static AttributeVector::SP invoke(const std::string& name, const attribute::Config& info) {
         if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
             return std::make_shared<SingleValueStringAttribute>(name, info);
-        } else if constexpr (std::is_same_v<T, TypifyBasicType::Unsupported>) {
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::ComplexBasicType>) {
             return {};
         } else {
             return std::make_shared<SingleValueNumericAttribute<NumericAttributeTemplate<T>>>(name, info);

@@ -25,7 +25,7 @@ struct CreateArrayFastSearch {
     template <typename T> static AttributeVector::SP invoke(const std::string& name, const attribute::Config& info) {
         if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
             return std::make_shared<ArrayStringPostingAttribute>(name, info);
-        } else if constexpr (std::is_same_v<T, TypifyBasicType::Unsupported>) {
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::ComplexBasicType>) {
             return {};
         } else if constexpr (std::is_same_v<T, int8_t>) {
             // Fast search int8 arrays use FlagAttribute, which keeps one bit vector per

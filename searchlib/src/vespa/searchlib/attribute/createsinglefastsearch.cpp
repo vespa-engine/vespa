@@ -24,7 +24,7 @@ struct CreateSingleFastSearch {
     template <typename T> static AttributeVector::SP invoke(const std::string& name, const attribute::Config& info) {
         if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
             return std::make_shared<SingleValueStringPostingAttribute>(name, info);
-        } else if constexpr (std::is_same_v<T, TypifyBasicType::Unsupported>) {
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::ComplexBasicType>) {
             return {};
         } else {
             using A = SingleValueNumericPostingAttribute<EnumAttribute<NumericAttributeTemplate<T>>>;
