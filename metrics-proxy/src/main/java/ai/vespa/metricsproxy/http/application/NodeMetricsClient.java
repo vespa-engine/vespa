@@ -11,10 +11,13 @@ import org.apache.hc.client5.http.async.methods.SimpleRequestProducer;
 
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.concurrent.FutureCallback;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.Message;
 import org.apache.hc.core5.http.nio.support.BasicResponseConsumer;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 import java.time.Duration;
@@ -27,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static java.util.logging.Level.FINE;
@@ -75,15 +79,19 @@ public class NodeMetricsClient {
         log.log(FINE, () -> "Retrieving metrics from host " + metricsUri);
 
         CompletableFuture<?> onDone = new CompletableFuture<>();
-        httpClient.execute(SimpleRequestProducer.create(SimpleRequestBuilder.get(metricsUri).build()),
+        var request = SimpleRequestBuilder.get(metricsUri).build();
+        // The client does not decompress (see ApplicationMetricsRetriever.createHttpClient), so the body is
+        // held compressed until all of it has arrived, and inflated while it is parsed
+        request.setHeader(HttpHeaders.ACCEPT_ENCODING, "gzip");
+        httpClient.execute(SimpleRequestProducer.create(request),
                 new BasicResponseConsumer<>(new ChunkedBodyConsumer()),
                 new FutureCallback<>() {
                     @Override public void completed(Message<HttpResponse, InputStream> result) {
                         InputStream body = result.getBody() != null ? result.getBody() : InputStream.nullInputStream();
                         try {
-                            handleResponse(node, metricsUri, consumer, body);
+                            handleResponse(node, metricsUri, consumer, decoded(result.getHead(), body));
                             onDone.complete(null);
-                        } catch (RuntimeException e) { // Fail the fetch now, rather than leaving it to time out
+                        } catch (RuntimeException | IOException e) { // Fail the fetch now, rather than leaving it to time out
                             onDone.completeExceptionally(e);
                         }
                     }
@@ -91,6 +99,13 @@ public class NodeMetricsClient {
                     @Override public void cancelled() { onDone.cancel(false);  }
         });
         return onDone;
+    }
+
+    private static InputStream decoded(HttpResponse response, InputStream body) throws IOException {
+        Header encoding = response.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
+        if (encoding == null) return body;
+        if (encoding.getValue().equalsIgnoreCase("gzip")) return new GZIPInputStream(body, 1 << 16);
+        throw new IllegalStateException("Unexpected Content-Encoding '" + encoding.getValue() + "'");
     }
 
     void handleResponse(Node node, String metricsUri, ConsumerId consumer, InputStream response) {

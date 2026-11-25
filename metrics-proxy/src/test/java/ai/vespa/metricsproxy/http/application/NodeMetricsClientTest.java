@@ -13,10 +13,15 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.zip.GZIPOutputStream;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
@@ -29,6 +34,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Two optimizations worth noting:
@@ -47,6 +53,9 @@ public class NodeMetricsClientTest {
     private static final String CPU_METRIC = "cpu.util";
     private static final String REPLACED_CPU_METRIC = "replaced_cpu_util";
     private static final String CUSTOM_CONSUMER = "custom-consumer";
+    private static final String GZIP_CONSUMER = "gzip-consumer";
+    private static final String GZIPPED_CPU_METRIC = "gzipped_cpu_util";
+    private static final String BROTLI_CONSUMER = "brotli-consumer";
     private static final Duration TTL = Duration.ofSeconds(30);
 
 
@@ -74,6 +83,26 @@ public class NodeMetricsClientTest {
                                      .withQueryParam("consumer", equalTo(CUSTOM_CONSUMER))
                                      .willReturn(aResponse().withBody(myConsumerResponse)));
 
+        // A gzipped response, with content that tells it apart from the others.
+        wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
+                                     .withQueryParam("consumer", equalTo(GZIP_CONSUMER))
+                                     .withHeader("Accept-Encoding", equalTo("gzip"))
+                                     .willReturn(aResponse().withHeader("Content-Encoding", "gzip")
+                                                            .withBody(gzip(RESPONSE.replaceAll(CPU_METRIC, GZIPPED_CPU_METRIC)))));
+
+        wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
+                                     .withQueryParam("consumer", equalTo(BROTLI_CONSUMER))
+                                     .willReturn(aResponse().withHeader("Content-Encoding", "br").withBody(RESPONSE)));
+    }
+
+    private static byte[] gzip(String content) {
+        var bytes = new ByteArrayOutputStream();
+        try (var out = new GZIPOutputStream(bytes)) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return bytes.toByteArray();
     }
 
     @Before
@@ -132,6 +161,28 @@ public class NodeMetricsClientTest {
 
         MetricsPacket replacedCpuMetric = customMetrics.get(0);
         assertTrue(replacedCpuMetric.hasMetric(toMetricId(REPLACED_CPU_METRIC)));
+    }
+
+    @Test
+    public void gzipped_metrics_are_inflated() {
+        updateSnapshot(toConsumerId(GZIP_CONSUMER), TTL);
+        List<MetricsPacket> metrics = nodeMetricsClient.getMetrics(toConsumerId(GZIP_CONSUMER));
+        assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
+        assertEquals(4, metrics.size());
+        assertTrue(metrics.get(0).hasMetric(toMetricId(GZIPPED_CPU_METRIC)));
+    }
+
+    @Test
+    public void unsupported_content_encoding_fails_the_update() throws InterruptedException {
+        var future = nodeMetricsClient.startSnapshotUpdate(toConsumerId(BROTLI_CONSUMER), TTL).orElseThrow();
+        try {
+            future.get();
+            fail("Expected the update to fail");
+        } catch (ExecutionException e) {
+            assertEquals("Unexpected Content-Encoding 'br'", e.getCause().getMessage());
+        }
+        assertEquals(0, nodeMetricsClient.snapshotsRetrieved());
+        assertEquals(0, nodeMetricsClient.getMetrics(toConsumerId(BROTLI_CONSUMER)).size());
     }
 
     private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
