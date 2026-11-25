@@ -194,8 +194,9 @@ public:
      *  - query.size() == dimensions()
      *  - quant_vec.size() == quantized_size()
      */
-    [[nodiscard]] float pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
-                                                                     std::span<const uint8_t> quant_vec) noexcept;
+    [[nodiscard]] float
+    pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
+                                                 std::span<const uint8_t> quant_vec) const noexcept;
 
     /*
      * Computes the squared Euclidean distance between two quantized vectors that were both
@@ -208,7 +209,7 @@ public:
      *  - rhs.size() == quantized_size()
      */
     [[nodiscard]] float quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
-                                                                     std::span<const uint8_t> rhs) noexcept;
+                                                                     std::span<const uint8_t> rhs) const noexcept;
 };
 
 } // namespace vespalib::quant

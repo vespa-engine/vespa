@@ -176,9 +176,9 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
                                                    std::span<const uint8_t> quant_vec) const noexcept {
     CHECK(query.size() == _dimensions);
     CHECK(quant_vec.size() == _quantized_size);
-    const float    scale = extract_scale_factor(quant_vec.data());
-    const uint8_t* bit_buf = packed_bits_buf(quant_vec.data());
-    return scale * hwaccelerated::eden_f32_q_dot_product(query.data(), bit_buf, _bits, _dimensions);
+    const float    rhs_scale = extract_scale_factor(quant_vec.data());
+    const uint8_t* rhs_bit_buf = packed_bits_buf(quant_vec.data());
+    return rhs_scale * hwaccelerated::eden_f32_q_dot_product(query.data(), rhs_bit_buf, _bits, _dimensions);
 }
 
 float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
@@ -219,26 +219,25 @@ float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
 }
 
 float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
-                                                                  std::span<const uint8_t> quant_vec) noexcept {
+                                                                  std::span<const uint8_t> quant_vec) const noexcept {
     CHECK(query.size() == _dimensions);
-    const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
-    const auto codebook = my_codebook();
-    return sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {
-        const float d = query[idx] - (codebook[centroid_idx[idx]] * scale);
-        return d * d;
-    });
+    CHECK(quant_vec.size() == _quantized_size);
+    const float    rhs_scale = extract_scale_factor(quant_vec.data());
+    const uint8_t* rhs_bit_buf = packed_bits_buf(quant_vec.data());
+    return hwaccelerated::eden_f32_q_squared_euclidean_distance(query.data(), rhs_bit_buf, rhs_scale, _bits,
+                                                                _dimensions);
 }
 
 float EdenQuantizer::quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
-                                                                  std::span<const uint8_t> rhs) noexcept {
-    const auto [lhs_unp, rhs_unp] = binary_unpack_bits_to_scratch_space(lhs, rhs);
-    const auto codebook = my_codebook();
-    return sum_indexed_unrolled<8, float>(_dimensions, [&](const size_t i) noexcept {
-        const float a = codebook[lhs_unp.centroid_idx[i]] * lhs_unp.scale;
-        const float b = codebook[rhs_unp.centroid_idx[i]] * rhs_unp.scale;
-        const float d = a - b;
-        return d * d;
-    });
+                                                                  std::span<const uint8_t> rhs) const noexcept {
+    CHECK(lhs.size() == _quantized_size);
+    CHECK(rhs.size() == _quantized_size);
+    const float    lhs_scale = extract_scale_factor(lhs.data());
+    const uint8_t* lhs_bit_buf = packed_bits_buf(lhs.data());
+    const float    rhs_scale = extract_scale_factor(rhs.data());
+    const uint8_t* rhs_bit_buf = packed_bits_buf(rhs.data());
+    return hwaccelerated::eden_q_q_squared_euclidean_distance(lhs_bit_buf, rhs_bit_buf, lhs_scale, rhs_scale, _bits,
+                                                              _dimensions);
 }
 
 } // namespace vespalib::quant
