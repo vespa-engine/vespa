@@ -93,6 +93,32 @@ public class ModelIdResolver {
         register(m, "lightonai-denseon-int8", "https://data.vespa-cloud.com/onnx_models/lightonai-denseon-int8/model.onnx", Set.of(ONNX_MODEL));
         register(m, "lightonai-denseon-int8-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-denseon-int8/tokenizer.json", Set.of(HF_TOKENIZER));
 
+        // LateOn's token ids are ModernBERT's [CLS], [SEP] and [MASK] and PyLate's "[Q] " and "[D] " prefixes.
+        // Its lengths are those of its config_sentence_transformers.json.
+        // attend-to-expansion-tokens is false, since that config sets do_query_expansion to false.
+        register(m, "lightonai-lateon", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon/model.onnx", Set.of(ONNX_MODEL), new ModelDefaults("colbert-embedder", parameters(
+                "transformer-output", "output",
+                "transformer-start-sequence-token", "50281",
+                "transformer-end-sequence-token", "50282",
+                "transformer-mask-token", "50284",
+                "query-token-id", "50368",
+                "document-token-id", "50369",
+                "max-query-tokens", "32",
+                "max-document-tokens", "300",
+                "attend-to-expansion-tokens", "false")));
+        register(m, "lightonai-lateon-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "lightonai-lateon-int8", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon-int8/model.onnx", Set.of(ONNX_MODEL), new ModelDefaults("colbert-embedder", parameters(
+                "transformer-output", "output",
+                "transformer-start-sequence-token", "50281",
+                "transformer-end-sequence-token", "50282",
+                "transformer-mask-token", "50284",
+                "query-token-id", "50368",
+                "document-token-id", "50369",
+                "max-query-tokens", "32",
+                "max-document-tokens", "300",
+                "attend-to-expansion-tokens", "false")));
+        register(m, "lightonai-lateon-int8-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon-int8/tokenizer.json", Set.of(HF_TOKENIZER));
+
         register(m, "alibaba-gte-modernbert", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/model.onnx", Set.of(ONNX_MODEL));
         register(m, "alibaba-gte-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/tokenizer.json", Set.of(HF_TOKENIZER));
         register(m, "alibaba-gte-modernbert-int8", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-int8/model.onnx", Set.of(ONNX_MODEL));

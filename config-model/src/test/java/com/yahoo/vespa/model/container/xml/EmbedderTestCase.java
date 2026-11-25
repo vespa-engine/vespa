@@ -383,10 +383,80 @@ public class EmbedderTestCase {
     }
 
     @Test
+    void colBertEmbedder_modelDefaults_hosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed-model-defaults/"), true);
+        var cluster = model.getContainerClusters().get("container");
+
+        var lateOn = colBertEmbedderConfig(cluster, "lateon");
+        assertEquals("https://data.vespa-cloud.com/onnx_models/lightonai-lateon/model.onnx",
+                     modelReference(lateOn, "transformerModel").url().orElseThrow().value());
+        assertEquals("https://data.vespa-cloud.com/onnx_models/lightonai-lateon/tokenizer.json",
+                     modelReference(lateOn, "tokenizerPath").url().orElseThrow().value());
+        assertEquals("output", lateOn.transformerOutput());
+        assertEquals(50281, lateOn.transformerStartSequenceToken());
+        assertEquals(50282, lateOn.transformerEndSequenceToken());
+        assertEquals(50284, lateOn.transformerMaskToken());
+        assertEquals(50368, lateOn.queryTokenId());
+        assertEquals(50369, lateOn.documentTokenId());
+        assertEquals(32, lateOn.maxQueryTokens());
+        assertEquals(300, lateOn.maxDocumentTokens());
+        assertEquals(false, lateOn.attendToExpansionTokens());
+
+        var overridden = colBertEmbedderConfig(cluster, "lateon-overridden");
+        assertEquals(512, overridden.maxDocumentTokens(), "A parameter that the component sets overrides the model default");
+        assertEquals(50368, overridden.queryTokenId());
+
+        var nested = colBertEmbedderConfig(nestedColBertEmbedder(cluster, "outer"));
+        assertEquals(50368, nested.queryTokenId(), "A component nested in another component gets the model defaults");
+        assertEquals("output", nested.transformerOutput());
+    }
+
+    @Test
+    void colBertEmbedder_modelDefaults_selfhosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed-model-defaults/"), false);
+        var cluster = model.getContainerClusters().get("container");
+
+        var lateOn = colBertEmbedderConfig(cluster, "lateon");
+        assertEquals("https://my/url/model.onnx", modelReference(lateOn, "transformerModel").url().orElseThrow().value());
+        assertEquals("contextual", lateOn.transformerOutput(), "Model defaults are added only where model ids resolve");
+        assertEquals(1, lateOn.queryTokenId());
+        assertEquals(512, lateOn.maxDocumentTokens());
+        assertEquals(true, lateOn.attendToExpansionTokens());
+    }
+
+    @Test
+    void modelDefaults_areAddedOnlyToTheirComponentType() throws IOException, SAXException {
+        var colBert = createElement("<component id='e' type='colbert-embedder'><transformer-model model-id='lightonai-lateon'/></component>");
+        ModelIdResolver.addModelDefaults(colBert, true);
+        assertEquals(10, XML.getChildren(colBert).size());
+
+        var huggingFace = createElement("<component id='e' type='hugging-face-embedder'><transformer-model model-id='lightonai-lateon'/></component>");
+        ModelIdResolver.addModelDefaults(huggingFace, true);
+        assertEquals(1, XML.getChildren(huggingFace).size());
+    }
+
+    @Test
     void modelDefaults_areNotAddedForAModelWithoutThem() throws IOException, SAXException {
         var withoutModelDefaults = createElement("<component id='e' type='colbert-embedder'><transformer-model model-id='e5-base-v2'/></component>");
         ModelIdResolver.addModelDefaults(withoutModelDefaults, true);
         assertEquals(1, XML.getChildren(withoutModelDefaults).size());
+    }
+
+    private static ColBertEmbedderConfig colBertEmbedderConfig(ApplicationContainerCluster cluster, String id) {
+        return colBertEmbedderConfig((ColBertEmbedder) cluster.getComponentsMap().get(new ComponentId(id)));
+    }
+
+    private static ColBertEmbedderConfig colBertEmbedderConfig(ColBertEmbedder embedder) {
+        var builder = new ColBertEmbedderConfig.Builder();
+        embedder.getConfig(builder);
+        return builder.build();
+    }
+
+    private static ColBertEmbedder nestedColBertEmbedder(ApplicationContainerCluster cluster, String outerId) {
+        return cluster.getComponentsMap().get(new ComponentId(outerId)).getChildren().values().stream()
+                .filter(ColBertEmbedder.class::isInstance)
+                .map(ColBertEmbedder.class::cast)
+                .findFirst().orElseThrow();
     }
 
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {
