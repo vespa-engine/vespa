@@ -1009,3 +1009,21 @@
    ...
    fun:_ZN13opentelemetry2v23sdk5trace25BatchSpanProcessorFactory6CreateEOSt10unique_ptrINS2_12SpanExporterESt14default_deleteIS5_EERKNS2_25BatchSpanProcessorOptionsE
 }
+{
+   grpc_static_init_reachable
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libgrpc*.so*
+   ...
+   fun:_dl_init
+}
+{
+   protobuf_static_init_reachable
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:_ZN6google8protobuf8internal14AddDescriptorsEPKNS1_15DescriptorTableE
+   ...
+   fun:_dl_init
+}
