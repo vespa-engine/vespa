@@ -68,12 +68,6 @@ template <> struct Mod<double> {
     double operator()(double oldVal) const { return oldVal; }
 };
 
-template <> struct Mod<float> {
-    using V = float;
-    explicit Mod(float) {}
-    float operator()(float oldVal) const { return oldVal; }
-};
-
 template <typename T> struct Set {
     using V = T;
     explicit Set(T m) : _m(m) {}
