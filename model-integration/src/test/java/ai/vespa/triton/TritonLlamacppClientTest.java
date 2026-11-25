@@ -112,7 +112,7 @@ class TritonLlamacppClientTest {
     void other_server_errors_are_triton_failures() {
         server.enqueue(json(500, "{\"error\":{\"code\":500,\"message\":\"Loading model\",\"type\":\"unavailable_error\"}}"));
 
-        assertThrows(TritonOnnxClient.TritonException.class, () -> client.embed("m", "text", Optional.empty()));
+        assertThrows(TritonException.class, () -> client.embed("m", "text", Optional.empty()));
     }
 
     @Test
@@ -120,7 +120,7 @@ class TritonLlamacppClientTest {
         // Triton's stock frontend handles requests for other models, and rejects a list of texts.
         server.enqueue(json(422, "{\"detail\":[{\"type\":\"string_type\",\"msg\":\"Input should be a valid string\"}]}"));
 
-        var e = assertThrows(TritonOnnxClient.TritonException.class, () -> client.embed("m", "text", Optional.empty()));
+        var e = assertThrows(TritonException.class, () -> client.embed("m", "text", Optional.empty()));
         assertTrue(e.getMessage().contains("422"), e.getMessage());
     }
 
@@ -129,7 +129,7 @@ class TritonLlamacppClientTest {
         // Triton's frontend answers with 400 for a model it does not have, e.g. after Triton restarted.
         server.enqueue(json(400, "{\"detail\":\"Unknown model: m\"}"));
 
-        var e = assertThrows(TritonOnnxClient.TritonException.class, () -> client.embed("m", "text", Optional.empty()));
+        var e = assertThrows(TritonException.class, () -> client.embed("m", "text", Optional.empty()));
         assertTrue(e.getMessage().contains("Unknown model"), e.getMessage());
     }
 

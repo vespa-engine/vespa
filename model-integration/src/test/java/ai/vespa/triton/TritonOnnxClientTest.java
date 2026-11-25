@@ -13,21 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
@@ -49,15 +40,15 @@ class TritonOnnxClientTest {
 
     @AfterEach
     void unload_model() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.unloadModel(MODEL_NAME);
+        try (var repositoryClient = createRepositoryClient()) {
+            repositoryClient.unloadModel(MODEL_NAME);
         }
     }
 
     @Test
     void loads_model_and_does_inference() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MODEL_NAME);
+        try (var tritonClient = createTritonClient(); var repositoryClient = createRepositoryClient()) {
+            repositoryClient.loadModel(MODEL_NAME);
 
             var inputIds = Tensor.from(
                     "tensor<float>(d0[1],d1[5]):{{d0:0,d1:0}:1.0, {d0:0,d1:1}:2.0, {d0:0,d1:2}:3.0, {d0:0,d1:3}:4.0,"
@@ -94,8 +85,8 @@ class TritonOnnxClientTest {
 
     @Test
     void evaluate_throws_timeout_exception_for_pre_expired_deadline() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MODEL_NAME);
+        try (var tritonClient = createTritonClient(); var repositoryClient = createRepositoryClient()) {
+            repositoryClient.loadModel(MODEL_NAME);
             var metadata = tritonClient.getModelMetadata(MODEL_NAME);
             var inputs = Map.of(
                     "input_ids",      Tensor.from("tensor<float>(d0[1],d1[1]):[1.0]"),
@@ -111,8 +102,8 @@ class TritonOnnxClientTest {
 
     @Test
     void evaluate_throws_timeout_exception_when_deadline_fires_during_rpc() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MODEL_NAME);
+        try (var tritonClient = createTritonClient(); var repositoryClient = createRepositoryClient()) {
+            repositoryClient.loadModel(MODEL_NAME);
             var metadata = tritonClient.getModelMetadata(MODEL_NAME);
             var inputs = Map.of(
                     "input_ids",      Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 2.0, 3.0, 4.0, 5.0]"),
@@ -133,236 +124,20 @@ class TritonOnnxClientTest {
     }
 
     @Test
-    void is_model_ready_model() {
-        try (var tritonClient = createTritonClient()) {
-            var isReadyBeforeLoad = tritonClient.isModelReady(MODEL_NAME);
-            assertFalse(isReadyBeforeLoad);
-
-            tritonClient.loadModel(MODEL_NAME);
-            var isReadyAfterLoad = tritonClient.isModelReady(MODEL_NAME);
-            assertTrue(isReadyAfterLoad);
-
-            tritonClient.unloadModel(MODEL_NAME);
-            var isReadyAfterUnload = tritonClient.isModelReady(MODEL_NAME);
-            assertFalse(isReadyAfterUnload);
-        }
-    }
-
-    @Test
-    void loadUntilModelReady_succeeds_when_load_succeeds_not_immediately() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            when(client.isModelReady(modelName)).thenReturn(false).thenReturn(true);
-            var exception = new TritonOnnxClient.TritonException("Load failed");
-            doThrow(exception).doThrow(exception).doNothing().when(client).loadModel(modelName);
-
-            client.loadUntilModelReady(modelName);
-
-            verify(client, times(2)).isModelReady(modelName);
-            verify(client, times(3)).loadModel(modelName);
-        }
-    }
-
-    @Test
-    void loadUntilModelReady_succeeds_when_not_ready_immediately() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            when(client.isModelReady(modelName))
-                    .thenReturn(false)
-                    .thenReturn(false)
-                    .thenReturn(true);
-            doNothing().when(client).loadModel(modelName);
-
-            client.loadUntilModelReady(modelName);
-
-            verify(client, times(3)).isModelReady(modelName);
-            verify(client, times(1)).loadModel(modelName);
-        }
-    }
-
-    // The messages are the ones Triton 26.09 returns.
-    @Test
-    void loadUntilModelReady_fails_without_retrying_when_triton_rejects_the_config() {
-        var rejections = List.of(
+    void batching_rejection_is_recognized() {
+        assertTrue(TritonOnnxClient.isBatchingRejection(new TritonException("Failed to load model", new RuntimeException(
                 "INVALID_ARGUMENT: load failed for model 'test-model': version 1 is at UNAVAILABLE state: Invalid argument: " +
-                "autofill failed for model 'test-model': model does not support batching while non-zero max_batch_size is specified;",
-                "INVALID_ARGUMENT: load failed for model 'test-model': version 1 is at UNAVAILABLE state: Invalid argument: " +
-                "unable to load model 'test-model', configuration expects datatype TYPE_FP16 for input 'x', model provides TYPE_FP32;");
-        for (var rejection : rejections) {
-            try (var tritonClient = createTritonClient()) {
-                var client = spy(tritonClient);
-                doThrow(new TritonOnnxClient.TritonException("Failed to load model", new RuntimeException(rejection)))
-                        .when(client).loadModel("test-model");
-
-                var thrown = assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady("test-model"));
-
-                assertTrue(TritonOnnxClient.isConfigRejection(thrown), rejection);
-                verify(client, times(1)).loadModel("test-model");
-            }
-        }
-        assertTrue(TritonOnnxClient.isBatchingRejection(new TritonOnnxClient.TritonException(
-                "Failed to load model", new RuntimeException(rejections.get(0)))));
-    }
-
-    // Triton reports a model file that is not completely copied yet as an internal error.
-    @Test
-    void loadUntilModelReady_retries_when_the_model_file_is_incomplete() {
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-            var incomplete = new TritonOnnxClient.TritonException("Failed to load model", new RuntimeException(
-                    "INVALID_ARGUMENT: load failed for model 'test-model': version 1 is at UNAVAILABLE state: Internal: " +
-                    "onnx runtime error 7: Load model from /models/test-model/1/model.onnx failed:Protobuf parsing failed.;"));
-            doThrow(incomplete).doNothing().when(client).loadModel("test-model");
-            doReturn(false, true).when(client).isModelReady("test-model");
-
-            client.loadUntilModelReady("test-model");
-
-            assertFalse(TritonOnnxClient.isConfigRejection(incomplete));
-            verify(client, times(2)).loadModel("test-model");
-        }
-    }
-
-    @Test
-    void loadUntilModelReady_fails_when_load_always_fails() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            // Will always throw because this model doesn't exist
-            assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady(modelName));
-
-            verify(client, times(1)).isModelReady(modelName);
-            verify(client, times(5)).loadModel(modelName);
-        }
-    }
-
-    @Test
-    void loadUntilModelReady_fails_when_never_ready() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            when(client.isModelReady(modelName)).thenReturn(false);
-            doNothing().when(client).loadModel(modelName);
-
-            assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady(modelName));
-
-            verify(client, times(6)).isModelReady(modelName);
-            verify(client, times(1)).loadModel(modelName);
-        }
-    }
-
-    @Test
-    void unloadUntilModelNotReady_succeeds_when_unload_succeeds_not_immediately() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            doReturn(
-                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
-                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
-                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
-                    TritonOnnxClient.ModelActivity.INACTIVE)
-                    .when(client).modelActivity(modelName);
-            var exception = new TritonOnnxClient.TritonException("Unload failed");
-            doThrow(exception).doThrow(exception).doNothing().when(client).unloadModel(modelName);
-
-            client.unloadUntilModelNotReady(modelName);
-
-            verify(client, times(4)).modelActivity(modelName);
-            verify(client, times(3)).unloadModel(modelName);
-        }
-    }
-
-    @Test
-    void unloadUntilModelNotReady_succeeds_when_not_ready_immediately() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            doReturn(
-                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
-                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
-                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
-                    TritonOnnxClient.ModelActivity.INACTIVE)
-                    .when(client).modelActivity(modelName);
-            doNothing().when(client).unloadModel(modelName);
-
-            client.unloadUntilModelNotReady(modelName);
-
-            verify(client, times(4)).modelActivity(modelName);
-            verify(client, times(1)).unloadModel(modelName);
-        }
-    }
-
-    @Test
-    void unloadUntilModelNotReady_waits_for_an_already_unloading_model() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            doReturn(
-                    TritonOnnxClient.ModelActivity.UNLOADING,
-                    TritonOnnxClient.ModelActivity.INACTIVE)
-                    .when(client).modelActivity(modelName);
-
-            client.unloadUntilModelNotReady(modelName);
-
-            verify(client, times(2)).modelActivity(modelName);
-            verify(client, times(0)).unloadModel(modelName);
-        }
-    }
-
-    @Test
-    void unloadUntilModelNotReady_fails_when_unload_always_fails() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            doReturn(TritonOnnxClient.ModelActivity.LOADED_OR_LOADING)
-                    .when(client).modelActivity(modelName);
-            var exception = new TritonOnnxClient.TritonException("Unload failed");
-            doThrow(exception).when(client).unloadModel(modelName);
-
-            assertThrows(TritonOnnxClient.TritonException.class, () -> client.unloadUntilModelNotReady(modelName));
-
-            verify(client, times(5)).modelActivity(modelName);
-            verify(client, times(5)).unloadModel(modelName);
-        }
-    }
-
-    @Test
-    void unloadUntilModelNotReady_fails_when_never_not_ready() {
-        var modelName = "test-model";
-
-        try (var tritonClient = createTritonClient()) {
-            var client = spy(tritonClient);
-
-            doReturn(TritonOnnxClient.ModelActivity.LOADED_OR_LOADING)
-                    .when(client).modelActivity(modelName);
-            doNothing().when(client).unloadModel(modelName);
-
-            assertThrows(TritonOnnxClient.TritonException.class, () -> client.unloadUntilModelNotReady(modelName));
-
-            verify(client, times(6)).modelActivity(modelName);
-            verify(client, times(1)).unloadModel(modelName);
-        }
+                "autofill failed for model 'test-model': model does not support batching while non-zero max_batch_size is specified;"))));
     }
 
     private static TritonOnnxClient createTritonClient() {
         return new TritonOnnxClient(new TritonConfig.Builder()
+                .target(tritonContainer.getGrpcEndpoint())
+                .build());
+    }
+
+    private static TritonModelRepositoryClient createRepositoryClient() {
+        return new TritonModelRepositoryClient(new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
                 .build());
     }

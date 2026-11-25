@@ -65,7 +65,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     // llama-server's micro-batch size when none is given, which the backend also assumes for its checks.
     private static final int LLAMA_SERVER_DEFAULT_UBATCH = 512;
 
-    private final TritonOnnxClient tritonClient;
+    private final TritonModelRepositoryClient repositoryClient;
     private final TritonLlamacppClient llamacppClient;
     private final boolean isModelControlExplicit;
     private final Path modelRepositoryPath;
@@ -77,12 +77,12 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
 
     @Inject
     public TritonLlamacppRuntime(TritonConfig config) {
-        this(config, new TritonOnnxClient(config), new TritonLlamacppClient(config));
+        this(config, new TritonModelRepositoryClient(config), new TritonLlamacppClient(config));
     }
 
     // Takes ownership of the clients: deconstruct() closes them.
-    TritonLlamacppRuntime(TritonConfig config, TritonOnnxClient tritonClient, TritonLlamacppClient llamacppClient) {
-        this.tritonClient = tritonClient;
+    TritonLlamacppRuntime(TritonConfig config, TritonModelRepositoryClient repositoryClient, TritonLlamacppClient llamacppClient) {
+        this.repositoryClient = repositoryClient;
         this.llamacppClient = llamacppClient;
         this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         this.modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
@@ -104,7 +104,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         var modelName = generateModelName(modelPath, options);
         warnIfStandaloneServerGetsAnotherModel(modelName, modelPath);
         var modelReference = referenceModel(modelName, modelPath, options);
-        return new TritonLlamacppEvaluator(modelName, modelReference, llamacppClient, tritonClient, isModelControlExplicit);
+        return new TritonLlamacppEvaluator(modelName, modelReference, llamacppClient, repositoryClient, isModelControlExplicit);
     }
 
     /**
@@ -153,14 +153,14 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         if ( ! isModelControlExplicit) return;
 
         try {
-            if (tritonClient.isModelReady(modelName)) return; // Adopt a model that Triton already has ready
-        } catch (TritonOnnxClient.TritonException | TimeoutException e) {
+            if (repositoryClient.isModelReady(modelName)) return; // Adopt a model that Triton already has ready
+        } catch (TritonException | TimeoutException e) {
             // Still attempt to copy and load the model below.
         }
 
         try {
             copyModelFilesToModelRepository(modelName, modelPath, createModelConfig(modelName, options));
-            tritonClient.loadUntilModelReady(modelName);
+            repositoryClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
             cleanUpModel(modelName); // Best effort
             throw e;
@@ -170,7 +170,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     // Best-effort unloading of a model from Triton and removing its files from the model repository.
     private void cleanUpModel(String modelName) {
         try {
-            tritonClient.unloadUntilModelNotReady(modelName);
+            repositoryClient.unloadUntilModelNotReady(modelName);
         } catch (RuntimeException e) {
             // Keep the files if unload fails: deleting them while the model may still be loaded would break it.
             log.log(Level.WARNING, e, () -> "Failed to unload model " + modelName + ", keeping its files");
@@ -182,7 +182,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     // Best-effort cleanup of the llama.cpp models left by a previous process. TritonOnnxRuntime cleans up the others.
     private void cleanUpLeftovers() {
         try {
-            tritonClient.unloadModels(modelName -> isLlamacppModel(modelRepositoryPath.resolve(modelName)));
+            repositoryClient.unloadModels(modelName -> isLlamacppModel(modelRepositoryPath.resolve(modelName)));
         } catch (RuntimeException e) {
             log.log(Level.WARNING, () -> "Skipped unloading leftover llama.cpp models: " + Exceptions.toMessageString(e));
             return; // The models may still be loaded, so keep their files
@@ -349,7 +349,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
             });
         }
         llamacppClient.close();
-        tritonClient.close();
+        repositoryClient.close();
     }
 
 }

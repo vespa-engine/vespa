@@ -32,6 +32,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final String modelName;
     private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
+    private final TritonModelRepositoryClient repositoryClient;
     private final boolean isExplicitControl;
     private final Optional<OnnxPoolingOptions> runtimePooling;
 
@@ -41,11 +42,13 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             String modelName,
             ResourceReference modelReference,
             TritonOnnxClient tritonClient,
+            TritonModelRepositoryClient repositoryClient,
             boolean isExplicitControl,
             Optional<OnnxPoolingOptions> runtimePooling) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
+        this.repositoryClient = repositoryClient;
         this.isExplicitControl = isExplicitControl;
         this.runtimePooling = runtimePooling;
         modelMetadata = tritonClient.getModelMetadata(modelName);
@@ -84,7 +87,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         Objects.requireNonNull(deadline, "deadline");
         try {
             return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
-        } catch (TritonOnnxClient.TritonException e) {
+        } catch (TritonException e) {
             if (!isExplicitControl) {
                 throw e;
             }
@@ -93,7 +96,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     Level.WARNING,
                     "Failed to evaluate ONNX model " + modelName + " in Triton, will retry after reload.",
                     e);
-            tritonClient.loadUntilModelReady(modelName);
+            repositoryClient.loadUntilModelReady(modelName);
             modelMetadata = tritonClient.getModelMetadata(modelName);
             return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
         }

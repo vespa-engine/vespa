@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client of Triton's OpenAI-compatible frontend, which relays requests for a llama.cpp model
- * to the model's llama-server. Model management goes through {@link TritonOnnxClient} instead.
+ * to the model's llama-server. Model management goes through {@link TritonModelRepositoryClient} instead.
  *
  * @author ingridhabrekke
  */
@@ -61,7 +61,7 @@ class TritonLlamacppClient implements AutoCloseable {
                              deadline);
         var embedding = response.path("data").path(0).path("embedding");
         if ( ! embedding.isArray())
-            throw new TritonOnnxClient.TritonException("No embedding in the response of model " + modelName + ": " + response);
+            throw new TritonException("No embedding in the response of model " + modelName + ": " + response);
         var result = new float[embedding.size()];
         for (int i = 0; i < result.length; i++)
             result[i] = (float) embedding.get(i).asDouble();
@@ -74,7 +74,7 @@ class TritonLlamacppClient implements AutoCloseable {
         var response = post("/tokenize", Map.of("model", modelName, "content", text, "add_special", false), deadline);
         var tokens = response.path("tokens");
         if ( ! tokens.isArray())
-            throw new TritonOnnxClient.TritonException("No tokens in the response of model " + modelName + ": " + response);
+            throw new TritonException("No tokens in the response of model " + modelName + ": " + response);
         var result = new int[tokens.size()];
         for (int i = 0; i < result.length; i++)
             result[i] = tokens.get(i).asInt();
@@ -85,7 +85,7 @@ class TritonLlamacppClient implements AutoCloseable {
         var response = post("/detokenize", Map.of("model", modelName, "tokens", tokens), deadline);
         var content = response.path("content");
         if ( ! content.isTextual())
-            throw new TritonOnnxClient.TritonException("No content in the response of model " + modelName + ": " + response);
+            throw new TritonException("No content in the response of model " + modelName + ": " + response);
         return content.asText();
     }
 
@@ -95,7 +95,7 @@ class TritonLlamacppClient implements AutoCloseable {
      * @throws InvalidInputException if llama-server rejects the input, e.g. because it is longer than the context
      * @throws TimeoutException if the deadline passes
      * @throws OverloadException if Triton or llama-server is loading or restarting the model, which is temporary
-     * @throws TritonOnnxClient.TritonException on any other failure, e.g. a model that Triton has not loaded
+     * @throws TritonException on any other failure, e.g. a model that Triton has not loaded
      */
     private JsonNode post(String path, Map<String, Object> body, Optional<Instant> deadline) {
         var effectiveTimeout = deadline.map(d -> Duration.between(Instant.now(), d)).orElse(defaultTimeout);
@@ -123,12 +123,12 @@ class TritonLlamacppClient implements AutoCloseable {
             if (message.isPresent() &&
                 (response.code() == 400 || (response.code() == 500 && message.get().contains("too large to process"))))
                 throw new InvalidInputException("llama.cpp in Triton rejected the input: " + message.get());
-            throw new TritonOnnxClient.TritonException(
+            throw new TritonException(
                     "Request to " + path + " failed with status " + response.code() + ": " + responseBody);
         } catch (InterruptedIOException e) {
             throw new TimeoutException("Request to " + path + " timed out after " + effectiveTimeout.toMillis() + " ms", e);
         } catch (IOException e) {
-            throw new TritonOnnxClient.TritonException("Request to " + path + " failed: " + e.getMessage(), e);
+            throw new TritonException("Request to " + path + " failed: " + e.getMessage(), e);
         }
     }
 

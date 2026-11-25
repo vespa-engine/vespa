@@ -29,7 +29,7 @@ class TritonLlamacppRuntimeReferenceTest {
     private static final LlamacppOptions OPTIONS =
             new LlamacppOptions(1, 0, -1, -1, 0, Optional.empty(), -1, 0, 0, false);
 
-    private final TritonOnnxClient tritonClient = mock(TritonOnnxClient.class);
+    private final TritonModelRepositoryClient repositoryClient = mock(TritonModelRepositoryClient.class);
     private final TritonLlamacppClient llamacppClient = mock(TritonLlamacppClient.class);
 
     @Test
@@ -37,27 +37,27 @@ class TritonLlamacppRuntimeReferenceTest {
         var repository = Files.createDirectories(directory.resolve("models"));
         var modelPath = Files.writeString(directory.resolve("model.gguf"), "gguf").toString();
         var runtime = new TritonLlamacppRuntime(new TritonConfig.Builder().modelRepositoryPath(repository.toString()).build(),
-                                                tritonClient, llamacppClient);
+                                                repositoryClient, llamacppClient);
         try {
-            when(tritonClient.isModelReady(anyString()))
+            when(repositoryClient.isModelReady(anyString()))
                     .thenReturn(false) // First reference: not loaded yet
-                    .thenThrow(new TritonOnnxClient.TritonException("Triton is briefly unavailable"));
+                    .thenThrow(new TritonException("Triton is briefly unavailable"));
 
             var first = runtime.evaluatorOf(modelPath, OPTIONS);
             var modelName = TritonLlamacppRuntime.generateModelName(modelPath, OPTIONS);
-            verify(tritonClient, times(1)).loadUntilModelReady(modelName);
+            verify(repositoryClient, times(1)).loadUntilModelReady(modelName);
 
             // A second reference to the model in use, e.g. by the new embedder of a reconfiguration
             var second = runtime.evaluatorOf(modelPath, OPTIONS);
-            verify(tritonClient, times(1)).loadUntilModelReady(modelName);
-            verify(tritonClient, never()).unloadUntilModelNotReady(anyString());
+            verify(repositoryClient, times(1)).loadUntilModelReady(modelName);
+            verify(repositoryClient, never()).unloadUntilModelNotReady(anyString());
             assertTrue(Files.exists(repository.resolve(modelName).resolve("1").resolve("model.gguf")));
 
             // The model is cleaned up only when its last reference is released
             first.close();
-            verify(tritonClient, never()).unloadUntilModelNotReady(anyString());
+            verify(repositoryClient, never()).unloadUntilModelNotReady(anyString());
             second.close();
-            verify(tritonClient, times(1)).unloadUntilModelNotReady(modelName);
+            verify(repositoryClient, times(1)).unloadUntilModelNotReady(modelName);
         } finally {
             runtime.deconstruct();
         }

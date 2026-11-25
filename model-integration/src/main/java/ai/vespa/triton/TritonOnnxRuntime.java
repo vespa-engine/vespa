@@ -87,6 +87,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     private static final String DEFAULT_POOLING_ATTENTION_MASK = "attention_mask";
 
     private final TritonOnnxClient tritonClient;
+    private final TritonModelRepositoryClient repositoryClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
     private final boolean runtimePoolingEnabled;
@@ -110,13 +111,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
-        this(config, new TritonOnnxClient(config));
+        this(config, new TritonOnnxClient(config), new TritonModelRepositoryClient(config));
     }
 
-    // Injectable tritonClient for testing.
-    // Takes ownership of the client: deconstruct() closes it.
-    TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient) {
+    // Injectable clients for testing.
+    // Takes ownership of the clients: deconstruct() closes them.
+    TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient, TritonModelRepositoryClient repositoryClient) {
         this.tritonClient = tritonClient;
+        this.repositoryClient = repositoryClient;
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
@@ -150,7 +152,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions, pooling);
 
         try {
-            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit, pooling);
+            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, repositoryClient, isModelControlExplicit, pooling);
 
             if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions,
                     () -> hasNonZeroMaxBatchSize(modelName).orElseGet(() -> hasDynamicFirstDimension(modelPath))))
@@ -238,10 +240,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         try {
-            if (tritonClient.isModelReady(modelName)) {
+            if (repositoryClient.isModelReady(modelName)) {
                 return Optional.empty(); // Adopt a model that Triton already has ready
             }
-        } catch (TritonOnnxClient.TritonException | TimeoutException e) {
+        } catch (TritonException | TimeoutException e) {
             // Still attempt to copy and load the requested model below.
         }
 
@@ -278,7 +280,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         try {
             loadModel(modelName, modelPath, options, pooling, maxBatchSize, Optional.empty());
             return hasDynamicFirstDimension;
-        } catch (TritonOnnxClient.TritonException e) {
+        } catch (TritonException e) {
             if (!hasDynamicFirstDimension || !TritonOnnxClient.isBatchingRejection(e)) throw e;
             // OnnxStreamParser reads declared shapes, but Triton decides from the shapes ONNX Runtime infers.
             // Triton rejects batching only for a model without a dynamic first dimension,
@@ -308,9 +310,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         try {
             loadModel(modelName, modelPath, options, pooling, 0, inputsAndOutputsConfig);
             return true;
-        } catch (TritonOnnxClient.TritonException e) {
+        } catch (TritonException e) {
             // Other errors, such as Triton being unavailable, would also fail a load without specified inputs and outputs.
-            if (!TritonOnnxClient.isConfigRejection(e)) throw e;
+            if (!TritonModelRepositoryClient.isConfigRejection(e)) throw e;
             // OnnxStreamParser reads declared shapes, but Triton checks the shapes ONNX Runtime infers.
             // When shape inference removes the dynamic first dimension, Triton also rejects max batch size 1,
             // and the model loads with max batch size 0 without specified inputs and outputs.
@@ -333,7 +335,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         try {
             var modelConfig = createModelConfig(modelName, options, pooling, maxBatchSize, inputsAndOutputsConfig);
             copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
-            tritonClient.loadUntilModelReady(modelName);
+            repositoryClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
             // Attempt to unload the failed model and remove its files; cleanup is best effort.
             cleanUpModel(modelName);
@@ -344,7 +346,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Best-effort unloading of a model from Triton and removing its files from the model repository.
     private void cleanUpModel(String modelName) {
         try {
-            tritonClient.unloadUntilModelNotReady(modelName);
+            repositoryClient.unloadUntilModelNotReady(modelName);
         } catch (RuntimeException e) {
             // Keep the files if unload fails: deleting them while the model may still be loaded would break it.
             log.log(Level.WARNING, e, () -> "Failed to unload model " + modelName + ", keeping its files");
@@ -358,7 +360,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Leaves the llama.cpp models to TritonLlamacppRuntime, which shares Triton and the model repository.
     private void cleanUpLeftovers() {
         try {
-            tritonClient.unloadModels(modelName -> ! TritonLlamacppRuntime.isLlamacppModel(modelRepositoryPath.resolve(modelName)));
+            repositoryClient.unloadModels(modelName -> ! TritonLlamacppRuntime.isLlamacppModel(modelRepositoryPath.resolve(modelName)));
             deleteAllModelFilesFromModelRepository();
         } catch (RuntimeException e) {
             // Triton may be down or not needed at all (no ONNX models in the app).
@@ -742,6 +744,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             });
         }
 
-        tritonClient.close();
+        try {
+            tritonClient.close();
+        } finally {
+            repositoryClient.close();
+        }
     }
 }

@@ -361,10 +361,10 @@ class TritonOnnxRuntimeDefaultsTest {
     @Test
     void full_config_override_preserves_instance_configuration_and_unresolved_options(@TempDir Path directory)
             throws IOException {
-        var client = mock(TritonOnnxClient.class);
+        var client = mock(TritonModelRepositoryClient.class);
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                 .modelRepositoryPath(directory.resolve("repository").toString())
-                .shareOnnxSessionBetweenInstances(true).build(), client);
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), client);
         try {
             for (var group : List.of("kind: KIND_CPU count: 3", "kind: KIND_GPU count: 3 gpus: [7]")) {
                 var config = Files.writeString(directory.resolve("override.pbtxt"),
@@ -392,10 +392,10 @@ class TritonOnnxRuntimeDefaultsTest {
         var options = options(8).setBatchingMaxSize(8).build();
         var name = TritonOnnxRuntime.generateModelName(model, resolveInstanceCount(options, true), true, Optional.empty());
         var repository = directory.resolve("repository");
-        var client = mock(TritonOnnxClient.class);
-        doThrow(new TritonOnnxClient.TritonException(REJECTS_BATCHING)).doNothing().when(client).loadUntilModelReady(name);
+        var client = mock(TritonModelRepositoryClient.class);
+        doThrow(new TritonException(REJECTS_BATCHING)).doNothing().when(client).loadUntilModelReady(name);
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
-                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), client);
         try (var evaluator = runtime.evaluatorOf(model, options)) {
             verify(client, times(2)).loadUntilModelReady(name);
             var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
@@ -416,9 +416,9 @@ class TritonOnnxRuntimeDefaultsTest {
         var options = options(8).setFirstDimensionIsBatch(false).build();
         var name = TritonOnnxRuntime.generateModelName(model, resolveInstanceCount(options, true), true, Optional.empty());
         var repository = directory.resolve("repository");
-        var client = mock(TritonOnnxClient.class);
+        var client = mock(TritonModelRepositoryClient.class);
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
-                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), client);
         try (var evaluator = runtime.evaluatorOf(model, options)) {
             var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
             assertEquals(0, config.getMaxBatchSize());
@@ -445,10 +445,10 @@ class TritonOnnxRuntimeDefaultsTest {
                 "model provides TYPE_FP32;";
         for (var error : List.of(rejectsSpecifiedInputsAndOutputs, "UNAVAILABLE: io exception: Connection refused")) {
             var repository = directory.resolve("repository-" + error.hashCode());
-            var client = mock(TritonOnnxClient.class);
-            doThrow(new TritonOnnxClient.TritonException(error)).doNothing().when(client).loadUntilModelReady(name);
+            var client = mock(TritonModelRepositoryClient.class);
+            doThrow(new TritonException(error)).doNothing().when(client).loadUntilModelReady(name);
             var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
-                    .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+                    .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), client);
             try {
                 if (error.equals(rejectsSpecifiedInputsAndOutputs)) {
                     try (var evaluator = runtime.evaluatorOf(model, options)) {
@@ -461,7 +461,7 @@ class TritonOnnxRuntimeDefaultsTest {
                         assertEquals(Optional.of(true), runtime.hasNonZeroMaxBatchSize(name));
                     }
                 } else {
-                    assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(model, options));
+                    assertThrows(TritonException.class, () -> runtime.evaluatorOf(model, options));
                     verify(client, times(1)).loadUntilModelReady(name);
                 }
             } finally {
@@ -482,13 +482,13 @@ class TritonOnnxRuntimeDefaultsTest {
             var options = entry.getKey();
             var resolved = options.modelConfigOverride().isPresent() ? options : resolveInstanceCount(options, true);
             var name = TritonOnnxRuntime.generateModelName(model, resolved, true, Optional.empty());
-            var client = mock(TritonOnnxClient.class);
-            doThrow(new TritonOnnxClient.TritonException(entry.getValue())).when(client).loadUntilModelReady(name);
+            var client = mock(TritonModelRepositoryClient.class);
+            doThrow(new TritonException(entry.getValue())).when(client).loadUntilModelReady(name);
             var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                     .modelRepositoryPath(directory.resolve("repository").toString())
-                    .shareOnnxSessionBetweenInstances(true).build(), client);
+                    .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), client);
             try {
-                assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(model, options));
+                assertThrows(TritonException.class, () -> runtime.evaluatorOf(model, options));
                 verify(client, times(1)).loadUntilModelReady(name);
             } finally {
                 runtime.deconstruct();
@@ -503,7 +503,7 @@ class TritonOnnxRuntimeDefaultsTest {
         var repository = directory.resolve("repository");
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                 .modelRepositoryPath(repository.toString())
-                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), mock(TritonModelRepositoryClient.class));
         try {
             for (var batchingMaxSize : List.of(1, 8)) {
                 var options = options(8).setBatchingMaxSize(batchingMaxSize).build();
@@ -530,7 +530,7 @@ class TritonOnnxRuntimeDefaultsTest {
         var repository = directory.resolve("repository");
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                 .modelRepositoryPath(repository.toString())
-                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), mock(TritonModelRepositoryClient.class));
         try {
             try (var evaluator = runtime.evaluatorOf(model, options(8).build());
                  var modelDirs = Files.list(repository)) {
@@ -592,7 +592,7 @@ class TritonOnnxRuntimeDefaultsTest {
     private static TritonOnnxRuntime runtimeWithRepository(Path repository) {
         return new TritonOnnxRuntime(new TritonConfig.Builder()
                 .modelRepositoryPath(repository.toString())
-                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class), mock(TritonModelRepositoryClient.class));
     }
 
     private static void assertExternalDataRejected(Path directory, Path model, String expectedMessage) {
@@ -615,18 +615,20 @@ class TritonOnnxRuntimeDefaultsTest {
             for (var options : List.of(options(8).build(), options(8).setGpuDevice(2, true).build(),
                                        options(8).setModelConfigOverride(Optional.of(config)).build())) {
                 var client = mock(TritonOnnxClient.class);
+                var repositoryClient = mock(TritonModelRepositoryClient.class);
                 var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
-                        .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+                        .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client, repositoryClient);
                 var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true, Optional.empty());
                 try {
                     runtime.evaluatorOf(MODEL_PATH, options).close();
                     verify(client).getModelMetadata(name);
-                    verifyNoMoreInteractions(client);
+                    verifyNoMoreInteractions(client, repositoryClient);
                 } finally {
                     runtime.deconstruct();
                 }
                 verify(client).close();
-                verifyNoMoreInteractions(client);
+                verify(repositoryClient).close();
+                verifyNoMoreInteractions(client, repositoryClient);
                 assertEquals("externally managed config", Files.readString(config));
                 try (var files = Files.list(repository)) {
                     assertEquals(List.of(config), files.toList());
@@ -673,7 +675,7 @@ class TritonOnnxRuntimeDefaultsTest {
         var client = mock(TritonOnnxClient.class);
         when(client.getModelMetadata(any())).thenReturn(pooledMetadata());
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
-                .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), client);
+                .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), client, mock(TritonModelRepositoryClient.class));
         var options = options(8).build();
         try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.toBuilder().setRuntimePooling(Optional.of(MEAN_POOLING)).build())) {
             assertEquals(Optional.of(MEAN_POOLING), evaluator.runtimePooling());
@@ -701,30 +703,31 @@ class TritonOnnxRuntimeDefaultsTest {
         var tokenEmbeddings = TensorType.fromSpec("tensor<float>(d0[],d1[],d2[4])");
         when(client.getModelMetadata(any())).thenReturn(new TritonOnnxClient.ModelMetadata(Map.of(), Map.of("last_hidden_state", tokenEmbeddings)));
         var exception = assertThrows(IllegalArgumentException.class,
-                () -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true, Optional.of(MEAN_POOLING)));
+                () -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), true, Optional.of(MEAN_POOLING)));
         assertEquals("Triton did not pool output 'last_hidden_state' of model model_1: got type " + tokenEmbeddings +
                      " instead of [batch, embedding]. The Triton image does not support pooling. " +
                      "Disable triton-onnx-pooling, or use an image whose ONNX Runtime backend supports it.",
                      exception.getMessage());
         // A missing output is left to the caller, which reports it
-        assertDoesNotThrow(() -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true,
+        assertDoesNotThrow(() -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), true,
                                                          Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "no_such_output", "attention_mask"))));
     }
 
     @Test
     void retry_after_a_model_reload_gets_the_same_deadline() {
         var client = mock(TritonOnnxClient.class);
+        var repositoryClient = mock(TritonModelRepositoryClient.class);
         var metadata = new TritonOnnxClient.ModelMetadata(Map.of(), Map.of());
         when(client.getModelMetadata(any())).thenReturn(metadata);
         when(client.evaluate(eq("model_1"), any(), any(), ArgumentMatchers.<Optional<Instant>>any()))
-                .thenThrow(new TritonOnnxClient.TritonException("Model is not ready"))
+                .thenThrow(new TritonException("Model is not ready"))
                 .thenReturn(Map.of());
-        var evaluator = new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true, Optional.empty());
+        var evaluator = new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, repositoryClient, true, Optional.empty());
         var deadline = Optional.of(Instant.now().plusSeconds(10));
 
         evaluator.evaluate(Map.of(), deadline);
 
-        verify(client).loadUntilModelReady("model_1");
+        verify(repositoryClient).loadUntilModelReady("model_1");
         verify(client, times(2)).evaluate(eq("model_1"), any(), any(), eq(deadline));
     }
 
@@ -732,7 +735,7 @@ class TritonOnnxRuntimeDefaultsTest {
     void evaluation_with_a_null_deadline_fails() {
         var client = mock(TritonOnnxClient.class);
         when(client.getModelMetadata(any())).thenReturn(new TritonOnnxClient.ModelMetadata(Map.of(), Map.of()));
-        var evaluator = new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, false, Optional.empty());
+        var evaluator = new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), false, Optional.empty());
         assertThrows(NullPointerException.class, () -> evaluator.evaluate(Map.of(), (Optional<Instant>) null));
         assertThrows(NullPointerException.class, () -> evaluator.evaluate(Map.of(), "output", (Optional<Instant>) null));
     }
@@ -753,10 +756,10 @@ class TritonOnnxRuntimeDefaultsTest {
         var logger = Logger.getLogger(TritonOnnxEvaluator.class.getName());
         logger.addHandler(handler);
         try {
-            new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of());
-            new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of());
-            new TritonOnnxEvaluator("model_2", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of());
-            new TritonOnnxEvaluator("model_3", mock(ResourceReference.class), client, false, Optional.empty()).evaluate(Map.of(), Optional.empty());
+            new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), false, Optional.empty()).evaluate(Map.of());
+            new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), false, Optional.empty()).evaluate(Map.of());
+            new TritonOnnxEvaluator("model_2", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), false, Optional.empty()).evaluate(Map.of());
+            new TritonOnnxEvaluator("model_3", mock(ResourceReference.class), client, mock(TritonModelRepositoryClient.class), false, Optional.empty()).evaluate(Map.of(), Optional.empty());
         } finally {
             logger.removeHandler(handler);
         }
@@ -794,7 +797,7 @@ class TritonOnnxRuntimeDefaultsTest {
             for (var options : List.of(options(8).build(), options(8).setModelConfigOverride(Optional.of(override)).build())) {
                 if (enabled && options.modelConfigOverride().isEmpty()) continue; // the case where pooling applies
                 var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
-                        .modelRepositoryPath(repository.toString()).onnxPooling(enabled).build(), mock(TritonOnnxClient.class));
+                        .modelRepositoryPath(repository.toString()).onnxPooling(enabled).build(), mock(TritonOnnxClient.class), mock(TritonModelRepositoryClient.class));
                 try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.toBuilder().setRuntimePooling(Optional.of(MEAN_POOLING)).build())) {
                     assertTrue(evaluator.runtimePooling().isEmpty());
                     var resolved = options.modelConfigOverride().isPresent()
@@ -809,7 +812,7 @@ class TritonOnnxRuntimeDefaultsTest {
         }
         for (var mode : List.of(TritonConfig.ModelControlMode.NONE, TritonConfig.ModelControlMode.POLL)) {
             var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
-                    .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), mock(TritonOnnxClient.class));
+                    .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), mock(TritonOnnxClient.class), mock(TritonModelRepositoryClient.class));
             try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options(8).setRuntimePooling(Optional.of(MEAN_POOLING)).build())) {
                 assertTrue(evaluator.runtimePooling().isEmpty());
             } finally {

@@ -49,10 +49,10 @@ class TritonOnnxEvaluatorTest {
     /** Padding pads inputs to the buckets and unpads the outputs, which the real tokens' output is unchanged by */
     @Test
     void outputs_are_the_same_with_padding_and_cut_back_to_the_real_length() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MASKED_MODEL_NAME);
+        try (var tritonClient = createTritonClient(); var repositoryClient = createRepositoryClient()) {
+            repositoryClient.loadModel(MASKED_MODEL_NAME);
             var modelReference = mock(ResourceReference.class);
-            var unpadded = new TritonOnnxEvaluator(MASKED_MODEL_NAME, modelReference, tritonClient, false, Optional.empty());
+            var unpadded = new TritonOnnxEvaluator(MASKED_MODEL_NAME, modelReference, tritonClient, repositoryClient, false, Optional.empty());
             var padded = OnnxPadder.of(OnnxPadderOptions.of(List.of(8, 16)), unpadded, MASKED_MODEL_NAME);
             assertTrue(padded instanceof OnnxPadder, "Verified with a sample at construction");
 
@@ -70,10 +70,10 @@ class TritonOnnxEvaluatorTest {
 
     @Test
     void evaluate_with_output_name() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MODEL_NAME);
+        try (var tritonClient = createTritonClient(); var repositoryClient = createRepositoryClient()) {
+            repositoryClient.loadModel(MODEL_NAME);
             var modelReference = mock(ResourceReference.class);
-            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false, Optional.empty());
+            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, repositoryClient, false, Optional.empty());
 
             var inputIds = Tensor.from(
                     "tensor<float>(d0[1],d1[5]):{{d0:0,d1:0}:1.0, {d0:0,d1:1}:2.0, {d0:0,d1:2}:3.0, {d0:0,d1:3}:4.0,"
@@ -110,10 +110,10 @@ class TritonOnnxEvaluatorTest {
 
     @Test
     void evaluate_throws_timeout_exception_when_deadline_fires() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MODEL_NAME);
+        try (var tritonClient = createTritonClient(); var repositoryClient = createRepositoryClient()) {
+            repositoryClient.loadModel(MODEL_NAME);
             var modelReference = mock(ResourceReference.class);
-            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false, Optional.empty());
+            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, repositoryClient, false, Optional.empty());
 
             var inputs = Map.of(
                     "input_ids",      Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 2.0, 3.0, 4.0, 5.0]"),
@@ -146,6 +146,12 @@ class TritonOnnxEvaluatorTest {
 
     private static TritonOnnxClient createTritonClient() {
         return new TritonOnnxClient(new TritonConfig.Builder()
+                .target(tritonContainer.getGrpcEndpoint())
+                .build());
+    }
+
+    private static TritonModelRepositoryClient createRepositoryClient() {
+        return new TritonModelRepositoryClient(new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
                 .build());
     }

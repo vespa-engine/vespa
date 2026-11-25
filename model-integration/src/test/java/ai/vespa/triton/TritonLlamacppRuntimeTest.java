@@ -86,7 +86,7 @@ class TritonLlamacppRuntimeTest {
     @Test
     void model_is_unloaded_and_its_files_deleted_when_the_last_evaluator_closes() {
         var runtime = new TritonLlamacppRuntime(config());
-        var client = new TritonOnnxClient(config());
+        var client = new TritonModelRepositoryClient(config());
         try {
             var modelName = TritonLlamacppRuntime.generateModelName(GGUF_MODEL_PATH, options(3));
             var modelDir = tritonContainer.getModelRepositoryPath().resolve(modelName);
@@ -109,7 +109,7 @@ class TritonLlamacppRuntimeTest {
 
     @Test
     void each_runtime_cleans_up_only_its_own_leftovers() throws IOException {
-        var client = new TritonOnnxClient(config());
+        var client = new TritonModelRepositoryClient(config());
         var llamacppModel = TritonLlamacppRuntime.generateModelName(GGUF_MODEL_PATH, options(4));
         // Runtimes of a previous process, which leave their models loaded.
         var previousLlamacppRuntime = new TritonLlamacppRuntime(config());
@@ -139,7 +139,7 @@ class TritonLlamacppRuntimeTest {
     }
 
     // The models in the repository that Triton has ready, of llama.cpp or other backends.
-    private static List<String> loadedModelsOf(TritonOnnxClient client, boolean llamacpp) throws IOException {
+    private static List<String> loadedModelsOf(TritonModelRepositoryClient client, boolean llamacpp) throws IOException {
         try (var dirs = Files.list(tritonContainer.getModelRepositoryPath())) {
             return dirs.filter(dir -> TritonLlamacppRuntime.isLlamacppModel(dir) == llamacpp)
                        .map(dir -> dir.getFileName().toString())

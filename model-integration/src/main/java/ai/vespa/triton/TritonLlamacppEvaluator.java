@@ -23,15 +23,15 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
     private final String modelName;
     private final ResourceReference modelReference;
     private final TritonLlamacppClient llamacppClient;
-    private final TritonOnnxClient tritonClient;
+    private final TritonModelRepositoryClient repositoryClient;
     private final boolean isExplicitControl;
 
     TritonLlamacppEvaluator(String modelName, ResourceReference modelReference, TritonLlamacppClient llamacppClient,
-                         TritonOnnxClient tritonClient, boolean isExplicitControl) {
+                         TritonModelRepositoryClient repositoryClient, boolean isExplicitControl) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.llamacppClient = llamacppClient;
-        this.tritonClient = tritonClient;
+        this.repositoryClient = repositoryClient;
         this.isExplicitControl = isExplicitControl;
     }
 
@@ -61,19 +61,19 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
     private <T> T withReload(Supplier<T> request) {
         try {
             return request.get();
-        } catch (TritonOnnxClient.TritonException e) {
+        } catch (TritonException e) {
             if ( ! isExplicitControl || isModelReady()) throw e;
 
             log.log(Level.WARNING, "Failed to run llama.cpp model " + modelName + " in Triton, will retry after reload.", e);
-            tritonClient.loadUntilModelReady(modelName);
+            repositoryClient.loadUntilModelReady(modelName);
             return request.get();
         }
     }
 
     private boolean isModelReady() {
         try {
-            return tritonClient.isModelReady(modelName);
-        } catch (TritonOnnxClient.TritonException | TimeoutException e) {
+            return repositoryClient.isModelReady(modelName);
+        } catch (TritonException | TimeoutException e) {
             return false; // Loading reports why Triton is unavailable
         }
     }
