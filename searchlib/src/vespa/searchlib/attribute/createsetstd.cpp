@@ -1,55 +1,42 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefactory.h"
-#include "defines.h"
 #include "multinumericattribute.h"
 #include "multistringattribute.h"
+#include "numeric_attribute_template.h"
+#include "typify_basic_type.h"
 
 #include <vespa/check_require.h>
+
+#include <type_traits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.create_set_std");
 
 namespace search {
 
-using attribute::BasicType;
+using attribute::TypifyBasicType;
 
-#define INTSET(T) MultiValueNumericAttribute<IntegerAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T)>
-#define FLOATSET(T) MultiValueNumericAttribute<FloatingPointAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T)>
-#define CREATEINTSET(T, fname, info) static_cast<AttributeVector*>(new INTSET(T)(fname, info))
-#define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector*>(new FLOATSET(T)(fname, info))
+namespace {
+
+struct CreateSetStd {
+    template <typename T> static AttributeVector::SP invoke(const std::string& name, const attribute::Config& info) {
+        if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
+            return std::make_shared<WeightedSetStringAttribute>(name, info);
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::ComplexBasicType>) {
+            return {};
+        } else {
+            return std::make_shared<
+                MultiValueNumericAttribute<NumericAttributeTemplate<T>, multivalue::WeightedValue<T>>>(name, info);
+        }
+    }
+};
+
+} // namespace
 
 AttributeVector::SP AttributeFactory::createSetStd(std::string name, const Config& info) {
     CHECK(info.collectionType().type() == attribute::CollectionType::WSET);
-    AttributeVector::SP ret;
-    switch (info.basicType().type()) {
-    case BasicType::BOOL:
-        break;
-    case BasicType::INT8:
-        ret.reset(CREATEINTSET(int8_t, name, info));
-        break;
-    case BasicType::INT16:
-        ret.reset(CREATEINTSET(int16_t, name, info));
-        break;
-    case BasicType::INT32:
-        ret.reset(CREATEINTSET(int32_t, name, info));
-        break;
-    case BasicType::INT64:
-        ret.reset(CREATEINTSET(int64_t, name, info));
-        break;
-    case BasicType::FLOAT:
-        ret.reset(CREATEFLOATSET(float, name, info));
-        break;
-    case BasicType::DOUBLE:
-        ret.reset(CREATEFLOATSET(double, name, info));
-        break;
-    case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector*>(new WeightedSetStringAttribute(name, info)));
-        break;
-    default:
-        break;
-    }
-    return ret;
+    return vespalib::typify_invoke<1, TypifyBasicType, CreateSetStd>(info.basicType().type(), name, info);
 }
 
 } // namespace search
