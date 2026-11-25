@@ -94,7 +94,7 @@ private:
     bool                      _delayedPrune;
     mutable std::shared_mutex _feedLock;
     FeedStateSP               _feedState;
-    // used by master write thread tasks
+    // used by document db main executor tasks
     IFeedView*                         _activeFeedView;
     const document::DocumentTypeRepo*  _repo;
     const document::DocumentType*      _documentType;
@@ -107,7 +107,7 @@ private:
     mutable FeedHandlerStats           _stats;
 
     /**
-     * Delayed handling of feed operations, in master write thread.
+     * Delayed handling of feed operations, in document db main executor thread.
      * The current feed state is sampled here.
      */
     void doHandleOperation(FeedToken token, FeedOperationUP op);
@@ -116,7 +116,7 @@ private:
 
     /**
      * Delayed execution of feed operations against feed view, in
-     * master write thread.
+     * document db main executor thread.
      */
     void performPut(FeedToken token, PutOperation& op);
 
@@ -204,7 +204,7 @@ public:
 
     /**
      * Update the active feed view.
-     * Always called by the master write thread so locking is not needed.
+     * Always called by the document db main executor thread so locking is not needed.
      */
     void setActiveFeedView(IFeedView* feedView);
 

@@ -115,11 +115,11 @@ public:
     BucketMover& operator=(const BucketMover&) = delete;
     ~BucketMover();
 
-    /// Must be called in master thread
+    /// Must be called in document db main executor thread
     std::pair<MoveKeys, bool> getKeysToMove(size_t maxDocsToMove);
     /// Call from any thread
     GuardedMoveOps createMoveOperations(MoveKeys toMove);
-    /// Must be called in master thread
+    /// Must be called in document db main executor thread
     void moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone);
     void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
 
@@ -131,7 +131,7 @@ public:
     bool allScheduled() const { return _allScheduled; }
     bool needReschedule() const { return _needReschedule.load(std::memory_order_relaxed); }
     const MaintenanceDocumentSubDB* getSource() const { return _source; }
-    /// Must be called in master thread
+    /// Must be called in document db main executor thread
     void updateLastValidGid(const document::GlobalId& gid) {
         _lastGid = gid;
         _lastGidValid = true;

@@ -56,7 +56,7 @@ bool blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator>& cal
 
 BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc, RetainGuard dbRetainer,
                              IDocumentMoveHandler& moveHandler, IBucketModifiedHandler& modifiedHandler,
-                             IThreadService& master, BucketExecutor& bucketExecutor,
+                             IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
                              const MaintenanceDocumentSubDB& ready, const MaintenanceDocumentSubDB& notReady,
                              bucketdb::IBucketCreateNotifier&     bucketCreateNotifier,
                              IClusterStateChangedNotifier&        clusterStateChangedNotifier,
@@ -75,7 +75,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc, Retai
       _dbRetainer(std::move(dbRetainer)),
       _moveHandler(moveHandler),
       _modifiedHandler(modifiedHandler),
-      _master(master),
+      _main_thread_service(main_thread_service),
       _bucketExecutor(bucketExecutor),
       _ready(ready),
       _notReady(notReady),
@@ -110,18 +110,18 @@ BucketMoveJob::~BucketMoveJob() {
 
 std::shared_ptr<BucketMoveJob> BucketMoveJob::create(
     std::shared_ptr<IBucketStateCalculator> calc, RetainGuard dbRetainer, IDocumentMoveHandler& moveHandler,
-    IBucketModifiedHandler& modifiedHandler, IThreadService& master, BucketExecutor& bucketExecutor,
+    IBucketModifiedHandler& modifiedHandler, IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
     const MaintenanceDocumentSubDB& ready, const MaintenanceDocumentSubDB& notReady,
     bucketdb::IBucketCreateNotifier& bucketCreateNotifier, IClusterStateChangedNotifier& clusterStateChangedNotifier,
     IBucketStateChangedNotifier& bucketStateChangedNotifier, IResourceUsageNotifier& resource_usage_notifier,
     const BlockableMaintenanceJobConfig& blockableConfig, const std::string& docTypeName,
     document::BucketSpace bucketSpace) {
-    return {new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master,
-                              bucketExecutor, ready, notReady, bucketCreateNotifier, clusterStateChangedNotifier,
-                              bucketStateChangedNotifier, resource_usage_notifier, blockableConfig, docTypeName,
-                              bucketSpace),
-            [&master](auto job) {
-                auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
+    return {new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler,
+                              main_thread_service, bucketExecutor, ready, notReady, bucketCreateNotifier,
+                              clusterStateChangedNotifier, bucketStateChangedNotifier, resource_usage_notifier,
+                              blockableConfig, docTypeName, bucketSpace),
+            [&main_thread_service](auto job) {
+                auto failed = main_thread_service.execute(makeLambdaTask([job]() { delete job; }));
                 CHECK(!failed);
             }};
 }
@@ -183,11 +183,11 @@ private:
 };
 
 void BucketMoveJob::failOperation(std::shared_ptr<BucketMoveJob> job, BucketId bucketId) {
-    auto& master = job->_master;
+    auto& main_thread_service = job->_main_thread_service;
     if (job->stopped()) {
         return;
     }
-    master.execute(makeLambdaTask([job = std::move(job), bucketId]() {
+    main_thread_service.execute(makeLambdaTask([job = std::move(job), bucketId]() {
         if (job->stopped()) {
             return;
         }
@@ -215,11 +215,11 @@ void BucketMoveJob::prepareMove(std::shared_ptr<BucketMoveJob> job, BucketMover:
         return; // TODO Remove once lidtracker is no longer in use.
     }
     auto  moveOps = keys.createMoveOperations();
-    auto& master = job->_master;
+    auto& main_thread_service = job->_main_thread_service;
     if (job->stopped()) {
         return;
     }
-    master.execute(
+    main_thread_service.execute(
         makeLambdaTask([job = std::move(job), moveOps = std::move(moveOps), onDone = std::move(onDone)]() mutable {
             if (job->stopped()) {
                 return;
@@ -397,7 +397,7 @@ void BucketMoveJob::backFillMovers() {
 }
 
 void BucketMoveJob::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator>& newCalc) {
-    // Called by master write thread
+    // Called by document db main executor thread
     _calc = newCalc;
     if (blockedDueToClusterState(_calc)) {
         setBlocked(BlockedReason::CLUSTER_STATE);
@@ -411,12 +411,12 @@ void BucketMoveJob::notifyClusterStateChanged(const std::shared_ptr<IBucketState
 }
 
 void BucketMoveJob::notifyBucketStateChanged(const BucketId& bucketId, BucketInfo::ActiveState) {
-    // Called by master write thread
+    // Called by document db main executor thread
     considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
 }
 
 void BucketMoveJob::notify_resource_usage(const ResourceUsageState& state) {
-    // Called by master write thread
+    // Called by document db main executor thread
     internal_notify_resource_usage(state);
 }
 

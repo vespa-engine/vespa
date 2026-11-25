@@ -56,11 +56,11 @@ public:
     }
     void fail(const Bucket& bucket) override {
         CHECK(bucket.getBucketId() == _meta.bucketId);
-        auto& master = _job->_master;
+        auto& main_thread_service = _job->_main_thread_service;
         if (_job->stopped()) {
             return;
         }
-        master.execute(makeLambdaTask([job = std::move(_job)] { job->_scanItr.reset(); }));
+        main_thread_service.execute(makeLambdaTask([job = std::move(_job)] { job->_scanItr.reset(); }));
     }
 
 private:
@@ -89,22 +89,22 @@ void CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const searc
     if (job->stopped()) {
         return; // TODO Remove once lidtracker is no longer in use.
     }
-    // The real lid must be sampled in the master thread.
+    // The real lid must be sampled in the document db main executor thread.
     // TODO remove target lid from createMoveOperation interface
     auto op = job->_handler->createMoveOperation(metaThen, 0);
     if (!op || !op->getDocument()) {
         return;
     }
-    // Early detection and force md5 calculation outside of master thread
+    // Early detection and force md5 calculation outside of document db main executor thread
     if (metaThen.gid != op->getDocument()->getId().getGlobalId()) {
         return;
     }
 
-    auto& master = job->_master;
+    auto& main_thread_service = job->_main_thread_service;
     if (job->stopped()) {
         return;
     }
-    master.execute(makeLambdaTask(
+    main_thread_service.execute(makeLambdaTask(
         [self = std::move(job), meta = metaThen, moveOp = std::move(op), onDone = std::move(context)]() mutable {
             if (self->stopped()) {
                 return;
@@ -136,7 +136,7 @@ void CompactionJob::completeMove(const search::DocumentMetadata& metaThen, std::
 
 CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig& config, RetainGuard dbRetainer,
                              std::shared_ptr<ILidSpaceCompactionHandler> handler, IOperationStorer& opStorer,
-                             IThreadService& master, BucketExecutor& bucketExecutor,
+                             IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
                              IResourceUsageNotifier&              resource_usage_notifier,
                              const BlockableMaintenanceJobConfig& blockableConfig,
                              IClusterStateChangedNotifier&        clusterStateChangedNotifier,
@@ -157,7 +157,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig& config, R
                                                                       config.get_remove_block_rate())),
       _is_disabled(false),
       _shouldCompactLidSpace(false),
-      _master(master),
+      _main_thread_service(main_thread_service),
       _bucketExecutor(bucketExecutor),
       _dbRetainer(std::move(dbRetainer)),
       _bucketSpace(bucketSpace) {
@@ -177,17 +177,17 @@ CompactionJob::~CompactionJob() {
 
 std::shared_ptr<CompactionJob> CompactionJob::create(
     const DocumentDBLidSpaceCompactionConfig& config, RetainGuard dbRetainer,
-    std::shared_ptr<ILidSpaceCompactionHandler> handler, IOperationStorer& opStorer, IThreadService& master,
-    BucketExecutor& bucketExecutor, IResourceUsageNotifier& resource_usage_notifier,
-    const BlockableMaintenanceJobConfig& blockableConfig, IClusterStateChangedNotifier& clusterStateChangedNotifier,
-    bool node_retired_or_maintenance, document::BucketSpace bucketSpace,
-    std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source) {
+    std::shared_ptr<ILidSpaceCompactionHandler> handler, IOperationStorer& opStorer,
+    IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
+    IResourceUsageNotifier& resource_usage_notifier, const BlockableMaintenanceJobConfig& blockableConfig,
+    IClusterStateChangedNotifier& clusterStateChangedNotifier, bool node_retired_or_maintenance,
+    document::BucketSpace bucketSpace, std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source) {
     return std::shared_ptr<CompactionJob>(
-        new CompactionJob(config, std::move(dbRetainer), std::move(handler), opStorer, master, bucketExecutor,
-                          resource_usage_notifier, blockableConfig, clusterStateChangedNotifier,
+        new CompactionJob(config, std::move(dbRetainer), std::move(handler), opStorer, main_thread_service,
+                          bucketExecutor, resource_usage_notifier, blockableConfig, clusterStateChangedNotifier,
                           node_retired_or_maintenance, bucketSpace, maintenance_job_token_source),
-        [&master](auto job) {
-            auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
+        [&main_thread_service](auto job) {
+            auto failed = main_thread_service.execute(makeLambdaTask([job]() { delete job; }));
             CHECK(!failed);
         });
 }
@@ -293,12 +293,12 @@ void CompactionJob::compactLidSpace(const LidUsageStats& stats) {
 }
 
 void CompactionJob::notify_resource_usage(const ResourceUsageState& state) {
-    // Called by master write thread
+    // Called by document db main executor thread
     internal_notify_resource_usage(state);
 }
 
 void CompactionJob::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator>& newCalc) {
-    // Called by master write thread
+    // Called by document db main executor thread
     bool node_retired_or_maintenance = newCalc->node_retired_or_maintenance();
     if (!node_retired_or_maintenance) {
         if (isBlocked(BlockedReason::CLUSTER_STATE)) {

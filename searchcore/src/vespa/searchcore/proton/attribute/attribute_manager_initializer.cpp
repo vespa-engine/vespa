@@ -113,14 +113,15 @@ AttributeManagerInitializer::AttributeManagerInitializer(
     SerialNum configSerialNum, std::shared_ptr<InitializerTask> documentMetaStoreInitTask,
     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, const AttributeManager& baseAttrMgr,
     const AttributesConfig& attrCfg, const AllocStrategy& alloc_strategy, bool fastAccessAttributesOnly,
-    searchcorespi::index::IThreadService& master, std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult)
+    searchcorespi::index::IThreadService&              main_thread_service,
+    std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult)
     : _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),
       _attrMgr(),
       _attrCfg(attrCfg),
       _alloc_strategy(alloc_strategy),
       _fastAccessAttributesOnly(fastAccessAttributesOnly),
-      _master(master),
+      _main_thread_service(main_thread_service),
       _attributesResult(),
       _attrMgrResult(std::move(attrMgrResult)) {
     addDependency(documentMetaStoreInitTask);
@@ -143,9 +144,9 @@ void AttributeManagerInitializer::run() {
     auto               future = promise.get_future();
     /*
      * Attribute manager and some its members (e.g. _attributeFieldWriter) assumes that work is performed
-     * by document db master thread and lacks locking to handle calls from multiple threads.
+     * by document db main executor thread and lacks locking to handle calls from multiple threads.
      */
-    _master.execute(std::make_unique<AttributeManagerInitializerTask>(
+    _main_thread_service.execute(std::make_unique<AttributeManagerInitializerTask>(
         span, std::move(promise), _configSerialNum, _documentMetaStore, _attrMgr, _attributesResult));
     future.wait();
     *_attrMgrResult = _attrMgr;

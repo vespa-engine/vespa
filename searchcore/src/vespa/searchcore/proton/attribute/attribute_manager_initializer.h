@@ -29,7 +29,7 @@ private:
     vespa::config::search::AttributesConfig            _attrCfg;
     AllocStrategy                                      _alloc_strategy;
     bool                                               _fastAccessAttributesOnly;
-    searchcorespi::index::IThreadService&              _master;
+    searchcorespi::index::IThreadService&              _main_thread_service;
     InitializedAttributesResult                        _attributesResult;
     std::shared_ptr<std::shared_ptr<AttributeManager>> _attrMgrResult;
 
@@ -42,7 +42,7 @@ public:
                                 const AttributeManager&                        baseAttrMgr,
                                 const vespa::config::search::AttributesConfig& attrCfg,
                                 const AllocStrategy& alloc_strategy, bool fastAccessAttributesOnly,
-                                searchcorespi::index::IThreadService&              master,
+                                searchcorespi::index::IThreadService&              main_thread_service,
                                 std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult);
     ~AttributeManagerInitializer() override;
 

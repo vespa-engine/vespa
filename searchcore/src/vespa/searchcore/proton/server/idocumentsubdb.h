@@ -89,7 +89,7 @@ public:
                                                                         SerialNum               configSerialNum,
                                                                         const IndexConfig&      indexCfg) const = 0;
 
-    // Called by master thread
+    // Called by document db main executor thread
     virtual void setup(const DocumentSubDbInitializerResult& initResult) = 0;
     virtual void initViews(const DocumentDBConfig& configSnapshot) = 0;
 

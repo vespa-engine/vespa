@@ -76,7 +76,7 @@ void BucketHandler::setReadyBucketHandler(documentmetastore::IBucketHandler& rea
 void BucketHandler::handleListBuckets(IBucketIdListResultHandler& resultHandler) {
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
-    // master write thread in document database.
+    // document db main executor thread.
     BucketIdListResult::List buckets = _ready->getBucketDB().takeGuard()->getBuckets();
     resultHandler.handle(BucketIdListResult(std::move(buckets)));
 }
@@ -91,7 +91,7 @@ void BucketHandler::handleSetCurrentState(const BucketId& bucketId, storage::spi
 void BucketHandler::handleGetBucketInfo(const Bucket& bucket, IBucketInfoResultHandler& resultHandler) {
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
-    // master write thread in document database.
+    // document db main executor thread.
     BucketInfo bucketInfo = _ready->getBucketDB().takeGuard()->cachedGetBucketInfo(bucket);
     LOG(spam, "handleGetBucketInfo(%s): %s", bucket.toString().c_str(), bucketInfo.toString().c_str());
     resultHandler.handle(BucketInfoResult(bucketInfo));
@@ -104,7 +104,7 @@ bool BucketHandler::hasBucket(const storage::spi::Bucket& bucket) {
 void BucketHandler::handleListActiveBuckets(IBucketIdListResultHandler& resultHandler) {
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
-    // master write thread in document database.
+    // document db main executor thread.
 
     resultHandler.handle(BucketIdListResult(_ready->getBucketDB().takeGuard()->getActiveBuckets()));
 }

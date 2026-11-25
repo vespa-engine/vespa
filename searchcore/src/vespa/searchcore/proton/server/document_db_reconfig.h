@@ -19,11 +19,11 @@ class DocumentSubDBReconfig;
  *
  * 2) Complete prepare:
  * Docid limit and serial number are used to complete the prepared reconfig.
- * This is done by the DocumentDB master write thread.
+ * This is done by the Document db main executor thread.
  *
  * 3) Apply:
  * The new components are swapped with the old ones.
- * This is done by the DocumentDB master write thread.
+ * This is done by the Document db main executor thread
  */
 class DocumentDBReconfig {
 private:

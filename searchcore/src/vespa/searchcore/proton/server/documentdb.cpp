@@ -697,7 +697,7 @@ void DocumentDB::flushDone(SerialNum flushedSerial) {
 }
 
 void DocumentDB::setIndexSchema(const DocumentDBConfig& configSnapshot, SerialNum serialNum) {
-    // Called by documen db main executor thread
+    // Called by document db main executor thread
     _subDBs.getReadySubDB()->setIndexSchema(configSnapshot.getSchemaSP(), serialNum);
 
     // TODO: Adjust tune.

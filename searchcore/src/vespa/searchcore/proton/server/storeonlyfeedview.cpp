@@ -253,7 +253,7 @@ void StoreOnlyFeedView::forceCommit(const CommitParam& param, const DoneCallback
         _metaStore.commit(param);
     }
     internalForceCommit(param, std::make_shared<ForceCommitContext>(
-                                   _writeService.master(), _metaStore, _pendingLidsForCommit->produceSnapshot(),
+                                   _writeService.main(), _metaStore, _pendingLidsForCommit->produceSnapshot(),
                                    _gidToLidChangeHandler.grab_pending_changes(), onDone));
 }
 
@@ -533,7 +533,7 @@ void StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const Doc
 }
 
 bool StoreOnlyFeedView::lookupDocId(const DocumentId& docId, Lid& lid) const {
-    // This function should only be called by the document db main thread.
+    // This function should only be called by the document db main executor thread.
     auto result = _metaStore.inspectExisting(docId.getGlobalId(), 0);
     if (!result.ok()) {
         return false;
@@ -761,7 +761,7 @@ void StoreOnlyFeedView::handleMove(const MoveOperation& moveOp, const DoneCallba
 }
 
 void StoreOnlyFeedView::heartBeat(SerialNum serialNum, const DoneCallback& onDone) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     _metaStore.reclaim_unused_memory();
     _metaStore.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
     heartBeatSummary(serialNum, onDone);
@@ -787,7 +787,7 @@ void StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation& op
     if (useDocumentMetaStore(serialNum)) {
         getDocumentMetaStore()->get().compactLidSpace(op.getLidLimit());
         auto commitContext(std::make_shared<ForceCommitContext>(
-            _writeService.master(), _metaStore, _pendingLidsForCommit->produceSnapshot(),
+            _writeService.main(), _metaStore, _pendingLidsForCommit->produceSnapshot(),
             _gidToLidChangeHandler.grab_pending_changes(), onDone));
         commitContext->holdUnblockShrinkLidSpace();
         internalForceCommit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP), commitContext);

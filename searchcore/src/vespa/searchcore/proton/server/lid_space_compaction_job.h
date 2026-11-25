@@ -55,7 +55,7 @@ private:
     std::shared_ptr<RemoveOperationsRateTracker> _ops_rate_tracker;
     bool                                         _is_disabled;
     bool                                         _shouldCompactLidSpace;
-    IThreadService&                              _master;
+    IThreadService&                              _main_thread_service;
     BucketExecutor&                              _bucketExecutor;
     vespalib::RetainGuard                        _dbRetainer;
     document::BucketSpace                        _bucketSpace;
@@ -76,7 +76,7 @@ private:
 
     CompactionJob(const DocumentDBLidSpaceCompactionConfig& config, vespalib::RetainGuard dbRetainer,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler, IOperationStorer& opStorer,
-                  IThreadService& master, BucketExecutor& bucketExecutor,
+                  IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
                   IResourceUsageNotifier&              resource_usage_notifier,
                   const BlockableMaintenanceJobConfig& blockableConfig,
                   IClusterStateChangedNotifier& clusterStateChangedNotifier, bool nodeRetired,
@@ -86,9 +86,9 @@ private:
 public:
     static std::shared_ptr<CompactionJob>
     create(const DocumentDBLidSpaceCompactionConfig& config, vespalib::RetainGuard dbRetainer,
-           std::shared_ptr<ILidSpaceCompactionHandler> handler, IOperationStorer& opStorer, IThreadService& master,
-           BucketExecutor& bucketExecutor, IResourceUsageNotifier& resource_usage_notifier,
-           const BlockableMaintenanceJobConfig& blockableConfig,
+           std::shared_ptr<ILidSpaceCompactionHandler> handler, IOperationStorer& opStorer,
+           IThreadService& main_thread_service, BucketExecutor& bucketExecutor,
+           IResourceUsageNotifier& resource_usage_notifier, const BlockableMaintenanceJobConfig& blockableConfig,
            IClusterStateChangedNotifier& clusterStateChangedNotifier, bool nodeRetired,
            document::BucketSpace                      bucketSpace,
            std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source);

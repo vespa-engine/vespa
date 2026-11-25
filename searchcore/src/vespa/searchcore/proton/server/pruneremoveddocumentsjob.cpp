@@ -27,12 +27,13 @@ namespace proton {
 PruneRemovedDocumentsJob::PruneRemovedDocumentsJob(const DocumentDBPruneConfig& config, RetainGuard dbRetainer,
                                                    const IDocumentMetaStore& metaStore, uint32_t subDbId,
                                                    document::BucketSpace bucketSpace, const std::string& docTypeName,
-                                                   IPruneRemovedDocumentsHandler& handler, IThreadService& master,
-                                                   BucketExecutor& bucketExecutor)
+                                                   IPruneRemovedDocumentsHandler& handler,
+                                                   IThreadService&                main_thread_service,
+                                                   BucketExecutor&                bucketExecutor)
     : BlockableMaintenanceJob("prune_removed_documents." + docTypeName, config.getDelay(), config.getInterval()),
       _metaStore(metaStore),
       _handler(handler),
-      _master(master),
+      _main_thread_service(main_thread_service),
       _bucketExecutor(bucketExecutor),
       _docTypeName(docTypeName),
       _dbRetainer(std::move(dbRetainer)),
@@ -61,7 +62,7 @@ void PruneRemovedDocumentsJob::PruneTask::run(const Bucket& bucket, IDestructorC
     CHECK(bucket.getBucketId() == _meta.getBucketId());
     using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
     auto& job = *_job;
-    job._master.execute(makeLambdaTask(
+    job._main_thread_service.execute(makeLambdaTask(
         [job = std::move(_job), lid = _lid, meta = _meta,
          onDone = std::make_shared<DoneContext>(std::make_pair(std::move(_opsTracker), std::move(onDone)))]() {
             (void)onDone;
