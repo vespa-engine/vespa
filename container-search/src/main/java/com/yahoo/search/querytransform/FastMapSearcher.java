@@ -366,10 +366,11 @@ public class FastMapSearcher extends Searcher {
     /**
      * Returns the int to encode for the given range endpoint, using the given value when the
      * endpoint is unbounded, or null if the endpoint has no exact int form.
+     * An infinite endpoint is unbounded only when it has the same sign as the given value.
      */
     private static Integer toIntBound(Limit limit, int whenInfinite) {
         if (limit.isInfinite()) {
-            return whenInfinite;
+            return isSameSign(limit, whenInfinite) ? whenInfinite : null;
         }
         int asInt = limit.number().intValue();
         double asDouble = limit.number().doubleValue();
@@ -409,10 +410,11 @@ public class FastMapSearcher extends Searcher {
     /**
      * Returns the long to encode for the given range endpoint, using the given value when the
      * endpoint is unbounded, or null if the endpoint has no exact long form.
+     * An infinite endpoint is unbounded only when it has the same sign as the given value.
      */
     private static Long toLongBound(Limit limit, long whenInfinite) {
         if (limit.isInfinite()) {
-            return whenInfinite;
+            return isSameSign(limit, whenInfinite) ? whenInfinite : null;
         }
         Number number = limit.number();
         if (number instanceof Long || number instanceof Integer) {
@@ -425,6 +427,14 @@ public class FastMapSearcher extends Searcher {
             return null;
         }
         return (long) asDouble;
+    }
+
+    /**
+     * Returns true if the given infinite limit has the same sign as the given extreme value. When it does not,
+     * as for a lower limit of +infinity, the limit is not unbounded and has no form in the encoded range.
+     */
+    private static boolean isSameSign(Limit limit, long extreme) {
+        return (limit.number().doubleValue() < 0) == (extreme < 0);
     }
 
     /** Package-private for unit testing. */
