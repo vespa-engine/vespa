@@ -32,6 +32,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -56,6 +57,9 @@ public class NodeMetricsClientTest {
     private static final String GZIP_CONSUMER = "gzip-consumer";
     private static final String GZIPPED_CPU_METRIC = "gzipped_cpu_util";
     private static final String BROTLI_CONSUMER = "brotli-consumer";
+    private static final String MALFORMED_JSON_CONSUMER = "malformed-json-consumer";
+    private static final String GOOD_THEN_CORRUPT_CONSUMER = "good-then-corrupt-consumer";
+    private static final String GOOD_THEN_CORRUPT = "good-then-corrupt";
     private static final Duration TTL = Duration.ofSeconds(30);
 
 
@@ -93,6 +97,27 @@ public class NodeMetricsClientTest {
         wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
                                      .withQueryParam("consumer", equalTo(BROTLI_CONSUMER))
                                      .willReturn(aResponse().withHeader("Content-Encoding", "br").withBody(RESPONSE)));
+
+        wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
+                                     .withQueryParam("consumer", equalTo(MALFORMED_JSON_CONSUMER))
+                                     .willReturn(aResponse().withBody("{\"services\": [")));
+
+        // A good gzipped response first, then one whose compressed data is corrupt.
+        wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
+                                     .withQueryParam("consumer", equalTo(GOOD_THEN_CORRUPT_CONSUMER))
+                                     .inScenario(GOOD_THEN_CORRUPT).whenScenarioStateIs(STARTED).willSetStateTo("corrupt")
+                                     .willReturn(aResponse().withHeader("Content-Encoding", "gzip").withBody(gzip(RESPONSE))));
+        wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
+                                     .withQueryParam("consumer", equalTo(GOOD_THEN_CORRUPT_CONSUMER))
+                                     .inScenario(GOOD_THEN_CORRUPT).whenScenarioStateIs("corrupt")
+                                     .willReturn(aResponse().withHeader("Content-Encoding", "gzip").withBody(corrupted(gzip(RESPONSE)))));
+    }
+
+    /** Keeps the 10 byte gzip header intact, so the corruption is only found while inflating. */
+    private static byte[] corrupted(byte[] gzipped) {
+        byte[] copy = gzipped.clone();
+        for (int i = 10; i < copy.length - 8; i++) copy[i] ^= (byte) 0x5a;
+        return copy;
     }
 
     private static byte[] gzip(String content) {
@@ -183,6 +208,38 @@ public class NodeMetricsClientTest {
         }
         assertEquals(0, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(0, nodeMetricsClient.getMetrics(toConsumerId(BROTLI_CONSUMER)).size());
+    }
+
+    @Test
+    public void malformed_json_fails_the_update() throws InterruptedException {
+        var future = nodeMetricsClient.startSnapshotUpdate(toConsumerId(MALFORMED_JSON_CONSUMER), TTL).orElseThrow();
+        try {
+            future.get();
+            fail("Expected the update to fail");
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof UncheckedIOException);
+        }
+        assertEquals(0, nodeMetricsClient.snapshotsRetrieved());
+        assertEquals(0, nodeMetricsClient.getMetrics(toConsumerId(MALFORMED_JSON_CONSUMER)).size());
+    }
+
+    @Test
+    public void corrupt_gzip_body_fails_the_update_and_keeps_the_previous_snapshot() throws InterruptedException {
+        wireMockRule.resetScenarios();
+        ConsumerId consumer = toConsumerId(GOOD_THEN_CORRUPT_CONSUMER);
+        updateSnapshot(consumer, TTL);
+        assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
+        assertEquals(4, nodeMetricsClient.getMetrics(consumer).size());
+
+        var future = nodeMetricsClient.startSnapshotUpdate(consumer, Duration.ZERO).orElseThrow();
+        try {
+            future.get();
+            fail("Expected the update to fail");
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof UncheckedIOException);
+        }
+        assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
+        assertEquals(4, nodeMetricsClient.getMetrics(consumer).size());
     }
 
     private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
