@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -110,13 +111,18 @@ public class GenericJsonUtil {
         }
     }
 
+    /**
+     * Returns the metrics packets in the given generic json, which may be inflated while it is read.
+     *
+     * @throws UncheckedIOException if the stream can not be read or parsed, so a bad body fails
+     *         the fetch instead of becoming an empty set of metrics
+     */
     public static List<MetricsPacket.Builder> toMetricsPackets(InputStream json) {
         try (json) {
             GenericJsonModel jsonModel = objectMapper().readValue(json, GenericJsonModel.class);
             return toMetricsPackets(jsonModel);
         } catch (IOException e) {
-            log.log(WARNING, "Could not create metrics packets from json", e);
-            return List.of();
+            throw new UncheckedIOException("Could not create metrics packets from json", e);
         }
     }
 
