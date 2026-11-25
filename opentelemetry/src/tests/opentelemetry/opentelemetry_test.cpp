@@ -141,16 +141,16 @@ TEST_F(OpenTelemetryTest, hello_world_to_grpc) {
     std::filesystem::remove(traces_json);
     ASSERT_NO_FATAL_FAILURE(write_otelcol_config(tls_config_file));
     /*
-     * 2 second margin for vespa-otelcol startup before emitting trace
+     * 5 second margin for vespa-otelcol startup before emitting trace
      * 1 seconds delay due to batch processor.
      * 2 seconds margin for trace to reach vespa-otelcol
-     * 2 + 1 + 2 = 5 seconds sleep.
+     * 5 + 1 + 2 = 8 seconds sleep.
      */
     std::thread thread([]() {
-        system("(vespa-otelcol --config otelcol-config.yaml & otelcol_pid=$!; sleep 5; kill $otelcol_pid)");
+        system("(vespa-otelcol --config otelcol-config.yaml & otelcol_pid=$!; sleep 8; kill $otelcol_pid)");
     });
     // Wait for vespa-otelcol to start
-    std::this_thread::sleep_for(2s);
+    std::this_thread::sleep_for(5s);
     std::cerr << "Emitting span" << std::endl;
     emit_hello_world_span();
     std::cerr << "Waiting for vespa-otelcol" << std::endl;
