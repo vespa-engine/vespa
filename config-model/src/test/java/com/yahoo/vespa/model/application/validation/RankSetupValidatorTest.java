@@ -13,6 +13,7 @@ import java.util.Map;
 import static com.yahoo.schema.DistributableResource.PathType.BLOB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -68,6 +69,22 @@ public class RankSetupValidatorTest {
         Map<String, String> env = RankSetupValidator.createEnvForEnablingLandlock(context, schemaDir);
 
         assertTrue(env.isEmpty());
+    }
+
+    @Test
+    void landlock_paths_with_separators_or_relative_paths_are_rejected() {
+        Validation.Context context = contextWithLandlock(true);
+        for (String schemaDir : List.of("/tmp/foo:/,rwx/", "/tmp/foo,rwx/", "tmp/foo/", "/tmp/../foo/", "/tmp/./foo/", ""))
+            assertThrows(IllegalArgumentException.class,
+                         () -> RankSetupValidator.createEnvForEnablingLandlock(context, schemaDir),
+                         schemaDir);
+    }
+
+    @Test
+    void file_reference_must_be_a_single_path_element() {
+        assertTrue(RankSetupValidator.fileReferenceDir("abc123").endsWith("abc123"));
+        for (String fileReference : List.of("", ".", "..", "../abc", "abc/def", "/abc"))
+            assertThrows(IllegalArgumentException.class, () -> RankSetupValidator.fileReferenceDir(fileReference), fileReference);
     }
 
     private static Validation.Context contextWithLandlock(boolean enableLandlock) {

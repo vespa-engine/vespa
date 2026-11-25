@@ -36,12 +36,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.text.StringUtilities.escape;
 
@@ -171,13 +172,12 @@ public class RankSetupValidator implements Validator {
     }
 
     public static Path getFileRepositoryPath(String name, String fileReference) {
-        ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder()); // assume defaults
-        String fileRefDir = Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir());
-        return Paths.get(fileRefDir, fileReference, name);
+        return Paths.get(fileRepositoryDir().toString(), fileReference, name);
     }
 
-    public static String getFileRepositoryPathParent(String name, String fileReference) {
-        return getFileRepositoryPath(name, fileReference).getParent().toString();
+    private static Path fileRepositoryDir() {
+        ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder()); // assume defaults
+        return Paths.get(Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir()));
     }
 
     public static String getFileRepositoryPathAsString(String name, String fileReference) {
@@ -216,23 +216,29 @@ public class RankSetupValidator implements Validator {
     }
 
     private static Map<String, String> createEnvForEnablingLandlock(Context context, String schemaDir, DocumentDatabase docDb) {
-        Set<String> modelPaths = new HashSet<>();
-        modelPaths.add(schemaDir);
+        boolean enableLandlock = context.deployState().featureFlags().enableLandlock();
+        if ( ! enableLandlock) return Map.of();
+
+        Set<String> readOnlyPaths = new LinkedHashSet<>();
+        readOnlyPaths.add(schemaDir);
 
         if (docDb != null) {
             var config = docDb.getDerivedConfiguration();
-            config.getRankProfileList()
-                  .getOnnxModels()
-                  .asMap()
-                  .values().
-                  forEach(model -> modelPaths.add(getFileRepositoryPathParent(model.getFilePath().getName(), model.getFileReference())));
-            config.getSchema()
-                  .rankExpressionFiles()
-                  .expressions().
-                  forEach(model -> modelPaths.add(getFileRepositoryPathParent(model.getFilePath().getName(), model.getFileReference())));
+            Stream.concat(config.getRankProfileList().getOnnxModels().asMap().values().stream(),
+                          config.getSchema().rankExpressionFiles().expressions().stream())
+                  .map(resource -> fileReferenceDir(resource.getFileReference()).toString())
+                  .forEach(readOnlyPaths::add);
         }
 
-        return Landlock.createEnv(context.deployState().featureFlags().enableLandlock(), modelPaths.toArray(new String[0]));
+        return Landlock.createEnv(enableLandlock, readOnlyPaths.toArray(new String[0]));
+    }
+
+    /** Returns the directory holding the files for the given file reference, which must be a single, plain path element */
+    static Path fileReferenceDir(String fileReference) {
+        if (fileReference.isEmpty() || fileReference.equals(".") || fileReference.equals("..") ||
+            fileReference.contains("/"))
+            throw new IllegalArgumentException("Illegal file reference '" + fileReference + "'");
+        return fileRepositoryDir().resolve(fileReference);
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
