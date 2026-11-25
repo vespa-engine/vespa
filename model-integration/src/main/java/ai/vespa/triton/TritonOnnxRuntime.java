@@ -355,9 +355,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     // Best-effort cleanup of models left by a previous process.
+    // Leaves the llama.cpp models to TritonLlamacppRuntime, which shares Triton and the model repository.
     private void cleanUpLeftovers() {
         try {
-            tritonClient.unloadAllModels();
+            tritonClient.unloadModels(modelName -> ! TritonLlamacppRuntime.isLlamacppModel(modelRepositoryPath.resolve(modelName)));
             deleteAllModelFilesFromModelRepository();
         } catch (RuntimeException e) {
             // Triton may be down or not needed at all (no ONNX models in the app).
@@ -720,7 +721,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         try (var stream = Files.list(modelRepositoryPath)) {
-            stream.forEach(path -> {
+            stream.filter(path -> ! TritonLlamacppRuntime.isLlamacppModel(path)).forEach(path -> {
                 log.warning(() -> "Deleting leftover model files from Triton model repository: " + path);
                 deleteModelDir(path);
             });

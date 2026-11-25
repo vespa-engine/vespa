@@ -24,6 +24,7 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
     private static final int GRPC_PORT = 8001;
     private static final int HTTP_PORT = 8000;
     private static final int METRICS_PORT = 8002;
+    private static final int OPENAI_PORT = 9000;
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("nvcr.io/nvidia/tritonserver:26.08-py3");
 
     // Overrides the image, e.g. to test against Vespa's Triton images: -DVESPA_TRITON_IMAGE=localhost/tritonserver:<tag>
@@ -50,9 +51,36 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         setCommandParts(new String[]{"tritonserver", "--model-repository=/models", "--model-control-mode=explicit"});
     }
 
+    /**
+     * Returns a container of the configured image that runs Triton's OpenAI frontend with its KServe frontends,
+     * as llama.cpp models need. Requires a Vespa Triton image with llama.cpp, e.g. cpu-onnx-llamacpp.
+     */
+    public static TritonServerContainer withLlamacpp() throws IOException {
+        var container = new TritonServerContainer();
+        container.addExposedPort(OPENAI_PORT);
+        // OpenAI requests reach llama.cpp through Triton's Python backend, whose shared memory in /dev/shm
+        // must hold the largest bodies of every instance; the container default of 64 MiB is too small.
+        container.withSharedMemorySize(1024L * 1024 * 1024);
+        // The images with llama.cpp start the same by default; given here so older images work too.
+        container.setCommandParts(new String[]{"python3", "/opt/tritonserver/python/openai/openai_frontend/main.py",
+                                               "--model-repository=/models", "--model-control-mode=explicit",
+                                               "--enable-kserve-frontends"});
+        return container;
+    }
+
     // Only Vespa's Triton images, given with the image override, support ONNX session sharing and pooling.
     public boolean isVespaImage() {
         return System.getProperty(IMAGE_NAME_PROPERTY) != null;
+    }
+
+    // Vespa's Triton images with llama.cpp are tagged with it, e.g. <version>-cpu-onnx-llamacpp.
+    public static boolean isLlamacppImageConfigured() {
+        var imageName = System.getProperty(IMAGE_NAME_PROPERTY);
+        return imageName != null && imageName.contains("llamacpp");
+    }
+
+    public String getLlamacppEndpoint() {
+        return "http://" + getHost() + ":" + getMappedPort(OPENAI_PORT);
     }
 
     public String getGrpcEndpoint() {

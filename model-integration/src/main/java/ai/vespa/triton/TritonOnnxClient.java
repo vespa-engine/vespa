@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -190,7 +191,12 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     public void unloadAllModels() {
-        log.fine(() -> "Unloading all models");
+        unloadModels(modelName -> true);
+    }
+
+    /** Unloads the loaded models whose names match. */
+    public void unloadModels(Predicate<String> modelNameFilter) {
+        log.fine(() -> "Unloading models");
 
         getRepositoryIndex().stream()
                 .filter(model -> "READY".equals(model.getState())
@@ -198,6 +204,7 @@ public class TritonOnnxClient implements AutoCloseable {
                         || "UNLOADING".equals(model.getState()))
                 .map(GrpcService.RepositoryIndexResponse.ModelIndex::getName)
                 .distinct()
+                .filter(modelNameFilter)
                 .forEach(this::unloadUntilModelNotReady);
     }
 

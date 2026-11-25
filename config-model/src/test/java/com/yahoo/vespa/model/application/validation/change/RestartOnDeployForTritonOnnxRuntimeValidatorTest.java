@@ -79,6 +79,20 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         </services>
         """.formatted(EMBEDDER);
 
+    // Also a GGUF embedder, so that the cluster gets TritonLlamacppRuntime as well when the flag is on.
+    private static final String SERVICES_XML_WITH_GGUF_EMBEDDER = """
+        <services version='1.0'>
+          <container id='cluster1' version='1.0'>
+            %s
+            <component id='gguf' class='ai.vespa.embedding.GgufEmbedder' bundle='model-integration'>
+              <config name='ai.vespa.embedding.config.gguf-embedder'>
+                <embeddingModel url='https://example.invalid/model.gguf'/>
+              </config>
+            </component>
+          </container>
+        </services>
+        """.formatted(EMBEDDER);
+
     @Test
     void restart_when_triton_runtime_enabled() {
         var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, false);
@@ -171,6 +185,36 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
 
         var restartAction = (VespaRestartAction) result.get(0);
         assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
+    }
+
+    // The cluster already uses Triton for ONNX; a GGUF embedder adds TritonLlamacppRuntime and the llama.cpp capability.
+    @Test
+    void restart_when_triton_llamacpp_runtime_enabled() {
+        var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true);
+        var next = createModel(SERVICES_XML_WITH_GGUF_EMBEDDER, true);
+        var result = validateModel(previous, next);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getMessage().contains("Triton llama.cpp runtime was enabled"), result.get(0).getMessage());
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, ((VespaRestartAction) result.get(0)).configChange());
+    }
+
+    @Test
+    void restart_when_triton_llamacpp_runtime_disabled() {
+        var previous = createModel(SERVICES_XML_WITH_GGUF_EMBEDDER, true);
+        var next = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true);
+        var result = validateModel(previous, next);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getMessage().contains("Triton llama.cpp runtime was disabled"), result.get(0).getMessage());
+    }
+
+    @Test
+    void no_restart_when_both_triton_runtimes_remain_enabled() {
+        var previous = createModel(SERVICES_XML_WITH_GGUF_EMBEDDER, true);
+        var next = createModel(SERVICES_XML_WITH_GGUF_EMBEDDER, true);
+
+        assertTrue(validateModel(previous, next).isEmpty());
     }
 
     @Test

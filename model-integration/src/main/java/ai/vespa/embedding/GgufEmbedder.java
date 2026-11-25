@@ -2,33 +2,40 @@
 package ai.vespa.embedding;
 
 import ai.vespa.embedding.config.GgufEmbedderConfig;
+import ai.vespa.modelintegration.llamacpp.EmbeddedLlamacppRuntime;
+import ai.vespa.modelintegration.llamacpp.LlamacppEvaluator;
+import ai.vespa.modelintegration.llamacpp.LlamacppOptions;
+import ai.vespa.modelintegration.llamacpp.LlamacppRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.OverloadException;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
-import de.kherud.llama.LlamaModel;
-import de.kherud.llama.ModelParameters;
-import de.kherud.llama.args.PoolingType;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Embedder using GGUF file format through llama.cpp
+ * Embedder using GGUF file format through llama.cpp.
+ * The model runs in the container, or in a Triton Inference Server sidecar when the config model
+ * provides a Triton llama.cpp runtime.
  *
  * @author bjorncs
  */
 public class GgufEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(GgufEmbedder.class.getName());
-    private final LlamaModel model;
+    private final LlamacppEvaluator model;
     private final int maxPromptTokens;
     private final TextPrepender prepender;
     private final boolean normalize;
@@ -37,29 +44,52 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         public Exception(Throwable cause) { super(cause.getMessage(), cause); }
     }
 
+    /**
+     * Runs the model in the llama.cpp runtime of the container cluster, if it has one, else in the container.
+     * The runtime comes as a registry because it is optional: the config model adds a runtime component,
+     * e.g. TritonLlamacppRuntime, only to some clusters, and injecting a single component would fail without one.
+     */
     @Inject
+    public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, ComponentRegistry<LlamacppRuntime> runtimes) {
+        this(config, helper, runtimeOf(runtimes, EmbeddedLlamacppRuntime::new));
+    }
+
+    /** Returns the only runtime in the registry, or the fallback if it has none. */
+    static LlamacppRuntime runtimeOf(ComponentRegistry<LlamacppRuntime> runtimes, Supplier<LlamacppRuntime> fallback) {
+        var runtimesById = runtimes.allComponentsById();
+        if (runtimesById.size() > 1)
+            throw new IllegalArgumentException("Expected at most one llama.cpp runtime component, but got " +
+                                               runtimesById.keySet().stream().map(ComponentId::stringValue).sorted().toList());
+        return runtimesById.isEmpty() ? fallback.get() : runtimesById.values().iterator().next();
+    }
+
     public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper) {
+        this(config, helper, new EmbeddedLlamacppRuntime());
+    }
+
+    GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, LlamacppRuntime runtime) {
         log.fine(() -> Text.format("Config: %s", config));
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
-        var modelParams = new ModelParameters()
-                .enableEmbedding()
-                .setParallel(config.parallel())
-                .setModel(modelPath)
-                .setGpuLayers(config.gpuLayers());
-        if (config.continuousBatching()) modelParams.enableContBatching();
-        if (config.poolingType() != GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED)
-            modelParams.setPoolingType(PoolingType.valueOf(config.poolingType().name()));
-        if (config.physicalMaxBatchSize() > 0) modelParams.setUbatchSize(config.physicalMaxBatchSize());
-        if (config.logicalMaxBatchSize() > 0) modelParams.setBatchSize(config.logicalMaxBatchSize());
-        if (config.contextSize() > 0) modelParams.setCtxSize(config.contextSize());
-        if (config.seed() > -1) modelParams.setSeed(config.seed());
-        if (config.threads() != 0) modelParams.setThreads(calculateThreadCount(config.threads()));
-        if (config.batchThreads() != 0) modelParams.setThreadsBatch(calculateThreadCount(config.batchThreads()));
-    //  if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
-        model = new LlamaModel(modelParams);
+        model = runtime.evaluatorOf(modelPath, options(config));
         maxPromptTokens = config.maxPromptTokens();
         prepender = new TextPrepender(config.prependQuery(), config.prependDocument());
         normalize = config.normalize();
+    }
+
+    static LlamacppOptions options(GgufEmbedderConfig config) {
+        var pooling = config.poolingType() == GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED
+                ? Optional.<LlamacppOptions.Pooling>empty()
+                : Optional.of(LlamacppOptions.Pooling.valueOf(config.poolingType().name()));
+        return new LlamacppOptions(config.parallel(),
+                                config.contextSize(),
+                                config.logicalMaxBatchSize(),
+                                config.physicalMaxBatchSize(),
+                                config.gpuLayers(),
+                                pooling,
+                                config.seed(),
+                                config.threads() != 0 ? calculateThreadCount(config.threads()) : 0,
+                                config.batchThreads() != 0 ? calculateThreadCount(config.batchThreads()) : 0,
+                                config.continuousBatching());
     }
 
     @Override
@@ -67,7 +97,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var prompt = prependAndTruncatePrompt(text, context);
         record CacheKey(String embedderId, String text){}
         var cacheKey = new CacheKey(context.getEmbedderId(), prompt);
-        var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> generateRawEmbedding(prompt));
+        var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> generateRawEmbedding(prompt, context));
         if (tensorType.dimensions().size() != 1) {
             throw new IllegalArgumentException(
                     Text.format("Error in embedding to type '%s': should only have one dimension.", tensorType));
@@ -92,13 +122,14 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String text, Context context) {
-        return Arrays.stream(wrapLlamaException(() -> model.encode(text)))
+        return Arrays.stream(wrapLlamaException(() -> model.tokenize(text, deadline(context))))
                 .boxed().toList();
     }
 
     @Override
     public String decode(List<Integer> tokens, Context context) {
-        return wrapLlamaException(() -> model.decode(tokens.stream().mapToInt(Integer::intValue).toArray()));
+        var tokenIds = tokens.stream().mapToInt(Integer::intValue).toArray();
+        return wrapLlamaException(() -> model.detokenize(tokenIds, deadline(context)));
     }
 
     @Override
@@ -111,37 +142,31 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
      * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
      */
     private String prependAndTruncatePrompt(String text, Context context) {
-        text = prepender.prepend(text, context);
-        if (maxPromptTokens <= 0) return text;
-        var tokens = model.encode(text);
+        var prompt = prepender.prepend(text, context);
+        if (maxPromptTokens <= 0) return prompt;
+        var tokens = wrapLlamaException(() -> model.tokenize(prompt, deadline(context)));
         var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token
-        if (tokens.length <= maxTruncatedLength) return text;
+        if (tokens.length <= maxTruncatedLength) return prompt;
         log.fine(() -> Text.format("Truncating prompt from %d to %d tokens", tokens.length, maxTruncatedLength));
         var truncatedTokens = Arrays.copyOfRange(tokens, 0, maxTruncatedLength);
-        return model.decode(truncatedTokens);
+        return wrapLlamaException(() -> model.detokenize(truncatedTokens, deadline(context)));
     }
 
-    private float[] generateRawEmbedding(String prompt) {
-        try {
-            return wrapLlamaException(() -> model.embed(prompt));
-        } catch (GgufEmbedder.Exception e) {
-            var cause = e.getCause();
-            if (cause == null) throw e;
-            if (cause.getClass().getName().endsWith("de.kherud.llama.LlamaException") // Package-private exception
-                    && cause.getMessage().contains("too large to process"))
-            {
-                // Illegal input must be propagated as IllegalArgumentException
-                throw new IllegalArgumentException(
-                        Text.format("Input text is too large (prompt UTF-16 length: %d). Either set max prompt tokens or adjust batch/context size.", prompt.length()),
-                        cause);
-            }
-            throw e;
-        }
+    private float[] generateRawEmbedding(String prompt, Context context) {
+        return wrapLlamaException(() -> model.embed(prompt, deadline(context)));
     }
 
+    // The request deadline, or empty to use the runtime's default timeout. A runtime in the container ignores it.
+    private static Optional<Instant> deadline(Context context) {
+        return context.getDeadline().map(deadline -> deadline.asInstant());
+    }
+
+    // Illegal input, timeouts and overload keep their types, which callers act on.
     private static <T> T wrapLlamaException(Supplier<T> supplier) {
         try {
             return supplier.get();
+        } catch (IllegalArgumentException | TimeoutException | OverloadException e) {
+            throw e;
         } catch (RuntimeException e) {
             throw new GgufEmbedder.Exception(e);
         }
