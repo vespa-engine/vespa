@@ -94,13 +94,6 @@ void ResultProcessor::prepareThreadContextCreation(size_t num_threads) {
     if (_groupingSession) {
         _groupingSession->prepareThreadContextCreation(num_threads);
     }
-    // Take the m.key enum guards on this thread, before dispatch. They are released on this
-    // thread too, and a shared lock must be released by the thread that took it. This is
-    // done for one match thread as well: whether the thread bundle runs a single target on
-    // the calling thread is up to the bundle.
-    if (_sortSpec.has_value()) {
-        FastS_SortSpec::prefetch_enum_guards(_attrContext, *_sortSpec);
-    }
 }
 
 std::unique_ptr<ResultProcessor::Context>

@@ -4,12 +4,10 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_to_number.h>
 #include <vespa/searchlib/common/sortresults.h>
@@ -19,7 +17,6 @@
 
 #include <cinttypes>
 #include <map>
-#include <mutex>
 #include <thread>
 #include <type_traits>
 
@@ -829,108 +826,25 @@ TEST(SortTest, map_value_init_fails_for_unusable_attributes) {
     }
 }
 
-namespace {
-
-struct GuardEvent {
-    std::string     name;
-    std::thread::id acquired;
-    std::thread::id released;
-    bool            stable_enum = false;
-};
-
-class RecordingReadGuard : public search::attribute::AttributeReadGuard {
-    std::shared_ptr<GuardEvent> _event;
-
-public:
-    RecordingReadGuard(const search::attribute::IAttributeVector* attr, std::shared_ptr<GuardEvent> event)
-        : search::attribute::AttributeReadGuard(attr), _event(std::move(event)) {
-        _event->acquired = std::this_thread::get_id();
-    }
-    ~RecordingReadGuard() override { _event->released = std::this_thread::get_id(); }
-};
-
-class RecordingAttributeManager : public IAttributeManager {
-    std::map<std::string, AttributeVector::SP>       _attributes;
-    mutable std::mutex                               _lock;
-    mutable std::vector<std::shared_ptr<GuardEvent>> _events;
-
-public:
-    void add(const AttributeVector::SP& attr) { _attributes[attr->getName()] = attr; }
-    std::vector<std::shared_ptr<GuardEvent>> events() const {
-        std::lock_guard guard(_lock);
-        return _events;
-    }
-    AttributeGuard::UP getAttribute(std::string_view) const override { return std::make_unique<AttributeGuard>(); }
-    void asyncForAttribute(std::string_view, std::unique_ptr<search::attribute::IAttributeFunctor>) const override {}
-    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name,
-                                                                                 bool stable_enum) const override {
-        auto event = std::make_shared<GuardEvent>();
-        event->name = std::string(name);
-        event->stable_enum = stable_enum;
-        {
-            std::lock_guard guard(_lock);
-            _events.push_back(event);
-        }
-        auto                                       found = _attributes.find(std::string(name));
-        const search::attribute::IAttributeVector* attr =
-            (found == _attributes.end()) ? nullptr : found->second.get();
-        return std::make_unique<RecordingReadGuard>(attr, std::move(event));
-    }
-    void getAttributeList(std::vector<AttributeGuard>&) const override {}
-    search::attribute::IAttributeContext::UP createContext() const override {
-        return std::make_unique<AttributeContext>(*this);
-    }
-    std::shared_ptr<search::attribute::ReadableAttributeVector>
-    readable_attribute_vector(std::string_view name) const override {
-        auto found = _attributes.find(std::string(name));
-        if (found == _attributes.end()) {
-            return {};
-        }
-        return found->second;
-    }
-};
-
-} // namespace
-
-TEST(SortTest, map_sort_enum_guards_are_taken_and_released_on_the_setup_thread) {
-    RecordingAttributeManager mgr;
-    mgr.add(AttributeFactory::createAttribute("m.key", Config(BasicType::STRING, CollectionType::ARRAY)));
-    mgr.add(AttributeFactory::createAttribute("m.value", Config(BasicType::INT64, CollectionType::ARRAY)));
-    const auto setup_thread = std::this_thread::get_id();
-    {
-        search::AttributeContext ctx(mgr);
-        ctx.enableMultiThreadSafe();
-        FastS_SortSpec::prefetch_enum_guards(ctx, ParsedSortSpec("+m{\"k\"} -other"));
-
-        auto lookup = [&ctx] {
-            ctx.getAttributeStableEnum("m.key");
-            ctx.getAttribute("m.value");
-        };
-        std::thread worker_a(lookup);
-        std::thread worker_b(lookup);
-        worker_a.join();
-        worker_b.join();
-    }
-
-    auto events = mgr.events();
-    ASSERT_EQ(2u, events.size());
-    bool saw_key = false;
-    bool saw_value = false;
-    for (const auto& event : events) {
-        EXPECT_EQ(setup_thread, event->acquired);
-        EXPECT_EQ(setup_thread, event->released);
-        if (event->name == "m.key") {
-            saw_key = true;
-            EXPECT_TRUE(event->stable_enum);
-        } else if (event->name == "m.value") {
-            saw_value = true;
-            EXPECT_FALSE(event->stable_enum);
-        } else {
-            ADD_FAILURE() << event->name;
-        }
-    }
-    EXPECT_TRUE(saw_key);
-    EXPECT_TRUE(saw_value);
+TEST(SortTest, map_sort_holds_no_enum_guard_outside_of_encoding_the_sort_blobs) {
+    // The map lookup writer takes a stable enum guard on m.key, a shared lock that must be
+    // released by the thread that took it. It is neither held after Init() nor after sorting,
+    // so a sort spec set up and used by one thread can be destroyed by another.
+    search::uca::UcaConverterFactory ucaFactory;
+    MapSortFixture                   f;
+    search::AttributeContext         ac(f.mgr);
+    ac.enableMultiThreadSafe();
+    std::unique_ptr<FastS_SortSpec> sorter;
+    std::thread                     worker([&] {
+        sorter = std::make_unique<FastS_SortSpec>("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+        ASSERT_TRUE(sorter->Init("+m{\"k1\"}", ac));
+        EXPECT_FALSE(f.keys->hasActiveEnumGuards());
+        EXPECT_EQ((std::vector<uint32_t>{3, 2, 1, 4}), sorted_docids(*sorter));
+        EXPECT_FALSE(f.keys->hasActiveEnumGuards());
+    });
+    worker.join();
+    sorter.reset();
+    EXPECT_FALSE(f.keys->hasActiveEnumGuards());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

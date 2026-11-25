@@ -107,6 +107,9 @@ public:
         const search::attribute::IAttributeVector*          _vector;
         std::unique_ptr<search::attribute::ISortBlobWriter> _writer;
         uint32_t                                            _feature_ordinal;
+        // Set for a map lookup level. Its writer holds a stable enum guard on this attribute and
+        // is only present while initSortData() runs (see MapLookupWriterScope).
+        const search::attribute::IAttributeVector* _map_key_vector;
         bool has_ascending_sort_order() const {
             return _type == ASC_VECTOR || _type == ASC_RANK || _type == ASC_DOCID || _type == ASC_FEATURE;
         }
@@ -135,6 +138,8 @@ private:
     INumericSortValueProvider* _numeric_provider;
     bool                       _feature_values_failed;
 
+    class MapLookupWriterScope;
+
     bool Add(search::attribute::IAttributeContext& vecMan, const search::common::FieldSortSpec& field_sort_spec);
     double feature_value(uint32_t ordinal) const;
     void initSortData(const search::RankedHit* a, uint32_t n);
@@ -152,10 +157,6 @@ public:
     }
     bool Init(const std::string& sortSpec, search::attribute::IAttributeContext& vecMan);
     bool Init(const search::common::sortspec::ParsedSortSpec& sortSpec, search::attribute::IAttributeContext& vecMan);
-    // Takes the m.key enum guard on this thread. A shared lock is released by the thread that
-    // took it, so match workers must only look that guard up.
-    static void prefetch_enum_guards(search::attribute::IAttributeContext&           attr_ctx,
-                                     const search::common::sortspec::ParsedSortSpec& sort_spec);
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
     void copySortData(uint32_t offset, uint32_t n, uint32_t* idx, char* buf);
