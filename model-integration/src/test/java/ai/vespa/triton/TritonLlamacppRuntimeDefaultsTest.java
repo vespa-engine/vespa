@@ -114,6 +114,28 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertNotEquals(name, otherName);
     }
 
+    @Test
+    void image_token_options_become_llama_server_flags() throws IOException {
+        var options = new LlamacppOptions(1, 0, -1, -1, 0, Optional.empty(), -1, 0, 0, false, 250, 280);
+        var parameters = parameters(parse(TritonLlamacppRuntime.createModelConfig("model_abc", options)));
+
+        assertEquals("250", parameters.get("llamacpp.image-min-tokens"));
+        assertEquals("280", parameters.get("llamacpp.image-max-tokens"));
+    }
+
+    @Test
+    void model_name_includes_the_projector_if_any(@TempDir Path directory) throws IOException {
+        var model = Files.writeString(directory.resolve("embedder.gguf"), "model contents");
+        var mmproj = Files.writeString(directory.resolve("mmproj.gguf"), "projector contents");
+        var otherMmproj = Files.writeString(directory.resolve("other-mmproj.gguf"), "other projector contents");
+
+        var name = TritonLlamacppRuntime.generateModelName(model.toString(), DEFAULT_OPTIONS);
+        assertEquals(name, TritonLlamacppRuntime.generateModelName(model.toString(), Optional.empty(), DEFAULT_OPTIONS));
+        var withMmproj = TritonLlamacppRuntime.generateModelName(model.toString(), Optional.of(mmproj.toString()), DEFAULT_OPTIONS);
+        assertNotEquals(name, withMmproj);
+        assertNotEquals(withMmproj, TritonLlamacppRuntime.generateModelName(model.toString(), Optional.of(otherMmproj.toString()), DEFAULT_OPTIONS));
+    }
+
     private static String hashOf(String modelName) {
         return modelName.substring(modelName.lastIndexOf('_') + 1);
     }

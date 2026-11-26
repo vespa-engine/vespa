@@ -31,6 +31,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +59,8 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
 
     static final String BACKEND = "llamacpp";
     private static final String MODEL_FILE_NAME = "model.gguf";
+    // The name of the multimodal projector file which the llama.cpp backend looks for beside the model file.
+    private static final String MMPROJ_FILE_NAME = "mmproj.gguf";
     private static final String CONFIG_FILE_NAME = "config.pbtxt";
     // Each llamacpp.<flag> parameter becomes the llama-server flag --<flag>, an empty value a switch.
     private static final String FLAG_PREFIX = "llamacpp.";
@@ -94,18 +97,27 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
 
     @Override
     public LlamacppEvaluator evaluatorOf(String modelPath, LlamacppOptions options) {
-        var modelName = generateModelName(modelPath, options);
-        var modelReference = referenceModel(modelName, modelPath, options);
-        return new TritonLlamacppEvaluator(modelName, modelReference, llamacppClient, repositoryClient, isModelControlExplicit);
+        return evaluatorOf(modelPath, Optional.empty(), options);
+    }
+
+    @Override
+    public boolean loadsMmproj() { return true; }
+
+    @Override
+    public LlamacppEvaluator evaluatorOf(String modelPath, Optional<String> mmprojPath, LlamacppOptions options) {
+        var modelName = generateModelName(modelPath, mmprojPath, options);
+        var modelReference = referenceModel(modelName, modelPath, mmprojPath, options);
+        return new TritonLlamacppEvaluator(modelName, modelReference, llamacppClient, repositoryClient,
+                                           isModelControlExplicit, mmprojPath.isPresent());
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if this is its first reference.
     // A model that already has references is in use: copying over it, or cleaning it up when a load fails,
     // would break the evaluators using it. If Triton has lost it, those evaluators reload it, see TritonLlamacppEvaluator.
-    private ResourceReference referenceModel(String modelName, String modelPath, LlamacppOptions options) {
+    private ResourceReference referenceModel(String modelName, String modelPath, Optional<String> mmprojPath, LlamacppOptions options) {
         referenceCounts.compute(modelName, (key, count) -> {
             if (count != null) return count + 1;
-            ensureModelReady(modelName, modelPath, options);
+            ensureModelReady(modelName, modelPath, mmprojPath, options);
             return 1;
         });
 
@@ -127,7 +139,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     }
 
     // Uses an already-ready model, or copies the model into the repository and loads it into Triton.
-    private void ensureModelReady(String modelName, String modelPath, LlamacppOptions options) {
+    private void ensureModelReady(String modelName, String modelPath, Optional<String> mmprojPath, LlamacppOptions options) {
         if ( ! isModelControlExplicit) return;
 
         try {
@@ -137,7 +149,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         }
 
         try {
-            copyModelFilesToModelRepository(modelName, modelPath, createModelConfig(modelName, options));
+            copyModelFilesToModelRepository(modelName, modelPath, mmprojPath, createModelConfig(modelName, options));
             repositoryClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
             cleanUpModel(modelName); // Best effort
@@ -192,15 +204,20 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         }
     }
 
-    /** Hashes the model contents and options, so that different models or options get different names. */
     static String generateModelName(String modelPath, LlamacppOptions options) {
+        return generateModelName(modelPath, Optional.empty(), options);
+    }
+
+    /** Hashes the contents of the model and its projector, and the options, so that each gets its own name. */
+    static String generateModelName(String modelPath, Optional<String> mmprojPath, LlamacppOptions options) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var extensionIndex = fileName.lastIndexOf('.');
         var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
         if (baseName.length() > MAX_BASE_NAME_LENGTH) baseName = baseName.substring(0, MAX_BASE_NAME_LENGTH);
-        var identity = ByteBuffer.allocate(2 * Long.BYTES)
+        var identity = ByteBuffer.allocate(3 * Long.BYTES)
                 .putLong(ModelPathOrData.of(modelPath).calculateHash())
-                .putLong(hashOptions(options));
+                .putLong(hashOptions(options))
+                .putLong(mmprojPath.map(path -> ModelPathOrData.of(path).calculateHash()).orElse(0L));
         return baseName + "_" + Long.toHexString(hash(identity.array()));
     }
 
@@ -215,7 +232,9 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
                        ", seed=" + options.seed() +
                        ", threads=" + options.threads() +
                        ", batchThreads=" + options.batchThreads() +
-                       ", continuousBatching=" + options.continuousBatching() + "]";
+                       ", continuousBatching=" + options.continuousBatching() +
+                       ", imageMinTokens=" + options.imageMinTokens() +
+                       ", imageMaxTokens=" + options.imageMaxTokens() + "]";
         return hash(encoding.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -244,6 +263,8 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         if (options.seed() > -1) putFlag(builder, "seed", Integer.toString(options.seed()));
         if (options.threads() > 0) putFlag(builder, "threads", Integer.toString(options.threads()));
         if (options.batchThreads() > 0) putFlag(builder, "threads-batch", Integer.toString(options.batchThreads()));
+        if (options.imageMinTokens() > 0) putFlag(builder, "image-min-tokens", Integer.toString(options.imageMinTokens()));
+        if (options.imageMaxTokens() > 0) putFlag(builder, "image-max-tokens", Integer.toString(options.imageMaxTokens()));
         // llama-server batches continuously by default.
         return builder.build().toString();
     }
@@ -265,10 +286,11 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     }
 
     /**
-     * Writes the config and copies the model file to a model repository directory that Triton has access to.
+     * Writes the config, and copies the model file and its projector, if any, to a model repository directory
+     * that Triton has access to.
      * The config is written first, see {@link #isLlamacppModel}.
      */
-    private void copyModelFilesToModelRepository(String modelName, String modelPath, String modelConfig) {
+    private void copyModelFilesToModelRepository(String modelName, String modelPath, Optional<String> mmprojPath, String modelConfig) {
         var modelDirPath = modelRepositoryPath.resolve(modelName);
         var modelVersionPath = modelDirPath.resolve("1");
         var modelFilePath = modelVersionPath.resolve(MODEL_FILE_NAME);
@@ -281,6 +303,11 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
             addReadPermissions(modelConfigPath);
             Files.copy(Paths.get(modelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
             addReadPermissions(modelFilePath); // Triton must be able to read the files
+            if (mmprojPath.isPresent()) {
+                var mmprojFilePath = modelVersionPath.resolve(MMPROJ_FILE_NAME);
+                Files.copy(Paths.get(mmprojPath.get()), mmprojFilePath, StandardCopyOption.REPLACE_EXISTING);
+                addReadPermissions(mmprojFilePath);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }

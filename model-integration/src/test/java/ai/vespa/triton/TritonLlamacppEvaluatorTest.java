@@ -91,7 +91,7 @@ class TritonLlamacppEvaluatorTest {
     }
 
     private TritonLlamacppEvaluator evaluator(boolean explicitControl) {
-        return new TritonLlamacppEvaluator(MODEL, releases::incrementAndGet, llamacppClient, repositoryClient, explicitControl);
+        return new TritonLlamacppEvaluator(MODEL, releases::incrementAndGet, llamacppClient, repositoryClient, explicitControl, false);
     }
 
 }

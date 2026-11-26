@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.triton;
 
+import ai.vespa.modelintegration.llamacpp.LlamacppEvaluator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvalidInputException;
 import com.yahoo.language.process.OverloadException;
 import com.yahoo.language.process.TimeoutException;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -46,6 +49,27 @@ class TritonLlamacppClientTest {
     void tearDown() throws IOException {
         client.close();
         server.shutdown();
+    }
+
+    @Test
+    void embeds_text_and_image_parts_in_order_as_one_input() throws Exception {
+        server.enqueue(json(200, """
+                {"model":"m","object":"list","data":[{"embedding":[0.6,0.8],"index":0,"object":"embedding"}]}"""));
+        byte[] png = { (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 1, 2 };
+        var parts = List.<LlamacppEvaluator.Part>of(new LlamacppEvaluator.Part.Text("passage: "),
+                            new LlamacppEvaluator.Part.Image(new Embedder.Image(png)),
+                            new LlamacppEvaluator.Part.Text(" A title"));
+
+        assertArrayEquals(new float[] { 0.6f, 0.8f }, client.embed("m", parts, Optional.empty()));
+
+        var request = server.takeRequest();
+        assertEquals("/v1/embeddings", request.getPath());
+        assertEquals(objectMapper.readTree("""
+                {"model":"m","input":[{"content":[
+                  {"type":"text","text":"passage: "},
+                  {"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoBAg=="}},
+                  {"type":"text","text":" A title"}]}]}"""),
+                     objectMapper.readTree(request.getBody().readUtf8()));
     }
 
     @Test

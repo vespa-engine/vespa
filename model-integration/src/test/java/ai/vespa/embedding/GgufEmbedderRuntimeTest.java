@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GgufEmbedderRuntimeTest {
 
     private static final String MODEL = "models/embedder.gguf";
+    private static final String MMPROJ = "models/mmproj.gguf";
+    private static final Embedder.Image IMAGE = new Embedder.Image(new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1 });
     private static final TensorType TYPE = TensorType.fromSpec("tensor<float>(x[3])");
 
     @Test
@@ -121,6 +124,87 @@ class GgufEmbedderRuntimeTest {
         assertEquals("engine failed", e.getMessage());
     }
 
+    @Test
+    void projector_and_image_tokens_go_to_the_runtime() {
+        var runtime = new FakeRuntime();
+        new GgufEmbedder(config().mmproj(new GgufEmbedderConfig.Mmproj.Builder().model(ModelReference.valueOf(MMPROJ)))
+                                 .imageMinTokens(250).imageMaxTokens(280).build(),
+                         ModelReference::value, runtime).deconstruct();
+
+        assertEquals(Optional.of(MMPROJ), runtime.mmprojPath);
+        assertEquals(250, runtime.options.imageMinTokens());
+        assertEquals(280, runtime.options.imageMaxTokens());
+    }
+
+    @Test
+    void embeds_text_only_without_a_projector() {
+        var embedder = new GgufEmbedder(config().build(), ModelReference::value, new FakeRuntime());
+
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT)), embedder.supportedModalities());
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> embedder.embed(Embedder.Input.of(IMAGE), new Embedder.Context("product.embedding"), TYPE));
+        assertEquals("This GGUF embedder accepts text, but is given image", e.getMessage());
+    }
+
+    @Test
+    void projector_is_not_resolved_for_a_runtime_which_does_not_load_it() {
+        var runtime = new FakeRuntime();
+        runtime.loadsMmproj = false;
+        var resolved = new ArrayList<String>();
+        var embedder = new GgufEmbedder(withProjector().build(), reference -> { resolved.add(reference.value().toString()); return reference.value(); },
+                                        runtime);
+
+        assertEquals(List.of(MODEL), resolved);
+        assertEquals(Optional.empty(), runtime.mmprojPath);
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT)), embedder.supportedModalities());
+    }
+
+    @Test
+    void image_first_layout_reads_the_prefix_then_the_image_then_the_text() {
+        var runtime = new FakeRuntime();
+        var embedder = new GgufEmbedder(withProjector().prependDocument("passage: ").build(), ModelReference::value, runtime);
+        var document = new Embedder.Context("product.embedding");
+
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT), Set.of(Embedder.Modality.IMAGE),
+                            Set.of(Embedder.Modality.TEXT, Embedder.Modality.IMAGE)),
+                     embedder.supportedModalities());
+        assertEquals(List.of(text("passage: "), image(), text(" A title")),
+                     embedder.parts(Embedder.Input.of("A title", IMAGE), document));
+        assertEquals(List.of(text("passage: "), image()), embedder.parts(Embedder.Input.of(IMAGE), document));
+
+        assertEquals(Tensor.from(TYPE, "[3, 0, 4]"), embedder.embed(Embedder.Input.of("A title", IMAGE), document, TYPE));
+        assertEquals(List.of(List.of(text("passage: "), image(), text(" A title"))), runtime.evaluator.embeddedParts);
+    }
+
+    @Test
+    void text_first_layout_reads_the_text_then_the_image() {
+        var embedder = new GgufEmbedder(withProjector().imageFirst(false).prependQuery("query: ").build(),
+                                        ModelReference::value, new FakeRuntime());
+
+        assertEquals(List.of(text("A title "), image()),
+                     embedder.parts(Embedder.Input.of("A title", IMAGE), new Embedder.Context("product.embedding")));
+        assertEquals(List.of(text("query: A title "), image()),
+                     embedder.parts(Embedder.Input.of("A title", IMAGE), new Embedder.Context("query(q)")));
+        assertEquals(List.of(image()), embedder.parts(Embedder.Input.of(IMAGE), new Embedder.Context("product.embedding")));
+    }
+
+    @Test
+    void max_prompt_tokens_truncates_the_text_alone_with_an_image() {
+        var embedder = new GgufEmbedder(withProjector().maxPromptTokens(4).prependDocument("passage: ").build(),
+                                        ModelReference::value, new FakeRuntime());
+
+        assertEquals(List.of(text("passage: "), image(), text(" a b")),
+                     embedder.parts(Embedder.Input.of("a b c d e", IMAGE), new Embedder.Context("product.embedding")));
+    }
+
+    private static GgufEmbedderConfig.Builder withProjector() {
+        return config().mmproj(new GgufEmbedderConfig.Mmproj.Builder().model(ModelReference.valueOf(MMPROJ)));
+    }
+
+    private static LlamacppEvaluator.Part text(String text) { return new LlamacppEvaluator.Part.Text(text); }
+
+    private static LlamacppEvaluator.Part image() { return new LlamacppEvaluator.Part.Image(IMAGE); }
+
     private static GgufEmbedderConfig.Builder config() {
         return new GgufEmbedderConfig.Builder().embeddingModel(ModelReference.valueOf(MODEL));
     }
@@ -129,12 +213,24 @@ class GgufEmbedderRuntimeTest {
 
         final FakeEvaluator evaluator = new FakeEvaluator();
         String modelPath;
+        Optional<String> mmprojPath;
         LlamacppOptions options;
+        boolean loadsMmproj = true;
+
+        @Override
+        public boolean loadsMmproj() { return loadsMmproj; }
 
         @Override
         public LlamacppEvaluator evaluatorOf(String modelPath, LlamacppOptions options) {
+            return evaluatorOf(modelPath, Optional.empty(), options);
+        }
+
+        @Override
+        public LlamacppEvaluator evaluatorOf(String modelPath, Optional<String> mmprojPath, LlamacppOptions options) {
             this.modelPath = modelPath;
+            this.mmprojPath = mmprojPath;
             this.options = options;
+            evaluator.acceptsImages = mmprojPath.isPresent();
             return evaluator;
         }
 
@@ -144,6 +240,8 @@ class GgufEmbedderRuntimeTest {
     private static class FakeEvaluator implements LlamacppEvaluator {
 
         final List<String> embedded = new ArrayList<>();
+        final List<List<Part>> embeddedParts = new ArrayList<>();
+        boolean acceptsImages;
         final List<Optional<Instant>> deadlines = new ArrayList<>();
         RuntimeException failure;
         boolean closed;
@@ -153,6 +251,15 @@ class GgufEmbedderRuntimeTest {
             if (failure != null) throw failure;
             embedded.add(text);
             deadlines.add(deadline);
+            return new float[] { 3, 0, 4 };
+        }
+
+        @Override
+        public boolean acceptsImages() { return acceptsImages; }
+
+        @Override
+        public float[] embed(List<Part> parts, Optional<Instant> deadline) {
+            embeddedParts.add(parts);
             return new float[] { 3, 0, 4 };
         }
 

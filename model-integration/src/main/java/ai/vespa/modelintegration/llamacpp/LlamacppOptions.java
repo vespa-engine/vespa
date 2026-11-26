@@ -17,14 +17,24 @@ import java.util.Optional;
  * @param threads the number of threads used for generation
  * @param batchThreads the number of threads used for batch and prompt processing
  * @param continuousBatching whether to batch sequences continuously
+ * @param imageMinTokens the minimum number of tokens an image becomes, with a multimodal projector
+ * @param imageMaxTokens the maximum number of tokens an image becomes, with a multimodal projector
  *
  * @author ingridhabrekke
  */
 public record LlamacppOptions(int parallel, int contextSize, int logicalMaxBatchSize, int physicalMaxBatchSize,
                            int gpuLayers, Optional<Pooling> pooling, int seed, int threads, int batchThreads,
-                           boolean continuousBatching) {
+                           boolean continuousBatching, int imageMinTokens, int imageMaxTokens) {
 
     public enum Pooling { NONE, MEAN, CLS, LAST, RANK }
+
+    /** Options of a model without a multimodal projector, or with the projector's default image tokens. */
+    public LlamacppOptions(int parallel, int contextSize, int logicalMaxBatchSize, int physicalMaxBatchSize,
+                           int gpuLayers, Optional<Pooling> pooling, int seed, int threads, int batchThreads,
+                           boolean continuousBatching) {
+        this(parallel, contextSize, logicalMaxBatchSize, physicalMaxBatchSize, gpuLayers, pooling, seed, threads,
+             batchThreads, continuousBatching, 0, 0);
+    }
 
     public LlamacppOptions {
         if (parallel < 1) throw new IllegalArgumentException("parallel must be at least 1, got " + parallel);
