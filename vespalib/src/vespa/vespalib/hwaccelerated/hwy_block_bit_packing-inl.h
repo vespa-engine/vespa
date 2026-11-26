@@ -18,21 +18,27 @@
 #include "hwy_vec_unpack-inl.h"
 #include "invocation_meta.h"
 
+#include <hwy/contrib/bit_pack/bit_pack-inl.h>
+
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
 namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
-template <uint8_t Bits, typename KernelFn, size_t FnAccus, typename... Accus>
-void with_unpacked_rhs_bits(const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
+// TODO benchmark with a generalized > 128 bit dispatcher that just loads from a temp buffer
+
+static constexpr size_t max_unpack_u8_lanes = 64; // 512 bits
+
+// 128-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 16), typename KernelFn, size_t FnAccus, typename... Accus>
+void with_unpacked_rhs_bits(const DU8 d8x16, const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
                             const FnAccuArity<FnAccus>, Accus&&... accus) {
     constexpr uint8_t B = Bits;
 
-    const hn::Full128<uint8_t> d8x16;
-    const hn::Full64<uint8_t>  d8x8;
-    const hn::Full32<uint8_t>  d8x4;
-    const hn::Full16<uint8_t>  d8x2;
+    const hn::Full64<uint8_t> d8x8;
+    const hn::Full32<uint8_t> d8x4;
+    const hn::Full16<uint8_t> d8x2;
 
     static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
     constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
@@ -45,7 +51,6 @@ void with_unpacked_rhs_bits(const uint8_t* HWY_RESTRICT packed, const size_t sz,
         // one such vector at a time, so we manually do 8x dispatches. The BlockInvocation index
         // allows for transparent striping of input accumulators (if any) across kernel
         // invocations via my_dispatch.
-        // TODO specialize this for >128-bit vector targets...!
         my_dispatch(BlockInvocation<0>{}, arity, kernel_fn, raw0, std::forward<Accus>(accus)...);
         my_dispatch(BlockInvocation<1>{}, arity, kernel_fn, raw1, std::forward<Accus>(accus)...);
         my_dispatch(BlockInvocation<2>{}, arity, kernel_fn, raw2, std::forward<Accus>(accus)...);
@@ -123,17 +128,164 @@ void with_unpacked_rhs_bits(const uint8_t* HWY_RESTRICT packed, const size_t sz,
     }
 }
 
-// This is effectively `with_unpacked_rhs_bits` run on two bit-packed buffers in parallel,
-// with the kernel function receiving element-matched lhs and rhs vectors as input.
-template <uint8_t Bits, typename KernelFn, size_t FnAccus, typename... Accus>
-void with_unpacked_lhs_rhs_bits(const uint8_t* HWY_RESTRICT lhs_packed, const uint8_t* HWY_RESTRICT rhs_packed,
-                                const size_t sz, KernelFn kernel_fn, const FnAccuArity<FnAccus>, Accus&&... accus) {
+// 256-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 32), typename KernelFn, size_t FnAccus, typename... Accus>
+void with_unpacked_rhs_bits(const DU8 d8x32, const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
+                            const FnAccuArity<FnAccus>, Accus&&... accus) {
     constexpr uint8_t B = Bits;
 
+    // Bit unpacking must always be done using fixed tag, regardless of kernel register width
     const hn::Full128<uint8_t> d8x16;
     const hn::Full64<uint8_t>  d8x8;
     const hn::Full32<uint8_t>  d8x4;
-    const hn::Full16<uint8_t>  d8x2;
+
+    static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
+    constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        hn::Vec<decltype(d8x16)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x16, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn, hn::Combine(d8x32, raw1, raw0),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn, hn::Combine(d8x32, raw3, raw2),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<2>{}, arity, kernel_fn, hn::Combine(d8x32, raw5, raw4),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<3>{}, arity, kernel_fn, hn::Combine(d8x32, raw7, raw6),
+                    std::forward<Accus>(accus)...);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Vec<decltype(d8x8)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x8, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x32, hn::Combine(d8x16, raw3, raw2), hn::Combine(d8x16, raw1, raw0)),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn,
+                    hn::Combine(d8x32, hn::Combine(d8x16, raw7, raw6), hn::Combine(d8x16, raw5, raw4)),
+                    std::forward<Accus>(accus)...);
+        i += 64;
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        hn::Vec<decltype(d8x4)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x4, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x32,
+                                hn::Combine(d8x16, hn::Combine(d8x8, raw7, raw6), hn::Combine(d8x8, raw5, raw4)),
+                                hn::Combine(d8x16, hn::Combine(d8x8, raw3, raw2), hn::Combine(d8x8, raw1, raw0))),
+                    std::forward<Accus>(accus)...);
+        i += 32;
+        packed += 4 * B;
+        rem -= 32;
+    }
+    if (rem > 0) { // <= 31
+        HWY_ALIGN uint8_t tmp_raw[32] = {};
+        const size_t      orig_rem = rem;
+        i = 0;
+        if (rem >= 16) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(packed, tmp_raw);
+            i += 16;
+            packed += 2 * B;
+            rem -= 16;
+        }
+        if (rem >= 8) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(packed, tmp_raw + i);
+            i += 8;
+            packed += 1 * B;
+            rem -= 8;
+        }
+        if (rem > 0 && rem < 8) { // <= 7
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(packed, tmp_raw + i, rem);
+        }
+        my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x32, tmp_raw),
+                    std::forward<Accus>(accus)...);
+    }
+}
+
+// 512-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 64), typename KernelFn, size_t FnAccus, typename... Accus>
+void with_unpacked_rhs_bits(const DU8 d8x64, const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
+                            const FnAccuArity<FnAccus>, Accus&&... accus) {
+    constexpr uint8_t B = Bits;
+
+    const hn::Half<decltype(d8x64)> d8x32;
+    const hn::Full128<uint8_t> d8x16;
+    const hn::Full64<uint8_t>  d8x8;
+
+    static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
+    constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        hn::Vec<decltype(d8x16)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x16, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x64, hn::Combine(d8x32, raw3, raw2), hn::Combine(d8x32, raw1, raw0)),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn,
+                    hn::Combine(d8x64, hn::Combine(d8x32, raw7, raw6), hn::Combine(d8x32, raw5, raw4)),
+                    std::forward<Accus>(accus)...);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Vec<decltype(d8x8)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x8, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x64,
+                                hn::Combine(d8x32, hn::Combine(d8x16, raw7, raw6), hn::Combine(d8x16, raw5, raw4)),
+                                hn::Combine(d8x32, hn::Combine(d8x16, raw3, raw2), hn::Combine(d8x16, raw1, raw0))),
+                    std::forward<Accus>(accus)...);
+        i += 64;
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem > 0) { // <= 63
+        HWY_ALIGN uint8_t tmp_raw[64] = {};
+        const size_t      orig_rem = rem;
+        i = 0;
+        if (rem >= 32) { // <= 63
+            ScalarVerticalBlockBitPacker<B>::template unpack<4>(packed, tmp_raw);
+            i += 32;
+            packed += 4 * B;
+            rem -= 32;
+        }
+        if (rem >= 16) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(packed, tmp_raw + i);
+            i += 16;
+            packed += 2 * B;
+            rem -= 16;
+        }
+        if (rem >= 8) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(packed, tmp_raw + i);
+            i += 8;
+            packed += 1 * B;
+            rem -= 8;
+        }
+        if (rem > 0 && rem < 8) { // <= 7
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(packed, tmp_raw + i, rem);
+        }
+        my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x64, tmp_raw),
+                    std::forward<Accus>(accus)...);
+    }
+}
+
+// This is effectively `with_unpacked_rhs_bits` run on two bit-packed buffers in parallel,
+// with the kernel function receiving element-matched lhs and rhs vectors as input.
+
+// 128-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 16), typename KernelFn, size_t FnAccus, typename... Accus>
+void with_unpacked_lhs_rhs_bits(const DU8 d8x16, const uint8_t* HWY_RESTRICT lhs_packed,
+                                const uint8_t* HWY_RESTRICT rhs_packed, const size_t sz, KernelFn kernel_fn,
+                                const FnAccuArity<FnAccus>, Accus&&... accus) {
+    constexpr uint8_t B = Bits;
+
+    const hn::Full64<uint8_t> d8x8;
+    const hn::Full32<uint8_t> d8x4;
+    const hn::Full16<uint8_t> d8x2;
 
     static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
     constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
@@ -233,6 +385,195 @@ void with_unpacked_lhs_rhs_bits(const uint8_t* HWY_RESTRICT lhs_packed, const ui
         }
         my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x16, lhs_tmp_raw),
                     std::forward<Accus>(accus)..., hn::Load(d8x16, rhs_tmp_raw));
+    }
+}
+
+// 256-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 32), typename KernelFn, size_t FnAccus, typename... Accus>
+void with_unpacked_lhs_rhs_bits(const DU8 d8x32, const uint8_t* HWY_RESTRICT lhs_packed,
+                                const uint8_t* HWY_RESTRICT rhs_packed, const size_t sz, KernelFn kernel_fn,
+                                const FnAccuArity<FnAccus>, Accus&&... accus) {
+    constexpr uint8_t B = Bits;
+
+    const hn::Full128<uint8_t> d8x16;
+    const hn::Full64<uint8_t>  d8x8;
+    const hn::Full32<uint8_t>  d8x4;
+
+    static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
+    constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, lhs_packed += 16 * B, rhs_packed += 16 * B) {
+        hn::Vec<decltype(d8x16)> l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7;
+        hn::Vec<decltype(d8x16)> r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7;
+        VecUnpack8<B>::unpack(d8x16, lhs_packed, l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7);
+        VecUnpack8<B>::unpack(d8x16, rhs_packed, r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7);
+
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn, hn::Combine(d8x32, l_raw1, l_raw0),
+                    std::forward<Accus>(accus)..., hn::Combine(d8x32, r_raw1, r_raw0));
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn, hn::Combine(d8x32, l_raw3, l_raw2),
+                    std::forward<Accus>(accus)..., hn::Combine(d8x32, r_raw3, r_raw2));
+        my_dispatch(BlockInvocation<2>{}, arity, kernel_fn, hn::Combine(d8x32, l_raw5, l_raw4),
+                    std::forward<Accus>(accus)..., hn::Combine(d8x32, r_raw5, r_raw4));
+        my_dispatch(BlockInvocation<3>{}, arity, kernel_fn, hn::Combine(d8x32, l_raw7, l_raw6),
+                    std::forward<Accus>(accus)..., hn::Combine(d8x32, r_raw7, r_raw6));
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Vec<decltype(d8x8)> l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7;
+        hn::Vec<decltype(d8x8)> r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7;
+        VecUnpack8<B>::unpack(d8x8, lhs_packed, l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7);
+        VecUnpack8<B>::unpack(d8x8, rhs_packed, r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7);
+
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x32, hn::Combine(d8x16, l_raw3, l_raw2), hn::Combine(d8x16, l_raw1, l_raw0)),
+                    std::forward<Accus>(accus)...,
+                    hn::Combine(d8x32, hn::Combine(d8x16, r_raw3, r_raw2), hn::Combine(d8x16, r_raw1, r_raw0)));
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn,
+                    hn::Combine(d8x32, hn::Combine(d8x16, l_raw7, l_raw6), hn::Combine(d8x16, l_raw5, l_raw4)),
+                    std::forward<Accus>(accus)...,
+                    hn::Combine(d8x32, hn::Combine(d8x16, r_raw7, r_raw6), hn::Combine(d8x16, r_raw5, r_raw4)));
+        i += 64;
+        lhs_packed += 8 * B;
+        rhs_packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        hn::Vec<decltype(d8x4)> l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7;
+        hn::Vec<decltype(d8x4)> r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7;
+        VecUnpack8<B>::unpack(d8x4, lhs_packed, l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7);
+        VecUnpack8<B>::unpack(d8x4, rhs_packed, r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7);
+
+        my_dispatch(
+            BlockInvocation<0>{}, arity, kernel_fn,
+            hn::Combine(d8x32,
+                        hn::Combine(d8x16, hn::Combine(d8x8, l_raw7, l_raw6), hn::Combine(d8x8, l_raw5, l_raw4)),
+                        hn::Combine(d8x16, hn::Combine(d8x8, l_raw3, l_raw2), hn::Combine(d8x8, l_raw1, l_raw0))),
+            std::forward<Accus>(accus)...,
+            hn::Combine(d8x32,
+                        hn::Combine(d8x16, hn::Combine(d8x8, r_raw7, r_raw6), hn::Combine(d8x8, r_raw5, r_raw4)),
+                        hn::Combine(d8x16, hn::Combine(d8x8, r_raw3, r_raw2), hn::Combine(d8x8, r_raw1, r_raw0))));
+        i += 32;
+        lhs_packed += 4 * B;
+        rhs_packed += 4 * B;
+        rem -= 32;
+    }
+    if (rem > 0) { // <= 31
+        HWY_ALIGN uint8_t lhs_tmp_raw[32] = {};
+        HWY_ALIGN uint8_t rhs_tmp_raw[32] = {};
+        const size_t      orig_rem = rem;
+        i = 0;
+        if (rem >= 16) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(lhs_packed, lhs_tmp_raw);
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(rhs_packed, rhs_tmp_raw);
+            i += 16;
+            lhs_packed += 2 * B;
+            rhs_packed += 2 * B;
+            rem -= 16;
+        }
+        if (rem >= 8) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(lhs_packed, lhs_tmp_raw + i);
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(rhs_packed, rhs_tmp_raw + i);
+            i += 8;
+            lhs_packed += 1 * B;
+            rhs_packed += 1 * B;
+            rem -= 8;
+        }
+        if (rem > 0 && rem < 8) { // <= 7
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(lhs_packed, lhs_tmp_raw + i, rem);
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(rhs_packed, rhs_tmp_raw + i, rem);
+        }
+        my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x32, lhs_tmp_raw),
+                    std::forward<Accus>(accus)..., hn::Load(d8x32, rhs_tmp_raw));
+    }
+}
+
+// 512-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 64), typename KernelFn, size_t FnAccus, typename... Accus>
+void with_unpacked_lhs_rhs_bits(const DU8 d8x64, const uint8_t* HWY_RESTRICT lhs_packed,
+                                const uint8_t* HWY_RESTRICT rhs_packed, const size_t sz, KernelFn kernel_fn,
+                                const FnAccuArity<FnAccus>, Accus&&... accus) {
+    constexpr uint8_t B = Bits;
+
+    const hn::Half<decltype(d8x64)> d8x32;
+    const hn::Full128<uint8_t>      d8x16;
+    const hn::Full64<uint8_t>       d8x8;
+
+    static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
+    constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, lhs_packed += 16 * B, rhs_packed += 16 * B) {
+        hn::Vec<decltype(d8x16)> l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7;
+        hn::Vec<decltype(d8x16)> r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7;
+        VecUnpack8<B>::unpack(d8x16, lhs_packed, l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7);
+        VecUnpack8<B>::unpack(d8x16, rhs_packed, r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7);
+
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x64, hn::Combine(d8x32, l_raw3, l_raw2), hn::Combine(d8x32, l_raw1, l_raw0)),
+                    std::forward<Accus>(accus)...,
+                    hn::Combine(d8x64, hn::Combine(d8x32, r_raw3, r_raw2), hn::Combine(d8x32, r_raw1, r_raw0)));
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn,
+                    hn::Combine(d8x64, hn::Combine(d8x32, l_raw7, l_raw6), hn::Combine(d8x32, l_raw5, l_raw4)),
+                    std::forward<Accus>(accus)...,
+                    hn::Combine(d8x64, hn::Combine(d8x32, r_raw7, r_raw6), hn::Combine(d8x32, r_raw5, r_raw4)));
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Vec<decltype(d8x8)> l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7;
+        hn::Vec<decltype(d8x8)> r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7;
+        VecUnpack8<B>::unpack(d8x8, lhs_packed, l_raw0, l_raw1, l_raw2, l_raw3, l_raw4, l_raw5, l_raw6, l_raw7);
+        VecUnpack8<B>::unpack(d8x8, rhs_packed, r_raw0, r_raw1, r_raw2, r_raw3, r_raw4, r_raw5, r_raw6, r_raw7);
+
+        my_dispatch(
+            BlockInvocation<0>{}, arity, kernel_fn,
+            hn::Combine(d8x64,
+                        hn::Combine(d8x32, hn::Combine(d8x16, l_raw7, l_raw6), hn::Combine(d8x16, l_raw5, l_raw4)),
+                        hn::Combine(d8x32, hn::Combine(d8x16, l_raw3, l_raw2), hn::Combine(d8x16, l_raw1, l_raw0))),
+            std::forward<Accus>(accus)...,
+            hn::Combine(d8x64,
+                        hn::Combine(d8x32, hn::Combine(d8x16, r_raw7, r_raw6), hn::Combine(d8x16, r_raw5, r_raw4)),
+                        hn::Combine(d8x32, hn::Combine(d8x16, r_raw3, r_raw2), hn::Combine(d8x16, r_raw1, r_raw0))));
+        i += 64;
+        lhs_packed += 8 * B;
+        rhs_packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem > 0) { // <= 63
+        HWY_ALIGN uint8_t lhs_tmp_raw[64] = {};
+        HWY_ALIGN uint8_t rhs_tmp_raw[64] = {};
+        const size_t      orig_rem = rem;
+        i = 0;
+        if (rem >= 32) { // <= 63
+            ScalarVerticalBlockBitPacker<B>::template unpack<4>(lhs_packed, lhs_tmp_raw);
+            ScalarVerticalBlockBitPacker<B>::template unpack<4>(rhs_packed, rhs_tmp_raw);
+            i += 32;
+            lhs_packed += 4 * B;
+            rhs_packed += 4 * B;
+            rem -= 32;
+        }
+        if (rem >= 16) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(lhs_packed, lhs_tmp_raw + i);
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(rhs_packed, rhs_tmp_raw + i);
+            i += 16;
+            lhs_packed += 2 * B;
+            rhs_packed += 2 * B;
+            rem -= 16;
+        }
+        if (rem >= 8) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(lhs_packed, lhs_tmp_raw + i);
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(rhs_packed, rhs_tmp_raw + i);
+            i += 8;
+            lhs_packed += 1 * B;
+            rhs_packed += 1 * B;
+            rem -= 8;
+        }
+        if (rem > 0 && rem < 8) { // <= 7
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(lhs_packed, lhs_tmp_raw + i, rem);
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(rhs_packed, rhs_tmp_raw + i, rem);
+        }
+        my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x64, lhs_tmp_raw),
+                    std::forward<Accus>(accus)..., hn::Load(d8x64, rhs_tmp_raw));
     }
 }
 

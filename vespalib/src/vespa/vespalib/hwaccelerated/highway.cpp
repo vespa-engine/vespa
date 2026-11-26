@@ -419,8 +419,13 @@ template <uint8_t Bits, bool ZeroOutOfBoundsRhs, typename InnerKernelFn>
 float eden_f32_q_reduce_sum(const float* HWY_RESTRICT f32_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
                             const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz,
                             InnerKernelFn inner_kernel_fn) noexcept {
-    // Important: all of these are _fixed_ lane count tags, not ScalableTag!
-    const hn::Full128<uint8_t>                            du8;
+#if HWY_HAVE_SCALABLE
+    // Perhaps paradoxically, we use a fixed register size for scalable vectors since we can't
+    // _compile-time_ dispatch to the appropriate register width unpack function.
+    const hn::Full128<uint8_t> du8;
+#else
+    const hn::CappedTag<uint8_t, max_unpack_u8_lanes> du8;
+#endif
     const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
     const hn::Repartition<float, decltype(dbf16)>         df32;
 
@@ -534,8 +539,8 @@ float eden_f32_q_reduce_sum(const float* HWY_RESTRICT f32_lhs, const uint8_t* HW
     VF32 accu6 = hn::Zero(df32);
     VF32 accu7 = hn::Zero(df32);
 
-    with_unpacked_rhs_bits<Bits>(packed_rhs, sz, outer_kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3, accu4,
-                                 accu5, accu6, accu7);
+    with_unpacked_rhs_bits<Bits>(du8, packed_rhs, sz, outer_kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3,
+                                 accu4, accu5, accu6, accu7);
     return LaneReduceSum{}(
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
 }
@@ -580,8 +585,13 @@ template <uint8_t Bits, bool ZeroOutOfBoundsRhs, typename InnerKernelFn>
 HWY_NOINLINE float eden_q_q_reduce_sum(const uint8_t* HWY_RESTRICT packed_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
                                        const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz,
                                        InnerKernelFn inner_kernel_fn) noexcept {
-    // Important: all of these are _fixed_ lane count tags, not ScalableTag!
-    const hn::Full128<uint8_t>                            du8;
+#if HWY_HAVE_SCALABLE
+    // Perhaps paradoxically, we use a fixed register size for scalable vectors since we can't
+    // _compile-time_ dispatch to the appropriate register width unpack function.
+    const hn::Full128<uint8_t> du8;
+#else
+    const hn::CappedTag<uint8_t, max_unpack_u8_lanes> du8;
+#endif
     const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
     const hn::Repartition<float, decltype(dbf16)>         df32;
 
@@ -633,8 +643,8 @@ HWY_NOINLINE float eden_q_q_reduce_sum(const uint8_t* HWY_RESTRICT packed_lhs, c
     VF32 accu6 = hn::Zero(df32);
     VF32 accu7 = hn::Zero(df32);
 
-    with_unpacked_lhs_rhs_bits<Bits>(packed_lhs, packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3,
-                                     accu4, accu5, accu6, accu7);
+    with_unpacked_lhs_rhs_bits<Bits>(du8, packed_lhs, packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2,
+                                     accu3, accu4, accu5, accu6, accu7);
 
     return LaneReduceSum{}(
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
