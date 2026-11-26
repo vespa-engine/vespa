@@ -4,10 +4,14 @@
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/fieldpath.h>
+#include <vespa/document/datatype/arraydatatype.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/assignfieldpathupdate.h>
 
+using document::ArrayDataType;
 using document::AssignFieldPathUpdate;
+using document::DataType;
 using document::DocumentType;
 using document::Field;
 using document::FieldNotFoundException;
