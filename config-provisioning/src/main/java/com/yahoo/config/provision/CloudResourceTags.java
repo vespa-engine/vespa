@@ -115,6 +115,31 @@ public class CloudResourceTags {
     }
 
     /**
+     * Returns the customer tags among these: those whose key does not have the platform prefix
+     * {@link CloudTagRules#PLATFORM_KEY_PREFIX}, ignoring case.
+     */
+    public CloudResourceTags customerTags() {
+        Map<String, String> customerTags = new LinkedHashMap<>();
+        tags.forEach((key, value) -> {
+            if ( ! isPlatformKey(key)) customerTags.put(key, value);
+        });
+        return from(customerTags);
+    }
+
+    /** Returns a copy of these tags with the customer tags replaced by the given tags, keeping the platform tags. */
+    public CloudResourceTags withCustomerTags(CloudResourceTags customerTags) {
+        Map<String, String> result = new LinkedHashMap<>(customerTags.tags);
+        tags.forEach((key, value) -> {
+            if (isPlatformKey(key)) result.put(key, value);
+        });
+        return from(result);
+    }
+
+    private static boolean isPlatformKey(String key) {
+        return CloudTagRules.reservedPrefixOf(key).equals(Optional.of(CloudTagRules.PLATFORM_KEY_PREFIX));
+    }
+
+    /**
      * Returns a new instance with the given tags merged into this.
      * Tags from {@code other} take precedence on key conflicts.
      */
