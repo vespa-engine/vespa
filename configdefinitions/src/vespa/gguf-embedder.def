@@ -16,8 +16,9 @@ imageFirst bool default=true
 imageMinTokens int default=0
 imageMaxTokens int default=0
 
-# Maximum number of model layers to run on GPU (default: 0 = CPU-only).
-gpuLayers int default=0
+# Maximum number of model layers to run on GPU (default: -1 = runtime default, 0 = CPU-only).
+# In Triton, the default uses a GPU if there is one, as ONNX models do. In the container, it is CPU-only.
+gpuLayers int default=-1
 
 # Set pooling type for embeddings (default: UNSPECIFIED, UNSPECIFIED = model default).
 poolingType enum {UNSPECIFIED, NONE, MEAN, CLS, LAST, RANK} default=UNSPECIFIED

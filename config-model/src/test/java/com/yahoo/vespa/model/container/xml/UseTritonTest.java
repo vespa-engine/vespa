@@ -279,7 +279,7 @@ public class UseTritonTest {
     void cluster_with_gguf_embedder_runs_it_in_triton(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), GGUF_EMBEDDER_SERVICES);
         var cluster = containerCluster(appDir);
-        // The sidecar, but the ONNX runtime stays in the container, as there are no ONNX models
+        // Gets the sidecar, but the ONNX runtime stays in the container, since there are no ONNX models
         assertEquals(List.of(TRITON_SIDECAR), cluster.getSpec().sidecars());
         assertFalse(hasTritonRuntime(cluster));
         assertTrue(cluster.usesTritonForLlamacpp());

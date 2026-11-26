@@ -10,8 +10,8 @@ package=ai.vespa.llm.clients
 target string default="triton:8001" restart
 
 # Endpoint of Triton's OpenAI-compatible frontend, which serves the GGUF models of TritonLlamacppRuntime.
-# Requires a Triton server with the llama.cpp backend that runs the OpenAI frontend together with its KServe frontends,
-# so that models are still loaded and unloaded through target.
+# Requires Triton with the llama.cpp backend, running the OpenAI frontend with its KServe frontends enabled
+# (--enable-kserve-frontends), since models are loaded and unloaded over gRPC at target.
 llamacppEndpoint string default="http://triton:9000" restart
 
 # Model repository path where ONNX and GGUF models are copied to.

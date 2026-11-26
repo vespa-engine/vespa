@@ -42,9 +42,10 @@ class TritonOnnxAndLlamacppTest {
             "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0.0, 0.0, 0.0, 0.0, 0.0]"));
     private static final String TEXT = "This is a test";
 
-    // Two slots, each holding a whole micro-batch, so that llama-server batches the requests continuously.
+    // Two slots, so llama-server runs two requests concurrently;
+    // each slot (1024/2) holds a whole micro-batch (256), as the backend requires.
     private static final LlamacppOptions LLAMACPP_OPTIONS =
-            new LlamacppOptions(2, 1024, -1, 256, 0, Optional.of(LlamacppOptions.Pooling.MEAN), -1, 0, 0, false);
+            new LlamacppOptions(2, 1024, -1, 256, -1, Optional.of(LlamacppOptions.Pooling.MEAN), -1, 0, 0, false);
 
     private static TritonServerContainer tritonContainer;
 

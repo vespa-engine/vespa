@@ -63,7 +63,8 @@ public class RestartOnDeployForTritonRuntimeValidator implements ChangeValidator
                 context.require(action);
                 runtimeAddedOrRemoved = true;
             }
-            // Both runtimes get the cluster's Triton config, so comparing that of one remaining runtime covers both.
+            // All Triton runtimes in a cluster get the same config,
+            // so it's enough to compare the config of one of them.
             var previousRuntime = getAnyTritonRuntime(previousCluster);
             var currentRuntime = getAnyTritonRuntime(currentCluster);
             if ( ! runtimeAddedOrRemoved && previousRuntime.isPresent() && currentRuntime.isPresent()) {

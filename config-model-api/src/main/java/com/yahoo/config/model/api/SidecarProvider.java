@@ -49,8 +49,9 @@ public interface SidecarProvider {
 
     /**
      * Returns sidecars to run alongside the nodes of the given cluster, as above, given also the capabilities
-     * the cluster needs from each sidecar, e.g. {"triton": {"onnx", "llamacpp"}}. Capability names are
-     * defined by each sidecar's provider. Providers that don't know capabilities get the sidecar names only.
+     * the cluster needs from each sidecar, e.g. {"triton": {"onnx", "llamacpp"}}. The config model sends the
+     * capability names defined as constants here. By default, this calls the method above with the sidecar names
+     * only, so that providers that don't know about capabilities keep working.
      */
     default List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
                                           NodeResources minNodeResources, Map<String, Set<String>> sidecarNamesWithCapabilities) {

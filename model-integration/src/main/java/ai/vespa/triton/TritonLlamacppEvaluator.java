@@ -87,7 +87,8 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
         try {
             return repositoryClient.isModelReady(modelName);
         } catch (TritonException | TimeoutException e) {
-            return false; // Loading reports why Triton is unavailable
+            // Treat as not ready: if Triton is unreachable, the reload fails with the cause.
+            return false;
         }
     }
 

@@ -11,11 +11,11 @@ import java.util.Optional;
  * @param contextSize the total context size shared by the parallel sequences, 0 to use the model's
  * @param logicalMaxBatchSize llama.cpp's batch size
  * @param physicalMaxBatchSize llama.cpp's micro-batch size, which must hold a whole input of an embedding model
- * @param gpuLayers the maximum number of model layers to run on a GPU
+ * @param gpuLayers the maximum number of model layers to run on a GPU, negative for the runtime's default
  * @param pooling how token embeddings are pooled, empty to use the model's default
  * @param seed the random number generator seed
- * @param threads the number of threads used for generation
- * @param batchThreads the number of threads used for batch and prompt processing
+ * @param threads the number of threads used for a micro-batch of one token
+ * @param batchThreads the number of threads used for a micro-batch of several tokens
  * @param continuousBatching whether to batch sequences continuously
  * @param imageMinTokens the minimum number of tokens an image becomes, with a multimodal projector
  * @param imageMaxTokens the maximum number of tokens an image becomes, with a multimodal projector

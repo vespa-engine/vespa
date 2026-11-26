@@ -10,10 +10,11 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 /**
- * Rejects GGUF embedder options that the llama.cpp backend of Triton refuses, in container clusters that run
- * their GGUF embedders in Triton, so that the deployment fails instead of the container.
+ * Fails the deployment if a GGUF embedder that runs in Triton has options that Triton's llama.cpp backend
+ * does not accept. Without this check, the container would fail later, when it loads the model or embeds.
  * Warns about image token options that llama-server may lower.
- * Checks the config the components produce, so that it covers the gguf-embedder type and the GgufEmbedder class.
+ * Validates the generated GgufEmbedderConfig, so that it covers embedders declared with type="gguf-embedder"
+ * as well as those declared with the GgufEmbedder class.
  *
  * @author ingridhabrekke
  * @author glebashnik
@@ -56,8 +57,9 @@ public class TritonLlamacppOptionsValidator implements Validator {
 
     /**
      * Returns why the llama.cpp backend of Triton would refuse the options, empty if it accepts them.
-     * The backend runs one llama-server slot per parallel sequence. A slot must hold a whole input,
-     * and llama-server aborts unless the slots divide the micro-batch.
+     * The backend runs one llama-server slot per parallel sequence (the parallel option), and gives each slot
+     * contextSize / parallel of the context. A slot must hold a whole input, i.e. at least the micro-batch,
+     * and llama-server aborts unless the number of slots divides the micro-batch.
      */
     static List<String> unsupportedOptions(GgufEmbedderConfig config) {
         var problems = new ArrayList<String>();

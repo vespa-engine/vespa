@@ -31,7 +31,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     private final String modelName;
     private final ResourceReference modelReference;
-    private final TritonOnnxClient tritonClient;
+    private final TritonOnnxClient onnxClient;
     private final TritonModelRepositoryClient repositoryClient;
     private final boolean isExplicitControl;
     private final Optional<OnnxPoolingOptions> runtimePooling;
@@ -41,17 +41,17 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     TritonOnnxEvaluator(
             String modelName,
             ResourceReference modelReference,
-            TritonOnnxClient tritonClient,
+            TritonOnnxClient onnxClient,
             TritonModelRepositoryClient repositoryClient,
             boolean isExplicitControl,
             Optional<OnnxPoolingOptions> runtimePooling) {
         this.modelName = modelName;
         this.modelReference = modelReference;
-        this.tritonClient = tritonClient;
+        this.onnxClient = onnxClient;
         this.repositoryClient = repositoryClient;
         this.isExplicitControl = isExplicitControl;
         this.runtimePooling = runtimePooling;
-        modelMetadata = tritonClient.getModelMetadata(modelName);
+        modelMetadata = onnxClient.getModelMetadata(modelName);
         runtimePooling.ifPresent(this::requirePooled);
     }
 
@@ -86,7 +86,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
         Objects.requireNonNull(deadline, "deadline");
         try {
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
+            return onnxClient.evaluate(modelName, modelMetadata, inputs, deadline);
         } catch (TritonException e) {
             if (!isExplicitControl) {
                 throw e;
@@ -97,8 +97,8 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     "Failed to evaluate ONNX model " + modelName + " in Triton, will retry after reload.",
                     e);
             repositoryClient.loadUntilModelReady(modelName);
-            modelMetadata = tritonClient.getModelMetadata(modelName);
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
+            modelMetadata = onnxClient.getModelMetadata(modelName);
+            return onnxClient.evaluate(modelName, modelMetadata, inputs, deadline);
         }
     }
 
