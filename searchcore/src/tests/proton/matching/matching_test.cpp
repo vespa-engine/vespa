@@ -2657,21 +2657,19 @@ TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
 
 namespace {
 
-// Records the thread taking each stable enum guard.
+// Records the stable enum guards looked up.
 class RecordingAttributeContext : public MockAttributeContext {
 public:
-    mutable std::vector<std::pair<std::string, std::thread::id>> stable_enum_lookups;
+    mutable std::vector<std::string> stable_enum_lookups;
     const IAttributeVector* getAttributeStableEnum(std::string_view name) const override {
-        stable_enum_lookups.emplace_back(std::string(name), std::this_thread::get_id());
+        stable_enum_lookups.emplace_back(name);
         return MockAttributeContext::getAttributeStableEnum(name);
     }
 };
 
 } // namespace
 
-TEST(ResultProcessorTest, map_key_enum_guard_is_taken_before_dispatch_for_any_thread_count) {
-    // The guard holds a shared lock, which must be released by the thread that took it, so it
-    // is taken here and not in a match thread, also when there is only one match thread.
+TEST(ResultProcessorTest, map_key_enum_guard_is_prefetched_before_dispatch) {
     for (size_t num_threads : {1, 4}) {
         SCOPED_TRACE(num_threads);
         RecordingAttributeContext          ac;
@@ -2682,9 +2680,7 @@ TEST(ResultProcessorTest, map_key_enum_guard_is_taken_before_dispatch_for_any_th
         search::grouping::GroupingContext  grouping(*valid_lids, now, vespalib::steady_time::max());
         ResultProcessor rp(ac, meta_store, session_mgr, grouping, "", ParsedSortSpec("+m{\"k\"} +a"), 0, 10);
         rp.prepareThreadContextCreation(num_threads);
-        ASSERT_EQ(1u, ac.stable_enum_lookups.size());
-        EXPECT_EQ("m.key", ac.stable_enum_lookups[0].first);
-        EXPECT_EQ(std::this_thread::get_id(), ac.stable_enum_lookups[0].second);
+        EXPECT_EQ(std::vector<std::string>{"m.key"}, ac.stable_enum_lookups);
     }
 }
 

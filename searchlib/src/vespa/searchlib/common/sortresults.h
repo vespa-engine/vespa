@@ -152,8 +152,9 @@ public:
     }
     bool Init(const std::string& sortSpec, search::attribute::IAttributeContext& vecMan);
     bool Init(const search::common::sortspec::ParsedSortSpec& sortSpec, search::attribute::IAttributeContext& vecMan);
-    // Takes the m.key enum guard on this thread. A shared lock is released by the thread that
-    // took it, so match workers must only look that guard up.
+    // Looks up the m.key (stable enum) and m.value guards of the map lookup levels in the
+    // attribute context, so the threads calling Init later find them cached. Kept to preserve
+    // existing behaviour; the enum lock no longer requires guards to be taken on a given thread.
     static void prefetch_enum_guards(search::attribute::IAttributeContext&           attr_ctx,
                                      const search::common::sortspec::ParsedSortSpec& sort_spec);
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;

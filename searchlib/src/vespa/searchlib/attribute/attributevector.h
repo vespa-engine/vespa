@@ -5,6 +5,7 @@
 #include "address_space_usage.h"
 #include "basename.h"
 #include "changevector.h"
+#include "enum_lock.h"
 #include "readable_attribute_vector.h"
 
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
@@ -22,8 +23,6 @@
 #include <vespa/vespalib/util/time.h>
 
 #include <cmath>
-#include <mutex>
-#include <shared_mutex>
 
 namespace document {
 class ArithmeticValueUpdate;
@@ -166,9 +165,14 @@ public:
     vespalib::Generation getCurrentGeneration() const { return _genHandler.getCurrentGeneration(); }
 
     /**
-     * Used for unit testing. Must not be called from the thread owning the enum guard(s).
+     * Used for unit testing. Returns true if the enum lock is held, shared (stable enum
+     * guards) or exclusively (enum store compaction). May be called from any thread,
+     * including one holding stable enum guards.
      */
     bool hasActiveEnumGuards();
+
+    // For tests and diagnostics.
+    const attribute::EnumLock& enum_lock() const noexcept { return _enumLock; }
 
     virtual IExtendAttribute* getExtendInterface();
 
@@ -426,7 +430,7 @@ private:
     attribute::BaseName                               _baseFileName;
     std::unique_ptr<Config>                           _config;
     std::shared_ptr<attribute::Interlock>             _interlock;
-    mutable std::shared_mutex                         _enumLock;
+    mutable attribute::EnumLock                       _enumLock;
     GenerationHandler                                 _genHandler;
     GenerationHolder                                  _genHolder;
     Status                                            _status;

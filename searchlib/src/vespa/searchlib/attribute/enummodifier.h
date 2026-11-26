@@ -2,18 +2,19 @@
 
 #pragma once
 
+#include "enum_lock.h"
+
 #include <mutex>
-#include <shared_mutex>
 
 namespace search::attribute {
 
 class InterlockGuard;
 
 class EnumModifier {
-    std::unique_lock<std::shared_mutex> _enumLock;
+    std::unique_lock<EnumLock> _enumLock;
 
 public:
-    EnumModifier(std::shared_mutex& lock, InterlockGuard& interlockGuard);
+    EnumModifier(EnumLock& lock, InterlockGuard& interlockGuard);
     ~EnumModifier();
 };
 
