@@ -232,14 +232,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
 
-        // Decided before addNodes, which provisions the Triton sidecar, and before addInferenceRuntimes,
+        // Decided before addNodes, which provisions the Triton sidecar, and before addModelEvaluationRuntime,
         // which chooses between the embedded and Triton runtimes for ONNX and for llama.cpp.
         // The two are independent: GGUF embedders alone don't move the ONNX runtime to Triton, and vice versa.
         cluster.setUsesTritonForOnnx(shouldUseTritonForOnnx(cluster, spec, context));
         cluster.setUsesTritonForLlamacpp(shouldUseTritonForLlamacpp(cluster, context));
         addNodes(cluster, spec, context);
 
-        addInferenceRuntimes(deployState, cluster);
+        addModelEvaluationRuntime(deployState, cluster);
         addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
         addInferenceMemory(spec, cluster);
 
@@ -1020,7 +1020,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    protected void addInferenceRuntimes(DeployState deployState, ApplicationContainerCluster cluster) {
+    protected void addModelEvaluationRuntime(DeployState deployState, ApplicationContainerCluster cluster) {
         /* These bundles are added to all application container clusters, even if they haven't
          * declared 'model-evaluation' in services.xml, because there are many public API packages
          * in the model-evaluation bundle that could be used by customer code. */
