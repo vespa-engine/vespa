@@ -404,9 +404,21 @@ alignas(32) constexpr uint8_t bf16_lut_b4[32] = {
     0x03, 0xc6, 0x28, 0x71, 0xa0, 0xcf, 0x04, 0x2e, 0x03, 0xc6, 0x28, 0x71, 0xa0, 0xcf, 0x04, 0x2e  // LSB
 };
 
-template <uint8_t Bits>
-HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
-                                      const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+// Convenience wrapper for computing the sum of pairwise element operations from a f32
+// lhs and a bitpacked, quantized rhs. The quantized rhs is transparently unpacked and
+// mapped to its corresponding centroid f32 values. The provided `inner_kernel_fn` is
+// invoked with two f32 vectors representing matching lhs and rhs f32 elements, as well
+// as an input-output accumulator vector that must be updated with the running partial
+// sum.
+// For remainder vectors that cross the end of the input buffers, the lhs f32 vector
+// elements will always be zero for OOB elements. Iff `ZeroOutOfBoundsRhs` is true, the
+// corresponding rhs elements will also be zero. Otherwise, the OOB rhs elements have
+// an unspecified, finite value.
+template <uint8_t Bits, bool ZeroOutOfBoundsRhs, typename InnerKernelFn>
+[[nodiscard]]
+float eden_f32_q_reduce_sum(const float* HWY_RESTRICT f32_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
+                            const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz,
+                            InnerKernelFn inner_kernel_fn) noexcept {
     // Important: all of these are _fixed_ lane count tags, not ScalableTag!
     const hn::Full128<uint8_t>                            du8;
     const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
@@ -442,15 +454,23 @@ HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const u
     //
     // Note that we take the f32_lhs ptr by _ref_ so that the kernel invocation can
     // increment the read position appropriately.
-    auto kernel = [du8, dbf16, df32, &f32_lhs, bf16_lut](const InvocationMeta auto meta, const VU8 rhs_v, VF32& accu0,
-                                                         VF32& accu1, VF32& accu2, VF32& accu3) VESPA_HWY_LAMBDA {
+    auto outer_kernel = [du8, dbf16, df32, &f32_lhs, bf16_lut,
+                         inner_kernel_fn](const InvocationMeta auto meta, const VU8 rhs_v, VF32& accu0, VF32& accu1,
+                                          VF32& accu2, VF32& accu3) VESPA_HWY_LAMBDA {
         // The compiler will hoist the LUT loads out of the loop and into the prologue.
         // We don't do this outside of the kernel since I have bad experiences with GCC
         // spilling lambda-captured vectors to memory... :I
         const VU8 bf16_msb_lut = hn::LoadDup128(du8, bf16_lut);
         const VU8 bf16_lsb_lut = hn::LoadDup128(du8, bf16_lut + 16);
-        const VU8 bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
-        const VU8 bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
+        VU8       bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
+        VU8       bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
+
+        if constexpr (ZeroOutOfBoundsRhs && meta.is_partial()) {
+            const auto in_bounds = hn::FirstN(du8, meta.partial_count());
+            bf16_msb = hn::IfThenElseZero(in_bounds, bf16_msb);
+            bf16_lsb = hn::IfThenElseZero(in_bounds, bf16_lsb);
+        } // else: just zeroing the f32 lhs OOB elements suffices for correctness (e.g. lhs * rhs)
+
         // Glue the MSB/LSB pairs together. Note the reverse LUT order since we use little
         // endian. InterleaveWhole(Lower|Upper) is used rather than just Interleave, as the
         // latter works _within_ 128-bit _blocks_ and not across them.
@@ -499,10 +519,10 @@ HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const u
             lhs_f32_hi_hi = rem > 0 ? hn::LoadN(df32, f32_lhs + NF32 * 3, std::min(rem, NF32)) : hn::Zero(df32);
             f32_lhs += meta.partial_count();
         }
-        accu0 = hn::MulAdd(lhs_f32_lo_lo, rhs_f32_lo_lo, accu0);
-        accu1 = hn::MulAdd(lhs_f32_lo_hi, rhs_f32_lo_hi, accu1);
-        accu2 = hn::MulAdd(lhs_f32_hi_lo, rhs_f32_hi_lo, accu2);
-        accu3 = hn::MulAdd(lhs_f32_hi_hi, rhs_f32_hi_hi, accu3);
+        inner_kernel_fn(df32, lhs_f32_lo_lo, rhs_f32_lo_lo, accu0);
+        inner_kernel_fn(df32, lhs_f32_lo_hi, rhs_f32_lo_hi, accu1);
+        inner_kernel_fn(df32, lhs_f32_hi_lo, rhs_f32_hi_lo, accu2);
+        inner_kernel_fn(df32, lhs_f32_hi_hi, rhs_f32_hi_hi, accu3);
     };
 
     VF32 accu0 = hn::Zero(df32);
@@ -514,15 +534,52 @@ HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const u
     VF32 accu6 = hn::Zero(df32);
     VF32 accu7 = hn::Zero(df32);
 
-    with_unpacked_rhs_bits<Bits>(packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3, accu4, accu5,
-                                 accu6, accu7);
+    with_unpacked_rhs_bits<Bits>(packed_rhs, sz, outer_kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3, accu4,
+                                 accu5, accu6, accu7);
     return LaneReduceSum{}(
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
 }
 
 template <uint8_t Bits>
-HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
-                                    const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
+                                      const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+    return eden_f32_q_reduce_sum<Bits, false>(f32_lhs, packed_rhs, bf16_lut, sz,
+                                              [](auto df32, auto lhs_f32, auto rhs_f32, auto& accu) VESPA_HWY_LAMBDA {
+                                                  (void)df32;
+                                                  accu = hn::MulAdd(lhs_f32, rhs_f32, accu);
+                                              });
+}
+
+template <uint8_t Bits>
+HWY_NOINLINE float hwy_eden_f32_q_squared_euclidean(const float* HWY_RESTRICT   f32_lhs,
+                                                    const uint8_t* HWY_RESTRICT packed_rhs, const float rhs_scale,
+                                                    const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+    return eden_f32_q_reduce_sum<Bits, true>(
+        f32_lhs, packed_rhs, bf16_lut, sz,
+        [rhs_scale](auto df32, auto lhs_f32, auto rhs_f32, auto& accu) VESPA_HWY_LAMBDA {
+            using VF32 = hn::Vec<decltype(df32)>;
+
+            const VF32 sub = hn::Sub(lhs_f32, hn::Mul(rhs_f32, hn::Set(df32, rhs_scale)));
+            accu = hn::MulAdd(sub, sub, accu);
+        });
+}
+
+// Convenience wrapper for computing the sum of pairwise element operations from bitpacked,
+// quantized lhs and rhs vectors. The quantized vectors are transparently unpacked and
+// mapped to their corresponding centroid _BFloat16_ values. The provided `inner_kernel_fn`
+// is invoked with two BFloat16 vectors representing matching lhs and rhs centroid elements,
+// as well as _two_ input-output accumulator vectors that must be updated with the running
+// partial sum. Two accumulators are provided so that target-native BFloat16 fused mul-add
+// operations (`ReorderWidenMulAccumulate`) can be used.
+// For remainder vectors that cross the end of the input buffers, the lhs BFloat16 vector
+// elements will always be zero for OOB elements. Iff `ZeroOutOfBoundsRhs` is true, the
+// corresponding rhs elements will also be zero. Otherwise, the OOB rhs elements have an
+// unspecified, finite value.
+template <uint8_t Bits, bool ZeroOutOfBoundsRhs, typename InnerKernelFn>
+[[nodiscard]]
+HWY_NOINLINE float eden_q_q_reduce_sum(const uint8_t* HWY_RESTRICT packed_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
+                                       const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz,
+                                       InnerKernelFn inner_kernel_fn) noexcept {
     // Important: all of these are _fixed_ lane count tags, not ScalableTag!
     const hn::Full128<uint8_t>                            du8;
     const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
@@ -532,23 +589,27 @@ HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, cons
     using VBF16 = hn::Vec<decltype(dbf16)>;
     using VF32 = hn::Vec<decltype(df32)>;
 
-    auto kernel = [du8, dbf16, df32, bf16_lut](const InvocationMeta auto meta, const VU8 lhs_v, const VU8 rhs_v,
-                                               VF32& accu0, VF32& accu1, VF32& accu2, VF32& accu3) VESPA_HWY_LAMBDA {
+    auto kernel = [du8, dbf16, df32, bf16_lut, inner_kernel_fn](const InvocationMeta auto meta, const VU8 lhs_v,
+                                                                const VU8 rhs_v, VF32& accu0, VF32& accu1,
+                                                                VF32& accu2, VF32& accu3) VESPA_HWY_LAMBDA {
         // The compiler will hoist the LUT loads out of the loop and into the prologue.
         const VU8 bf16_msb_lut = hn::LoadDup128(du8, bf16_lut);
         const VU8 bf16_lsb_lut = hn::LoadDup128(du8, bf16_lut + 16);
 
-        const VU8 lhs_bf16_msb = hn::TableLookupBytes(bf16_msb_lut, lhs_v);
-        const VU8 lhs_bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, lhs_v);
-        VU8       rhs_bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
-        VU8       rhs_bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
+        VU8 lhs_bf16_msb = hn::TableLookupBytes(bf16_msb_lut, lhs_v);
+        VU8 lhs_bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, lhs_v);
+        VU8 rhs_bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
+        VU8 rhs_bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
 
         if constexpr (meta.is_partial()) {
-            // It suffices to zero out one of the sides of the multiplication for it to be as-if masked away
             const auto in_bounds = hn::FirstN(du8, meta.partial_count());
-            rhs_bf16_msb = hn::IfThenElseZero(in_bounds, rhs_bf16_msb);
-            rhs_bf16_lsb = hn::IfThenElseZero(in_bounds, rhs_bf16_lsb);
-        }
+            lhs_bf16_msb = hn::IfThenElseZero(in_bounds, lhs_bf16_msb);
+            lhs_bf16_lsb = hn::IfThenElseZero(in_bounds, lhs_bf16_lsb);
+            if constexpr (ZeroOutOfBoundsRhs) {
+                rhs_bf16_msb = hn::IfThenElseZero(in_bounds, rhs_bf16_msb);
+                rhs_bf16_lsb = hn::IfThenElseZero(in_bounds, rhs_bf16_lsb);
+            }
+        } // else: just zeroing the lhs OOB elements suffices for correctness (e.g. lhs * rhs)
         // Glue the MSB/LSB pairs together. Note the reverse LUT order since we use little endian.
         // Since lhs and rhs are processed symmetrically and we allow ourselves to pretend that FP
         // additions commute, we can use non-block-crossing interleaving (see `hwy_eden_f32_q_dot`
@@ -557,9 +618,10 @@ HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, cons
         const VBF16 lhs_bf16_hi = hn::BitCast(dbf16, hn::InterleaveUpper(du8, lhs_bf16_lsb, lhs_bf16_msb));
         const VBF16 rhs_bf16_lo = hn::BitCast(dbf16, hn::InterleaveLower(du8, rhs_bf16_lsb, rhs_bf16_msb));
         const VBF16 rhs_bf16_hi = hn::BitCast(dbf16, hn::InterleaveUpper(du8, rhs_bf16_lsb, rhs_bf16_msb));
-        // This will use native BFloat16 dot product instructions on supported archs
-        accu0 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_lo, rhs_bf16_lo, accu0, accu1);
-        accu2 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_hi, rhs_bf16_hi, accu2, accu3);
+        // We pass the raw BF16 vectors directly since both sides have the same type
+        // (i.e. we don't have to "unify" types up to F32).
+        inner_kernel_fn(df32, lhs_bf16_lo, rhs_bf16_lo, accu0, accu1);
+        inner_kernel_fn(df32, lhs_bf16_hi, rhs_bf16_hi, accu2, accu3);
     };
 
     VF32 accu0 = hn::Zero(df32);
@@ -576,6 +638,42 @@ HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, cons
 
     return LaneReduceSum{}(
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
+}
+
+template <uint8_t Bits>
+HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
+                                    const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+    return eden_q_q_reduce_sum<Bits, false>(
+        packed_lhs, packed_rhs, bf16_lut, sz,
+        [](auto df32, auto lhs_bf16, auto rhs_bf16, auto& accu0, auto& accu1) VESPA_HWY_LAMBDA {
+            // This will use native BFloat16 dot product instructions on supported archs
+            accu0 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16, rhs_bf16, accu0, accu1);
+        });
+}
+
+template <uint8_t Bits>
+HWY_NOINLINE float hwy_eden_q_q_squared_euclidean(const uint8_t* HWY_RESTRICT packed_lhs,
+                                                  const uint8_t* HWY_RESTRICT packed_rhs, const float lhs_scale,
+                                                  const float rhs_scale, const uint8_t* HWY_RESTRICT bf16_lut,
+                                                  const size_t sz) noexcept {
+    return eden_q_q_reduce_sum<Bits, true>(
+        packed_lhs, packed_rhs, bf16_lut, sz,
+        [lhs_scale, rhs_scale](auto df32, auto lhs_bf16, auto rhs_bf16, auto& accu0, auto& accu1) VESPA_HWY_LAMBDA {
+            using VF32 = hn::Vec<decltype(df32)>;
+
+            const VF32 lhs_scale_f32 = hn::Set(df32, lhs_scale);
+            const VF32 rhs_scale_f32 = hn::Set(df32, rhs_scale);
+            // There is no native BF16 subtraction or mixed BF16/BF32 multiplication, so explicitly widen
+            const VF32 lhs_f32_lo = hn::Mul(hn::PromoteLowerTo(df32, lhs_bf16), lhs_scale_f32);
+            const VF32 lhs_f32_hi = hn::Mul(hn::PromoteUpperTo(df32, lhs_bf16), lhs_scale_f32);
+            const VF32 rhs_f32_lo = hn::Mul(hn::PromoteLowerTo(df32, rhs_bf16), rhs_scale_f32);
+            const VF32 rhs_f32_hi = hn::Mul(hn::PromoteUpperTo(df32, rhs_bf16), rhs_scale_f32);
+
+            const VF32 sub_lo = hn::Sub(lhs_f32_lo, rhs_f32_lo);
+            accu0 = hn::MulAdd(sub_lo, sub_lo, accu0);
+            const VF32 sub_hi = hn::Sub(lhs_f32_hi, rhs_f32_hi);
+            accu1 = hn::MulAdd(sub_hi, sub_hi, accu1);
+        });
 }
 
 template <size_t Bits>
@@ -673,6 +771,37 @@ double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t 
 double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
     return my_hwy_squared_euclidean_distance(a, b, sz);
 }
+float my_eden_f32_q_squared_euclidean_distance(const float* lhs, const uint8_t* packed_rhs, const float rhs_scale,
+                                               const uint8_t bits, const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return hwy_eden_f32_q_squared_euclidean<1>(lhs, packed_rhs, rhs_scale, bf16_lut_b1, sz);
+    case 2:
+        return hwy_eden_f32_q_squared_euclidean<2>(lhs, packed_rhs, rhs_scale, bf16_lut_b2, sz);
+    case 3:
+        return hwy_eden_f32_q_squared_euclidean<3>(lhs, packed_rhs, rhs_scale, bf16_lut_b3, sz);
+    case 4:
+        return hwy_eden_f32_q_squared_euclidean<4>(lhs, packed_rhs, rhs_scale, bf16_lut_b4, sz);
+    default:
+        abort();
+    }
+}
+float my_eden_q_q_squared_euclidean_distance(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
+                                             const float lhs_scale, const float rhs_scale, const uint8_t bits,
+                                             const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return hwy_eden_q_q_squared_euclidean<1>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, bf16_lut_b1, sz);
+    case 2:
+        return hwy_eden_q_q_squared_euclidean<2>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, bf16_lut_b2, sz);
+    case 3:
+        return hwy_eden_q_q_squared_euclidean<3>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, bf16_lut_b3, sz);
+    case 4:
+        return hwy_eden_q_q_squared_euclidean<4>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, bf16_lut_b4, sz);
+    default:
+        abort();
+    }
+}
 float my_squared_euclidean_length_f32(const float* a, size_t sz) noexcept {
     return my_hwy_squared_euclidean_length(a, sz);
 }
@@ -750,6 +879,8 @@ public:
         ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
         ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
         ft.squared_euclidean_distance_f64 = my_squared_euclidean_distance_f64;
+        ft.eden_f32_q_squared_euclidean_distance = my_eden_f32_q_squared_euclidean_distance;
+        ft.eden_q_q_squared_euclidean_distance = my_eden_q_q_squared_euclidean_distance;
         ft.squared_euclidean_length_f32 = my_squared_euclidean_length_f32;
         ft.binary_hamming_distance = my_binary_hamming_distance;
         ft.population_count = my_population_count;
@@ -769,6 +900,9 @@ public:
         ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_BF16, FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_BF16});
         // We use BF16 for centroid computations, so same applies to quantized dot product(s).
         ft.tag_fns_as_suboptimal({FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT, FnTable::FnId::EDEN_Q_Q_DOT_PRODUCT});
+        // Fixed-size NEON is faster for EDEN squared Euclidean distance on Graviton5 than SVE[2]
+        ft.tag_fns_as_suboptimal({FnTable::FnId::EDEN_F32_Q_SQUARED_EUCLIDEAN_DISTANCE,
+                                  FnTable::FnId::EDEN_Q_Q_SQUARED_EUCLIDEAN_DISTANCE});
         // SVE (1st edition) does not have signed subtraction with widening, causing i8
         // Euclidean to be slower than under NEON. SVE2 does have this, but int8 operations
         // are still slightly slower for the SVEs. So tag as suboptimal for now.
