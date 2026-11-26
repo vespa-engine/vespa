@@ -71,7 +71,6 @@ io.micrometer:micrometer-core:${micrometer.vespa.version}
 io.micrometer:micrometer-observation:${micrometer.vespa.version}
 io.modelcontextprotocol.sdk:mcp-core:${mcp-sdk.vespa.version}
 io.modelcontextprotocol.sdk:mcp-json-jackson2:${mcp-sdk.vespa.version}
-io.modelcontextprotocol.sdk:mcp:${mcp-sdk.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
 io.netty:netty-codec-base:${netty.vespa.version}
 io.netty:netty-common:${netty.vespa.version}
