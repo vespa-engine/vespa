@@ -20,14 +20,14 @@ LidReuseDelayer::~LidReuseDelayer() {
 }
 
 void LidReuseDelayer::delayReuse(uint32_t lid) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     if (_documentMetaStore.getFreeListActive()) {
         _pendingLids.push_back(lid);
     }
 }
 
 void LidReuseDelayer::delayReuse(const std::vector<uint32_t>& lids) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     if (_documentMetaStore.getFreeListActive() && !lids.empty()) {
         _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
     }
@@ -35,7 +35,7 @@ void LidReuseDelayer::delayReuse(const std::vector<uint32_t>& lids) {
 
 std::vector<uint32_t> LidReuseDelayer::getReuseLids() {
     std::vector<uint32_t> result;
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     result = _pendingLids;
     _pendingLids.clear();
     return result;

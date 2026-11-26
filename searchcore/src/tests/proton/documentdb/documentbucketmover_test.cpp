@@ -40,7 +40,7 @@ struct ControllerFixtureBase : public ::testing::Test {
     test::ResourceUsageNotifier              _resource_usage_notifier;
     MonitoredRefCount                        _refCount;
     ThreadStackExecutor                      _singleExecutor;
-    SyncableExecutorThreadService            _master;
+    SyncableExecutorThreadService            _main_thread_service;
     DummyBucketExecutor                      _bucketExecutor;
     MyMoveHandler                            _moveHandler;
     DocumentDBTaggedMetrics                  _metrics;
@@ -97,12 +97,12 @@ struct ControllerFixtureBase : public ::testing::Test {
     }
     void sync() {
         _bucketExecutor.sync();
-        _master.sync();
-        _master.sync(); // Handle that  master schedules onto master again
+        _main_thread_service.sync();
+        _main_thread_service.sync(); // Handle that document db main thread service schedules onto main again
     }
     template <typename FunctionType> void masterExecute(FunctionType&& function) {
-        _master.execute(vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
-        _master.sync();
+        _main_thread_service.execute(vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
+        _main_thread_service.sync();
     }
 };
 
@@ -120,11 +120,11 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _resource_usage_notifier(),
       _refCount(),
       _singleExecutor(1),
-      _master(_singleExecutor),
+      _main_thread_service(_singleExecutor),
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _metrics("test", 1),
-      _bmj(BucketMoveJob::create(_calc, RetainGuard(_refCount), _moveHandler, _modifiedHandler, _master,
+      _bmj(BucketMoveJob::create(_calc, RetainGuard(_refCount), _moveHandler, _modifiedHandler, _main_thread_service,
                                  _bucketExecutor, _ready._subDb, _notReady._subDb, _bucketCreateNotifier,
                                  _clusterStateHandler, _bucketHandler, _resource_usage_notifier, blockableConfig,
                                  _doc_type_name.getName(), makeBucketSpace())),

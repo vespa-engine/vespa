@@ -38,7 +38,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB {
     DocumentSubDbInitializer::UP createInitializer(const DocumentDBConfig&, SerialNum,
                                                    const index::IndexConfig&) const override {
         return std::make_unique<DocumentSubDbInitializer>(const_cast<DummyDocumentSubDb&>(*this),
-                                                          _service.write().master());
+                                                          _service.write().main());
     }
     void setup(const DocumentSubDbInitializerResult&) override {}
     void initViews(const DocumentDBConfig&) override {}

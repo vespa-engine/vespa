@@ -182,7 +182,7 @@ struct IndexManagerTest : public ::testing::Test {
 
     template <class FunctionType> void runAsMaster(FunctionType&& function) {
         vespalib::Gate gate;
-        _service.write().master().execute(makeLambdaTask([&gate, function = std::move(function)]() {
+        _service.write().main().execute(makeLambdaTask([&gate, function = std::move(function)]() {
             function();
             gate.countDown();
         }));

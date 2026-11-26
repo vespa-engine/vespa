@@ -149,7 +149,7 @@ public:
         ++_taskDone;
     }
 
-    // Called by flush engine master thread after flush handler is
+    // Called by flush engine main thread after flush handler is
     // added to flush engine and when one or more flush tasks related
     // to flush handler have completed.
     void flushDone(search::SerialNum oldestSerial) override {

@@ -84,8 +84,9 @@ class IndexMaintainer : public IIndexManager, public IWarmupDone {
     std::shared_ptr<const Schema> _activeFusionPrunedSchema;
     uint32_t                      _source_selector_changes; // Protected by IUL
     // _selector is protected by SL + IUL
-    std::shared_ptr<ISourceSelector>            _selector;
-    std::shared_ptr<ISearchableIndexCollection> _source_list;      // Protected by SL + NSL, only set by master thread
+    std::shared_ptr<ISourceSelector> _selector;
+    // _source list is protected by SL + NSL, only set by document db main thread
+    std::shared_ptr<ISearchableIndexCollection> _source_list;
     uint32_t                                    _last_fusion_id;   // Protected by SL + IUL
     uint32_t                                    _next_id;          // Protected by SL + IUL
     uint32_t                                    _current_index_id; // Protected by SL + IUL
@@ -118,7 +119,7 @@ class IndexMaintainer : public IIndexManager, public IWarmupDone {
      * relevant portion of variables to an args class (FlushArgs,
      * FusionArgs, SetSchemaArgs) and perform some disk io) that takes
      * time before scheduling a state change task performed by the
-     * document db master thread.
+     * document db main thread.
      *
      * The scheduled state change task will fail if state changed too much
      * after setup by the flush thread.  The flush thread must then retry

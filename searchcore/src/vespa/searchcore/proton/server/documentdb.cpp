@@ -122,7 +122,7 @@ template <typename T> void forceCommitAndWait(IFeedView& feedView, SerialNum ser
 } // namespace
 
 template <typename FunctionType> void DocumentDB::masterExecute(FunctionType&& function) {
-    _writeService.master().execute(makeLambdaTask(std::forward<FunctionType>(function)));
+    _writeService.main().execute(makeLambdaTask(std::forward<FunctionType>(function)));
 }
 
 DocumentDB::SP
@@ -175,8 +175,8 @@ DocumentDB::DocumentDB(const std::string& baseDir, DocumentDBConfig::SP configSn
       _validateAndSanitizeDocStore(protonCfg.validateAndSanitizeDocstore ==
                                    vespa::config::search::core::ProtonConfig::ValidateAndSanitizeDocstore::YES),
       _initGate(),
-      _clusterStateHandler(_writeService.master()),
-      _bucketHandler(_writeService.master()),
+      _clusterStateHandler(_writeService.main()),
+      _bucketHandler(_writeService.main()),
       _indexCfg(makeIndexConfig(protonCfg.index)),
       _config_store(std::move(config_store)),
       _metricsWireService(metricsWireService),
@@ -187,7 +187,7 @@ DocumentDB::DocumentDB(const std::string& baseDir, DocumentDBConfig::SP configSn
       _owner(owner),
       _bucketExecutor(shared_service.bucket_executor()),
       _state(std::make_shared<DDBState>(docTypeName)),
-      _resource_usage_forwarder(_writeService.master()),
+      _resource_usage_forwarder(_writeService.main()),
       _writeFilter(),
       _current_resource_usage_provider(),
       _feedHandler(
@@ -195,7 +195,7 @@ DocumentDB::DocumentDB(const std::string& baseDir, DocumentDBConfig::SP configSn
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, shared_service.shared(), fileHeaderContext,
               std::move(attribute_interlock), metricsWireService, getMetrics(), queryLimiter, shared_service.nowRef(),
               _configMutex, _baseDir, hwInfo, posting_list_cache),
-      _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
+      _maintenanceController(shared_service.transport(), _writeService.main(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler),
@@ -279,7 +279,7 @@ public:
 InitDoneTask::~InitDoneTask() = default;
 
 void DocumentDB::initManagers() {
-    // Called by executor thread
+    // Called by document db main executor thread
     DocumentDBConfig::SP configSnapshot(_initConfigSnapshot);
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
@@ -297,12 +297,12 @@ void DocumentDB::initManagers() {
     auto tracer = get_tracer();
     auto parent_span = _state->state_span();
     auto scope = tracer->WithActiveSpan(parent_span);
-    taskRunner->runTask(rootTask, _writeService.master(), std::move(doneTask));
+    taskRunner->runTask(rootTask, _writeService.main(), std::move(doneTask));
 }
 
 void DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot) {
-    // Called by executor thread
-    CHECK(_writeService.master().isCurrentThread());
+    // Called by document db main executor thread
+    CHECK(_writeService.main().isCurrentThread());
     _bucketHandler.setReadyBucketHandler(_subDBs.getReadySubDB()->getDocumentMetaStoreContext().get());
     _subDBs.initViews(*configSnapshot);
     syncFeedView();
@@ -324,8 +324,8 @@ std::unique_ptr<DocumentDBReconfig> DocumentDB::prepare_reconfig(const DocumentD
 }
 
 void DocumentDB::enterReprocessState() {
-    // Called by executor thread
-    CHECK(_writeService.master().isCurrentThread());
+    // Called by document db main executor thread
+    CHECK(_writeService.main().isCurrentThread());
     if (!_state->enterReprocessState()) {
         return;
     }
@@ -342,8 +342,8 @@ void DocumentDB::enterReprocessState() {
 }
 
 void DocumentDB::enterOnlineState() {
-    // Called by executor thread
-    CHECK(_writeService.master().isCurrentThread());
+    // Called by document db main executor thread
+    CHECK(_writeService.main().isCurrentThread());
     // Ensure that all replayed operations are committed to memory structures
     _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum(), CommitParam::UpdateStats::SKIP));
 
@@ -355,7 +355,7 @@ void DocumentDB::enterOnlineState() {
 
 void DocumentDB::performReconfig(DocumentDBConfig::SP                configSnapshot,
                                  std::unique_ptr<DocumentDBReconfig> prepared_reconfig) {
-    // Called by executor thread
+    // Called by document db main executor thread
     applyConfig(std::move(configSnapshot), getCurrentSerialNumber(), std::move(prepared_reconfig));
     if (_state->getState() == DDBState::State::APPLY_LIVE_CONFIG) {
         enterReprocessState();
@@ -505,7 +505,7 @@ void DocumentDB::close() {
             search::CommitParam(getCurrentSerialNumber(), search::CommitParam::UpdateStats::SKIP));
         tearDownReferences();
     });
-    _writeService.master().sync();
+    _writeService.main().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();
@@ -514,7 +514,7 @@ void DocumentDB::close() {
         _feedView.get()->forceCommitAndWait(
             search::CommitParam(getCurrentSerialNumber(), search::CommitParam::UpdateStats::SKIP));
     });
-    _writeService.master().sync();
+    _writeService.main().sync();
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics& metrics = getMetrics();
@@ -722,7 +722,7 @@ void DocumentDB::reconfigure(DocumentDBConfig::SP snapshot) {
 }
 
 void DocumentDB::enterRedoReprocessState() {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     ReprocessingRunner& runner = _subDBs.getReprocessingRunner();
     if (!runner.empty()) {
         if (!_state->enterRedoReprocessState()) {
@@ -739,7 +739,7 @@ void DocumentDB::enterRedoReprocessState() {
 }
 
 void DocumentDB::enter_doc_store_validation_state() {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     if (!_state->enter_doc_store_validation_state()) {
         return;
     }
@@ -753,7 +753,7 @@ void DocumentDB::enter_doc_store_validation_state() {
 }
 
 void DocumentDB::enterApplyLiveConfigState() {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     // Enable reconfig and queue currently pending config as executor task.
     {
         lock_guard guard(_configMutex);
@@ -826,7 +826,7 @@ int64_t DocumentDB::getActiveGeneration() const {
 }
 
 void DocumentDB::syncFeedView() {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _maintenanceController.killJobs();
