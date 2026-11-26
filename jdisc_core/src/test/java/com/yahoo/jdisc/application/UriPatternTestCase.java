@@ -256,6 +256,36 @@ public class UriPatternTestCase {
     }
 
     @Test
+    void requireThatHostMatchingIsCaseInsensitive() {
+        UriPattern pattern = new UriPattern("http://host.example:80/path");
+        assertMatch(pattern, "http://HOST.EXAMPLE:80/path", NO_GROUPS);
+        assertMatch(pattern, "http://Host.Example:80/path", NO_GROUPS);
+        assertNotMatch(pattern, "http://other.example:80/path");
+
+        UriPattern upperCasePattern = new UriPattern("http://HOST.EXAMPLE:80/path");
+        assertMatch(upperCasePattern, "http://host.example:80/path", NO_GROUPS);
+        assertEquals(pattern, upperCasePattern);
+
+        UriPattern wildcardPattern = new UriPattern("http://*.example:80/path");
+        assertMatch(wildcardPattern, "http://HOST.EXAMPLE:80/path", List.of("host"));
+    }
+
+    @Test
+    void requireThatHostMatchingIgnoresTrailingRootLabelDot() {
+        UriPattern pattern = new UriPattern("http://host.example:80/path");
+        assertMatch(pattern, "http://host.example.:80/path", NO_GROUPS);
+        assertMatch(pattern, "http://HOST.EXAMPLE.:80/path", NO_GROUPS);
+        assertNotMatch(pattern, "http://host.example.com:80/path");
+
+        UriPattern dottedPattern = new UriPattern("http://host.example.:80/path");
+        assertMatch(dottedPattern, "http://host.example:80/path", NO_GROUPS);
+        assertEquals(pattern, dottedPattern);
+
+        UriPattern wildcardPattern = new UriPattern("http://*.example:80/path");
+        assertMatch(wildcardPattern, "http://host.example.:80/path", List.of("host"));
+    }
+
+    @Test
     void requireThatUrlEncodingIsNotDoneForPath() {
         UriPattern encodedSlashPattern = new UriPattern("http://host:80/one%2Fpath");
         assertMatch(encodedSlashPattern, "http://host:80/one%2Fpath", NO_GROUPS);

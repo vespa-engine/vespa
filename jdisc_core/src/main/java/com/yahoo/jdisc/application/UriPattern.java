@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.application;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,7 +52,7 @@ public class UriPattern implements Comparable<UriPattern> {
             throw new IllegalArgumentException(uri);
 
         scheme = GlobPattern.compile(normalizeScheme(nonNullOrWildcard(matcher.group(1))));
-        host = GlobPattern.compile(nonNullOrWildcard(matcher.group(2)));
+        host = GlobPattern.compile(normalizeHost(nonNullOrWildcard(matcher.group(2))));
         port = parseOrZero(matcher.group(4));
         path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
         pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
@@ -61,6 +62,9 @@ public class UriPattern implements Comparable<UriPattern> {
      * <p>Attempts to match the given {@link URI} to this pattern. Note that only the scheme, host, port, and path
      * components of the URI are used, <em>and these must all be defined</em>. Only <em>absolute</em> URIs are supported.
      * Any user info, query or fragment part is ignored.</p>
+     *
+     * <p>The host matches without regard to case or a trailing dot. A group captured from the host is therefore in
+     * lowercase and has no trailing dot.</p>
      *
      * @param uri The URI to match.
      * @return A {@link Match} object describing the match found, or null if not found.
@@ -77,7 +81,7 @@ public class UriPattern implements Comparable<UriPattern> {
         if (pathMatch == null)
             return null;
 
-        GlobPattern.Match hostMatch = host.match(uri.getHost());
+        GlobPattern.Match hostMatch = host.match(normalizeHost(uri.getHost()));
         if (hostMatch == null)
             return null;
 
@@ -143,6 +147,15 @@ public class UriPattern implements Comparable<UriPattern> {
     private static String normalizeScheme(String scheme) {
         if (scheme.equals("https")) return "http"; // handle 'https' in bindings and uris as 'http'
         return scheme;
+    }
+
+    // The host component is case-insensitive (RFC 3986 §3.2.2).
+    // A trailing dot marks a fully qualified domain name (RFC 3986 §3.2.2). A pattern treats both forms as the same host.
+    private static String normalizeHost(String host) {
+        int end = host.length();
+        if (end > 1 && host.charAt(end - 1) == '.')
+            host = host.substring(0, end - 1);
+        return host.toLowerCase(Locale.ROOT);
     }
 
     /**
