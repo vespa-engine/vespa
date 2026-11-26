@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/enummodifier.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_to_number.h>
@@ -17,7 +18,9 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <chrono>
 #include <cinttypes>
+#include <future>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -931,6 +934,48 @@ TEST(SortTest, map_sort_enum_guards_are_taken_and_released_on_the_setup_thread) 
     }
     EXPECT_TRUE(saw_key);
     EXPECT_TRUE(saw_value);
+}
+
+/*
+ * Enum store compaction takes the enum lock exclusively. A stable enum guard is a shared lock
+ * on it, so it must only ever come from the attribute context, which takes one per attribute
+ * and query, warmed on the setup thread and shared with grouping and ranking. A second shared
+ * lock on m.key taken by the sort code itself deadlocks when compaction is pending: in the
+ * same thread if the context already holds one, and across threads when the setup thread
+ * holding the context's lock waits for a match thread blocked behind compaction.
+ *
+ * The recording manager hands out guards that take no lock, so with compaction holding the
+ * lock here, any shared lock the sort code takes on m.key itself blocks, whatever the lock
+ * prefers. The sort uses two levels on the same map, which must not stack two locks either.
+ */
+TEST(SortTest, map_sort_takes_no_enum_lock_of_its_own_while_compaction_is_pending) {
+    using namespace std::chrono_literals;
+    search::uca::UcaConverterFactory ucaFactory;
+    MapSortFixture                   f;
+    RecordingAttributeManager        mgr;
+    mgr.add(f.keys);
+    mgr.add(f.values);
+    const std::string        sort_spec = "+m{\"k1\"} -m{\"k0\"}";
+    search::AttributeContext ctx(mgr);
+    ctx.enableMultiThreadSafe();
+    FastS_SortSpec::prefetch_enum_guards(ctx, ParsedSortSpec(sort_spec));
+
+    std::future<std::vector<uint32_t>> sorting;
+    bool                               finished = false;
+    {
+        auto compaction = f.keys->getEnumModifier();
+        sorting = std::async(std::launch::async, [&] {
+            FastS_SortSpec sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+            if (!sorter.Init(sort_spec, ctx)) {
+                return std::vector<uint32_t>{};
+            }
+            return sorted_docids(sorter);
+        });
+        finished = (sorting.wait_for(30s) == std::future_status::ready);
+    } // compaction done: lets a blocked sort finish, so the test fails rather than hangs
+    EXPECT_TRUE(finished) << "map sort blocked on the m.key enum lock held by compaction";
+    // Missing k1 first ascending, then 20, 30, 50.
+    EXPECT_EQ((std::vector<uint32_t>{3, 2, 1, 4}), sorting.get());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
