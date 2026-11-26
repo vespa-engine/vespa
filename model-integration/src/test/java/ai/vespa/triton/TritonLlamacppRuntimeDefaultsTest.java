@@ -30,18 +30,27 @@ class TritonLlamacppRuntimeDefaultsTest {
 
     // The options of a GGUF embedder with the default config.
     private static final LlamacppOptions DEFAULT_OPTIONS =
-            new LlamacppOptions(1, 0, -1, -1, 0, Optional.empty(), -1, 0, 0, false);
+            new LlamacppOptions(1, 0, -1, -1, -1, Optional.empty(), -1, 0, 0, false);
 
     @Test
-    void default_options_give_an_embedding_model_with_one_slot_on_cpu() throws IOException {
+    void default_options_give_an_embedding_model_with_one_slot_on_a_gpu_if_there_is_one() throws IOException {
         var config = parse(TritonLlamacppRuntime.createModelConfig("model_abc", DEFAULT_OPTIONS));
 
         assertEquals("model_abc", config.getName());
         assertEquals("llamacpp", config.getBackend());
         assertEquals(1, config.getInstanceGroupCount());
         assertEquals(1, config.getInstanceGroup(0).getCount());
+        assertEquals(Kind.KIND_AUTO, config.getInstanceGroup(0).getKind());
+        assertEquals(0, config.getInstanceGroup(0).getGpusCount()); // Triton refuses GPUs on a host without them
+        assertEquals(Map.of("llamacpp.embeddings", ""), parameters(config));
+    }
+
+    @Test
+    void zero_gpu_layers_give_instances_on_cpu() throws IOException {
+        var options = new LlamacppOptions(1, 0, -1, -1, 0, Optional.empty(), -1, 0, 0, false);
+        var config = parse(TritonLlamacppRuntime.createModelConfig("model_abc", options));
+
         assertEquals(Kind.KIND_CPU, config.getInstanceGroup(0).getKind());
-        assertEquals(0, config.getInstanceGroup(0).getGpusCount());
         assertEquals(Map.of("llamacpp.embeddings", "", "llamacpp.n-gpu-layers", "0"), parameters(config));
     }
 

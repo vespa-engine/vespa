@@ -54,7 +54,7 @@ class GgufEmbedderRuntimeTest {
         var runtime = new FakeRuntime();
         new GgufEmbedder(config().build(), ModelReference::value, runtime).deconstruct();
 
-        assertEquals(new LlamacppOptions(1, 0, -1, -1, 0, Optional.empty(), -1, 0, 0, false), runtime.options);
+        assertEquals(new LlamacppOptions(1, 0, -1, -1, -1, Optional.empty(), -1, 0, 0, false), runtime.options);
     }
 
     @Test

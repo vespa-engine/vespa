@@ -351,7 +351,7 @@ public class EmbedderTestCase {
         assertEquals(0, config.contextSize());
         assertEquals(-1, config.logicalMaxBatchSize());
         assertEquals(-1, config.physicalMaxBatchSize());
-        assertEquals(0, config.gpuLayers());
+        assertEquals(-1, config.gpuLayers());
         assertEquals(-1, config.seed());
         assertEquals(0.0, config.threads());
         assertEquals(0.0, config.batchThreads());

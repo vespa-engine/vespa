@@ -25,7 +25,7 @@ public class EmbeddedLlamacppRuntime extends AbstractComponent implements Llamac
                 .enableEmbedding()
                 .setParallel(options.parallel())
                 .setModel(modelPath)
-                .setGpuLayers(options.gpuLayers());
+                .setGpuLayers(Math.max(0, options.gpuLayers())); // CPU-only unless GPU layers are given
         if (options.continuousBatching()) modelParams.enableContBatching();
         options.pooling().ifPresent(pooling -> modelParams.setPoolingType(PoolingType.valueOf(pooling.name())));
         if (options.physicalMaxBatchSize() > 0) modelParams.setUbatchSize(options.physicalMaxBatchSize());

@@ -228,7 +228,8 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
      * The backend runs one llama-server per model with one slot per model instance, so concurrency comes from
      * the instance count. The backend's ctx-size is per slot, while contextSize is the total for all slots,
      * as in the embedded runtime, so it is divided by parallel.
-     * Values the options leave unset are left to llama-server, except the GPU layers, where 0 means CPU only.
+     * Values the options leave unset are left to llama-server. For the GPU layers, that means offloading the
+     * model to a GPU if there is one, as for ONNX models, while 0 means CPU only.
      */
     static String createModelConfig(String modelName, LlamacppOptions options) {
         var builder = ModelConfig.newBuilder()
@@ -241,7 +242,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
             putFlag(builder, "ctx-size", Integer.toString(Math.max(1, options.contextSize() / options.parallel())));
         if (options.logicalMaxBatchSize() > 0) putFlag(builder, "batch-size", Integer.toString(options.logicalMaxBatchSize()));
         if (options.physicalMaxBatchSize() > 0) putFlag(builder, "ubatch-size", Integer.toString(options.physicalMaxBatchSize()));
-        putFlag(builder, "n-gpu-layers", Integer.toString(options.gpuLayers()));
+        if (options.gpuLayers() >= 0) putFlag(builder, "n-gpu-layers", Integer.toString(options.gpuLayers()));
         if (options.seed() > -1) putFlag(builder, "seed", Integer.toString(options.seed()));
         if (options.threads() > 0) putFlag(builder, "threads", Integer.toString(options.threads()));
         if (options.batchThreads() > 0) putFlag(builder, "threads-batch", Integer.toString(options.batchThreads()));
