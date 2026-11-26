@@ -112,7 +112,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config& cfg, const Context& ctx)
       _configMutex(ctx._configMutex),
       _hwInfo(ctx._hwInfo),
       _getSerialNum(ctx._getSerialNum),
-      _tlsSyncer(ctx._writeService.master(), ctx._getSerialNum, ctx._tlSyncer),
+      _tlsSyncer(ctx._writeService.main(), ctx._getSerialNum, ctx._tlSyncer),
       _dmsFlushTarget(),
       _dmsShrinkTarget(),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
@@ -283,7 +283,7 @@ search::LogDocumentStore::Config createStoreConfig(const search::LogDocumentStor
 DocumentSubDbInitializer::UP StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig& configSnapshot, SerialNum,
                                                                   const IndexConfig&) const {
     auto result =
-        std::make_unique<DocumentSubDbInitializer>(const_cast<StoreOnlyDocSubDB&>(*this), _writeService.master());
+        std::make_unique<DocumentSubDbInitializer>(const_cast<StoreOnlyDocSubDB&>(*this), _writeService.main());
     AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     auto          dmsInitTask = createDocumentMetaStoreInitializer(
         alloc_strategy, configSnapshot.get_document_meta_store_config().store_full_document_ids(),
@@ -314,7 +314,7 @@ void StoreOnlyDocSubDB::setup(const DocumentSubDbInitializerResult& initResult) 
 IFlushTarget::List StoreOnlyDocSubDB::getFlushTargets() {
     IFlushTarget::List ret;
     for (const auto& target : getFlushTargetsInternal()) {
-        ret.push_back(std::make_shared<ThreadedFlushTarget>(_writeService.master(), _getSerialNum, target,
+        ret.push_back(std::make_shared<ThreadedFlushTarget>(_writeService.main(), _getSerialNum, target,
                                                             _doc_type_and_subdb_name->subdb_name()));
     }
     return ret;
@@ -340,7 +340,7 @@ StoreOnlyFeedView::PersistentParams StoreOnlyDocSubDB::getFeedViewPersistentPara
 }
 
 void StoreOnlyDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     _iSearchView.set(std::make_shared<EmptySearchView>());
     {
         std::lock_guard<std::mutex> guard(_configMutex);
@@ -374,7 +374,7 @@ void StoreOnlyDocSubDB::validateDocStore(FeedHandler& feedHandler, SerialNum ser
 }
 
 void StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig& configSnapshot) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     auto feedView = std::make_shared<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
                                                         getFeedViewPersistentParams());
 
@@ -409,7 +409,7 @@ IReprocessingTask::List StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig& n
     (void)params;
     (void)resolver;
     (void)prepared_reconfig;
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     initFeedView(newConfigSnapshot);
@@ -488,7 +488,7 @@ void StoreOnlyDocSubDB::pruneRemovedFields(SerialNum) {
 }
 
 void StoreOnlyDocSubDB::setIndexSchema(std::shared_ptr<const Schema>, SerialNum) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
 }
 
 search::IndexStats StoreOnlyDocSubDB::get_index_stats(bool) const {
@@ -507,7 +507,7 @@ MatchingStats StoreOnlyDocSubDB::getMatcherStats(const std::string& rankProfile)
 }
 
 void StoreOnlyDocSubDB::flush_document_summary(bool sync_tls) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     search::IDocumentStore& store(_rSummaryMgr->getBackingStore());
     auto                    summaryFlush =
         std::make_shared<SummaryFlushTarget>(store, _writeService.summary(), _doc_type_and_subdb_name);

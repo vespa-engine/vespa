@@ -298,7 +298,7 @@ public:
         op->setDbDocumentId(dbdId);
         op->setPrevDbDocumentId(prevDbdId);
         vespalib::Gate commitDone;
-        _ddb->getWriteService().master().execute(vespalib::makeLambdaTask([this, op = std::move(op), &commitDone]() {
+        _ddb->getWriteService().main().execute(vespalib::makeLambdaTask([this, op = std::move(op), &commitDone]() {
             _ddb->getFeedHandler().appendOperation(*op, std::make_shared<vespalib::GateCallback>(commitDone));
         }));
         commitDone.await();

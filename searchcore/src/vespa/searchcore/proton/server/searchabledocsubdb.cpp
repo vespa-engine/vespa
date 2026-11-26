@@ -187,7 +187,7 @@ void SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketS
 }
 
 void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
 
     AttributeManager::SP     attrMgr = getAndResetInitAttributeManager();
     const IIndexManager::SP& indexMgr = getIndexManager();
@@ -209,7 +209,7 @@ void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
 }
 
 void SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig& configSnapshot) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
     auto feedView = std::make_shared<SearchableFeedView>(
         getStoreOnlyFeedViewContext(configSnapshot), getFeedViewPersistentParams(),
         FastAccessFeedView::Context(std::move(attrWriter), _docIdLimit),
@@ -227,7 +227,7 @@ void SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter, const Doc
  * flush engine has not started.
  */
 bool SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
 
     getFeedView()->forceCommitAndWait(
         search::CommitParam(_getSerialNum.getSerialNum(), search::CommitParam::UpdateStats::SKIP));
@@ -272,7 +272,7 @@ void SearchableDocSubDB::reconfigure_index_metrics(const Schema& schema) {
 }
 
 void SearchableDocSubDB::setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) {
-    CHECK(_writeService.master().isCurrentThread());
+    CHECK(_writeService.main().isCurrentThread());
 
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP  oldFeedView = _iFeedView.get();

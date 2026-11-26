@@ -17,7 +17,7 @@ struct JobTestBase : public ::testing::Test {
     proton::test::ResourceUsageNotifier                           _resource_usage_notifier;
     std::unique_ptr<storage::spi::dummy::DummyBucketExecutor>     _bucketExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>             _singleExecutor;
-    std::unique_ptr<searchcorespi::index::ISyncableThreadService> _master;
+    std::unique_ptr<searchcorespi::index::ISyncableThreadService> _main_thread_service;
     std::shared_ptr<MyHandler>                                    _handler;
     MyStorer                                                      _storer;
     std::shared_ptr<MaintenanceJobTokenSource>                    _maintenance_job_token_source;

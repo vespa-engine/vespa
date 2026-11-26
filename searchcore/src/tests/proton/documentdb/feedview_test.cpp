@@ -639,7 +639,7 @@ struct FixtureBase {
         runInMaster(
             [this, onDone = std::make_shared<GateCallback>(gate)]() { performForceCommit(std::move(onDone)); });
         gate.await();
-        _writeService.master().sync();
+        _writeService.main().sync();
     }
 
     std::string get_trace() { return _tracer._os.str(); }
@@ -656,7 +656,7 @@ struct FixtureBase {
         Gate gate;
         runInMaster([&]() { performCompactLidSpace(wantedLidLimit, std::make_shared<GateCallback>(gate)); });
         gate.await();
-        _writeService.master().sync();
+        _writeService.main().sync();
     }
     LastChange get_last_change() { return _gidToLidChangeHandler->get_last_change(); }
     uint32_t get_change_handler_count() { return _gidToLidChangeHandler->get_num_changes(); }
@@ -908,12 +908,12 @@ TEST(FeedViewTest, require_that_remove_calls_removes_complete_via_delayed_thread
     EXPECT_EQ(std::make_tuple(0u, 0u, 0u), get_execute_counts(f.writeServiceObserver()));
     f.putAndWait(f.doc1(10));
     f.forceCommitAndWait();
-    // put index fields handled in index thread
+    // put index fields handled in document db index thread
     EXPECT_EQ(std::make_tuple(2u, 2u, 2u), get_execute_counts(f.writeServiceObserver()));
     f.removeAndWait(f.doc1(20));
     f.forceCommitAndWait();
-    // remove index fields handled in index thread
-    // delayed remove complete handled in same index thread, then master thread
+    // remove index fields handled in document db index thread
+    // delayed remove complete handled in same document db index thread, then document db main thread
     EXPECT_EQ(std::make_tuple(5u, 4u, 4u), get_execute_counts(f.writeServiceObserver()));
     EXPECT_EQ(1u, f.metaStoreObserver()._removes_complete_cnt);
     ASSERT_FALSE(f.metaStoreObserver()._removes_complete_lids.empty());
@@ -1300,8 +1300,8 @@ TEST(
     f.populateBeforeCompactLidSpace();
     EXPECT_EQ(std::make_tuple(5u, 4u, 4u), get_execute_counts(f.writeServiceObserver()));
     f.compactLidSpaceAndWait(2);
-    // performIndexForceCommit in index thread, then completion callback
-    // in master thread.
+    // performIndexForceCommit in document db index thread, then completion callback
+    // in document db main thread.
     EXPECT_EQ(std::make_tuple(7u, 7u, 7u), get_execute_counts(f.writeServiceObserver()));
     EXPECT_EQ(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQ(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
@@ -1321,8 +1321,8 @@ TEST(
     f.runInMaster(
         [&, onDone = std::make_shared<GateCallback>(gate)]() { f.fv.handleCompactLidSpace(op, std::move(onDone)); });
     gate.await();
-    f._writeService.master().sync();
-    // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
+    f._writeService.main().sync();
+    // Delayed holdUnblockShrinkLidSpace() in document db index thread, then document db main thread
     EXPECT_EQ(std::make_tuple(6u, 6u, 5u), get_execute_counts(f.writeServiceObserver()));
     EXPECT_EQ(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQ(0u, f.getDocumentStore()._compactLidSpaceLidLimit);

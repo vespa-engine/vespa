@@ -408,11 +408,11 @@ struct FeedHandlerFixture {
     }
 
     ~FeedHandlerFixture() { _service.shutdown(); }
-    template <class FunctionType> inline void runAsMaster(FunctionType&& function) {
-        _service.write().master().execute(makeLambdaTask(std::move(function)));
-        syncMaster();
+    template <class FunctionType> inline void run_in_main_thread_service(FunctionType&& function) {
+        _service.write().main().execute(makeLambdaTask(std::move(function)));
+        sync_main_thread_service();
     }
-    void syncMaster() { _service.write().master().sync(); }
+    void sync_main_thread_service() { _service.write().main().sync(); }
 };
 
 } // namespace
@@ -438,7 +438,7 @@ void FeedHandlerTest::TearDownTestSuite() {
 
 TEST_F(FeedHandlerTest, require_that_heartBeat_calls_FeedViews_heartBeat) {
     FeedHandlerFixture f;
-    f.runAsMaster([&]() { f.handler.heartBeat(); });
+    f.run_in_main_thread_service([&]() { f.handler.heartBeat(); });
     EXPECT_EQ(1, f.feedView.heartbeat_count);
 }
 
@@ -481,7 +481,7 @@ TEST_F(FeedHandlerTest, require_that_handleMove_calls_FeedView) {
     DocumentContext    doc_context("id:ns:searchdocument::foo", f.schema.builder);
     MoveOperation      op(doc_context.bucketId, Timestamp(2), doc_context.doc, DbDocumentId(0, 2), 1);
     op.setDbDocumentId(DbDocumentId(1, 2));
-    f.runAsMaster([&]() { f.handler.handleMove(op, IDestructorCallback::SP()); });
+    f.run_in_main_thread_service([&]() { f.handler.handleMove(op, IDestructorCallback::SP()); });
     EXPECT_EQ(1, f.feedView.move_count);
     EXPECT_EQ(1, f.tls_writer.store_count);
 }
@@ -511,7 +511,7 @@ TEST_F(FeedHandlerTest, require_that_flush_done_calls_prune) {
     f.handler.changeToNormalFeedState();
     f.owner._allowPrune = true;
     f.handler.flushDone(10);
-    f.syncMaster();
+    f.sync_main_thread_service();
     EXPECT_EQ(1, f.tls_writer.erase_count);
     EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 }
@@ -519,7 +519,7 @@ TEST_F(FeedHandlerTest, require_that_flush_done_calls_prune) {
 TEST_F(FeedHandlerTest, require_that_flush_in_init_state_delays_pruning) {
     FeedHandlerFixture f;
     f.handler.flushDone(10);
-    f.syncMaster();
+    f.sync_main_thread_service();
     EXPECT_EQ(0, f.tls_writer.erase_count);
     EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 }
@@ -527,11 +527,11 @@ TEST_F(FeedHandlerTest, require_that_flush_in_init_state_delays_pruning) {
 TEST_F(FeedHandlerTest, require_that_flush_cannot_unprune) {
     FeedHandlerFixture f;
     f.handler.flushDone(10);
-    f.syncMaster();
+    f.sync_main_thread_service();
     EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 
     f.handler.flushDone(5); // Try to unprune.
-    f.syncMaster();
+    f.sync_main_thread_service();
     EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 }
 
@@ -692,8 +692,8 @@ TEST_F(FeedHandlerTest, require_that_feed_stats_are_updated) {
     auto op = std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), std::move(doc_context.doc));
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
-    f.syncMaster(); // wait for initateCommit
-    f.syncMaster(); // wait for onCommitDone
+    f.sync_main_thread_service(); // wait for initateCommit
+    f.sync_main_thread_service(); // wait for onCommitDone
     auto stats = f.handler.get_stats(false);
     EXPECT_EQ(1u, stats.get_commits());
     EXPECT_EQ(1u, stats.get_operations());

@@ -315,7 +315,7 @@ template <typename Traits> struct FixtureBase {
         init();
     }
     ~FixtureBase() {
-        _service.write().master().execute(makeLambdaTask([this]() { _subDb.close(); }));
+        _service.write().main().execute(makeLambdaTask([this]() { _subDb.close(); }));
         _service.shutdown();
     }
     void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator>& calc) {

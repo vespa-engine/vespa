@@ -67,7 +67,7 @@ InitializerTask::SP FastAccessDocSubDB::createAttributeManagerInitializer(
         _hwInfo);
     return std::make_shared<AttributeManagerInitializer>(
         configSerialNum, documentMetaStoreInitTask, documentMetaStore, *baseAttrMgr,
-        configSnapshot.getAttributesConfig(), alloc_strategy, _fastAccessAttributesOnly, _writeService.master(),
+        configSnapshot.getAttributesConfig(), alloc_strategy, _fastAccessAttributesOnly, _writeService.main(),
         attrMgrResult);
 }
 

@@ -147,7 +147,7 @@ void LidReuseDelayerTest::cycleLids(const std::vector<uint32_t>& lids, vespalib:
 
 void LidReuseDelayerTest::performCycleLids(const std::vector<uint32_t>&      lids,
                                            vespalib::IDestructorCallback::SP onDone) {
-    _writeService.master().execute(makeLambdaTask([this, lids, onDone]() {
+    _writeService.main().execute(makeLambdaTask([this, lids, onDone]() {
         (void)onDone;
         cycledLids(lids);
     }));
