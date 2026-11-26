@@ -21,11 +21,17 @@ public class EmbeddedLlamacppRuntime extends AbstractComponent implements Llamac
 
     @Override
     public LlamacppEvaluator evaluatorOf(String modelPath, LlamacppOptions options) {
+        return new Evaluator(new LlamaModel(modelParameters(modelPath, options)));
+    }
+
+    static ModelParameters modelParameters(String modelPath, LlamacppOptions options) {
         var modelParams = new ModelParameters()
                 .enableEmbedding()
                 .setParallel(options.parallel())
-                .setModel(modelPath)
-                .setGpuLayers(Math.max(0, options.gpuLayers())); // CPU-only unless GPU layers are given
+                .setModel(modelPath);
+        // Without --gpu-layers, llama.cpp offloads as many layers as fit in GPU memory, if the loaded
+        // native library supports GPUs and finds one.
+        if (options.gpuLayers() >= 0) modelParams.setGpuLayers(options.gpuLayers());
         if (options.continuousBatching()) modelParams.enableContBatching();
         options.pooling().ifPresent(pooling -> modelParams.setPoolingType(PoolingType.valueOf(pooling.name())));
         if (options.physicalMaxBatchSize() > 0) modelParams.setUbatchSize(options.physicalMaxBatchSize());
@@ -34,7 +40,7 @@ public class EmbeddedLlamacppRuntime extends AbstractComponent implements Llamac
         if (options.seed() > -1) modelParams.setSeed(options.seed());
         if (options.threads() > 0) modelParams.setThreads(options.threads());
         if (options.batchThreads() > 0) modelParams.setThreadsBatch(options.batchThreads());
-        return new Evaluator(new LlamaModel(modelParams));
+        return modelParams;
     }
 
     private record Evaluator(LlamaModel model) implements LlamacppEvaluator {

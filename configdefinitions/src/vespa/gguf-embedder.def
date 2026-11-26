@@ -3,8 +3,8 @@ package=ai.vespa.embedding.config
 # GGUF embedding model
 embeddingModel model
 
-# Maximum number of model layers to run on GPU (default: -1 = runtime default, 0 = CPU-only).
-# In Triton, the default uses a GPU if there is one, as ONNX models do. In the container, it is CPU-only.
+# Maximum number of model layers to run on GPU (default: -1 = llama.cpp default, 0 = CPU-only).
+# The default uses a GPU if there is one.
 gpuLayers int default=-1
 
 # Set pooling type for embeddings (default: UNSPECIFIED, UNSPECIFIED = model default).
