@@ -45,6 +45,16 @@ TEST(FieldPathTargetTest, make_assign_element) {
     ASSERT_NE(target.field(), nullptr);
 }
 
+TEST(FieldPathTargetTest, make_remove_element) {
+    const auto& doc_type = *repo->getDocumentType("testdoc");
+
+    auto target = FieldPathTarget::remove_element(doc_type.getField("aint"), 5);
+    EXPECT_EQ(target.kind(), FieldPathTarget::Kind::REMOVE_ELEMENT);
+    EXPECT_EQ(target.attribute_name(), "aint");
+    EXPECT_EQ(target.index(), 5);
+    ASSERT_NE(target.field(), nullptr);
+}
+
 TEST(FieldPathTargetTest, parse_value_assign_to_array_index) {
     const auto& doc_type = *repo->getDocumentType("testdoc");
 

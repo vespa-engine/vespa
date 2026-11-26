@@ -76,6 +76,8 @@ std::string to_string(const FieldPathTarget& target) {
         return "unsupported";
     case FieldPathTarget::Kind::ASSIGN_ELEMENT:
         return std::format("assign {}[{}]", target.attribute_name(), target.index());
+    case FieldPathTarget::Kind::REMOVE_ELEMENT:
+        return std::format("remove {}[{}]", target.attribute_name(), target.index());
     }
     return std::format("unknown({})", static_cast<int>(target.kind()));
 }
@@ -393,6 +395,10 @@ void AttributeUpdater::handle_field_path_update(AttributeVector& vec, uint32_t l
         assign_element(vec, lid, target.index(), assign.getValue());
         break;
     }
+    case FieldPathTarget::Kind::REMOVE_ELEMENT: {
+        remove_element(vec, lid, target.index());
+        break;
+    }
     case FieldPathTarget::Kind::UNSUPPORTED:
         // Expect this to be filtered in AttributeWriter.
         LOG(warning, "Skipping unsupported field path update to attribute '%s'", vec.getName().c_str());
@@ -533,6 +539,35 @@ void AttributeUpdater::assign_element(AttributeVector& vec, uint32_t lid, uint32
         }
     } else {
         LOG(warning, "Field path element assign is not supported for attribute '%s' (classname=%s)",
+            vec.getName().c_str(), getClassName(vec).c_str());
+    }
+}
+
+void AttributeUpdater::remove_element(AttributeVector& vec, uint32_t lid, uint32_t index) {
+    LOG(spam, "remove_element(%s, %u, %u)", vec.getName().c_str(), lid, index);
+    if (vec.isIntegerType()) {
+        if (vec.getBasicType() == attribute::BasicType::BOOL && vec.hasMultiValue()) {
+            LOG(warning, "Field path element remove is not supported for bool array attribute '%s'",
+                vec.getName().c_str());
+            return;
+        }
+        if (!static_cast<IntegerAttribute&>(vec).remove_element(lid, index)) {
+            throw UpdateException(
+                std::format("attribute remove_element failed: {}[{}][{}]", vec.getName(), lid, index));
+        }
+    } else if (vec.isFloatingPointType()) {
+        if (!static_cast<FloatingPointAttribute&>(vec).remove_element(lid, index)) {
+            throw UpdateException(
+                std::format("attribute remove_element failed: {}[{}][{}]", vec.getName(), lid, index));
+        }
+    } else if (vec.isStringType()) {
+        auto& str_attr = static_cast<StringAttribute&>(vec);
+        if (!str_attr.remove_element(lid, index)) {
+            throw UpdateException(
+                std::format("attribute remove_element failed: {}[{}][{}]", vec.getName(), lid, index));
+        }
+    } else {
+        LOG(warning, "Field path element remove is not supported for attribute '%s' (classname=%s)",
             vec.getName().c_str(), getClassName(vec).c_str());
     }
 }

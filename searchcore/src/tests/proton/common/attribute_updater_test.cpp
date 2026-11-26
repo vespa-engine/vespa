@@ -21,6 +21,7 @@
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/removefieldpathupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
@@ -57,12 +58,9 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
-using search::attribute::SingleRawAttribute;
 using search::attribute::test::AttributeBuilder;
 using search::tensor::DenseTensorAttribute;
-using search::tensor::ITensorAttribute;
 using search::tensor::SerializedFastValueAttribute;
-using search::tensor::TensorAttribute;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -166,6 +164,14 @@ struct Fixture {
         AssignFieldPathUpdate upd(*docType, path, "", std::move(value));
         auto                  target = FieldPathTarget::assign_element(docType->getField(vec.getName()), index);
         search::AttributeUpdater::handle_field_path_update(vec, docId, target, upd);
+        vec.commit();
+    }
+
+    void apply_remove_element(AttributeVector& vec, uint32_t doc_id, uint32_t index) {
+        auto                  field_path = std::format("{}[{}]", vec.getName(), index);
+        RemoveFieldPathUpdate upd(field_path);
+        auto                  target = FieldPathTarget::remove_element(docType->getField(vec.getName()), index);
+        search::AttributeUpdater::handle_field_path_update(vec, doc_id, target, upd);
         vec.commit();
     }
 };
@@ -517,6 +523,45 @@ TEST(AttributeUpdaterTest, require_that_assign_element_out_of_bounds_is_a_no_op)
     f.apply_assign_element(*vec, 1, 2, std::make_unique<IntFieldValue>(99));
     f.apply_assign_element(*vec, 1, 1000, std::make_unique<IntFieldValue>(99));
     f.apply_assign_element(*vec, 2, 0, std::make_unique<IntFieldValue>(99));
+    EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(20)}));
+    EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
+}
+
+TEST(AttributeUpdaterTest, require_that_removeelement_updates_array_attributes) {
+    Fixture        f;
+    CollectionType ct(CollectionType::ARRAY);
+    {
+        using IL = AttributeBuilder::IntList;
+        auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, ct)).fill_array({IL{10, 20, 30}}).get();
+        f.apply_remove_element(*vec, 1, 1);
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(30)}));
+    }
+    {
+        using DL = AttributeBuilder::DoubleList;
+        auto vec =
+            AttributeBuilder("in1/afloat", Config(BasicType::FLOAT, ct)).fill_array({DL{10.5, 20.5, 30.5}}).get();
+        f.apply_remove_element(*vec, 1, 1);
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(10.5), WeightedFloat(30.5)}));
+    }
+    {
+        using SL = AttributeBuilder::StringList;
+        auto vec = AttributeBuilder("in1/astring", Config(BasicType::STRING, ct))
+                       .fill_array({SL{"one", "two", "three"}})
+                       .get();
+        f.apply_remove_element(*vec, 1, 1);
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("one"), WeightedString("three")}));
+    }
+}
+
+TEST(AttributeUpdaterTest, require_that_remove_element_out_of_bounds_is_a_no_op) {
+    Fixture f;
+    using IL = AttributeBuilder::IntList;
+    auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, CollectionType::ARRAY))
+                   .fill_array({IL{10, 20}, IL{}})
+                   .get();
+    f.apply_remove_element(*vec, 1, 2);
+    f.apply_remove_element(*vec, 1, 1000);
+    f.apply_remove_element(*vec, 2, 0);
     EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(20)}));
     EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
 }

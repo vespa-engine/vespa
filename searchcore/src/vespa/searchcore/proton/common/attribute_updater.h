@@ -71,6 +71,7 @@ private:
     static void updateValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
     static void appendValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
     static void assign_element(AttributeVector& vec, uint32_t lid, uint32_t index, const FieldValue& val);
+    static void remove_element(AttributeVector& vec, uint32_t lid, uint32_t index);
 };
 
 } // namespace search
