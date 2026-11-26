@@ -545,7 +545,7 @@ void assert_str_array(AttributeVector& attr, uint32_t lid, const std::vector<con
 template <typename T>
 concept FpValue = std::convertible_to<T, int> || std::convertible_to<T, std::string_view>;
 
-auto fpupd(const DocumentUpdate& upd, const std::string& field_path, FpValue auto&& value) {
+auto field_path_assign(const DocumentUpdate& upd, const std::string& field_path, FpValue auto&& value) {
     using T = std::decay_t<decltype(value)>;
     std::unique_ptr<FieldValue> fv;
     if constexpr (std::convertible_to<T, int>) {
@@ -611,8 +611,8 @@ AttributeWriterFieldPathTest::~AttributeWriterFieldPathTest() = default;
 
 TEST_F(AttributeWriterFieldPathTest, assign_element_updates_array_attributes) {
     auto upd = make_update();
-    upd.addFieldPathUpdate(fpupd(upd, "a1[1]", 99));
-    upd.addFieldPathUpdate(fpupd(upd, "a2[0]", "baz"));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a1[1]", 99));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a2[0]", "baz"));
     apply(2, upd);
     assert_int_array(*_a1, LID1, {10, 99, 30});
     assert_str_array(*_a2, LID1, {"baz", "bar"});
@@ -620,19 +620,19 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_updates_array_attributes) {
 
 TEST_F(AttributeWriterFieldPathTest, assign_element_out_of_bounds_is_ignored) {
     auto upd = make_update();
-    upd.addFieldPathUpdate(fpupd(upd, "a1[5]", 77));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a1[5]", 77));
     apply(2, upd);
     assert_int_array(*_a1, LID1, {10, 20, 30});
 }
 
 TEST_F(AttributeWriterFieldPathTest, assign_element_is_not_reapplied_on_replay) {
     auto upd = make_update();
-    upd.addFieldPathUpdate(fpupd(upd, "a1[0]", 42));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a1[0]", 42));
     apply(2, upd);
     assert_int_array(*_a1, LID1, {42, 20, 30});
 
     auto replay = make_update();
-    replay.addFieldPathUpdate(fpupd(replay, "a1[0]", 77));
+    replay.addFieldPathUpdate(field_path_assign(replay, "a1[0]", 77));
     apply(2, replay); // same sync token as previous => ignored
     assert_int_array(*_a1, LID1, {42, 20, 30});
     apply(3, replay); // newer sync token => applied
@@ -641,8 +641,8 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_is_not_reapplied_on_replay) 
 
 TEST_F(AttributeWriterFieldPathTest, assign_element_to_non_attribute_field_is_ignored) {
     auto upd = make_update();
-    upd.addFieldPathUpdate(fpupd(upd, "extra[0]", 5));
-    upd.addFieldPathUpdate(fpupd(upd, "a1[0]", 42));
+    upd.addFieldPathUpdate(field_path_assign(upd, "extra[0]", 5));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a1[0]", 42));
     apply(2, upd);
     assert_int_array(*_a1, LID1, {42, 20, 30});
 }
@@ -650,7 +650,7 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_to_non_attribute_field_is_ig
 TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_in_same_update) {
     auto upd = make_update();
     upd.addUpdate(remove_fupd(upd, "a2", "foo"));
-    upd.addFieldPathUpdate(fpupd(upd, "a2[1]", "x"));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a2[1]", "x"));
     apply(2, upd);
     // In the document model, regular field updates are applied before field path updates.
     // So, removing "foo" shifts "bar" over to position 0 and the field path update is
@@ -677,9 +677,9 @@ struct RecordingFieldUpdateCallback : IFieldUpdateCallback {
 TEST_F(AttributeWriterFieldPathTest, field_path_updates_report_fields_to_update_callback) {
     auto upd = make_update();
     // attribute: reported and applied.
-    upd.addFieldPathUpdate(fpupd(upd, "a1[0]", 42));
+    upd.addFieldPathUpdate(field_path_assign(upd, "a1[0]", 42));
     // not an attribute: reported without attribute.
-    upd.addFieldPathUpdate(fpupd(upd, "extra[0]", 5));
+    upd.addFieldPathUpdate(field_path_assign(upd, "extra[0]", 5));
     // attribute, but an unsupported assign kind (expression based): reported, but not applied.
     upd.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("a1[1]", "", "5"));
     // field does not exist: not reported.
@@ -704,7 +704,7 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_from_earlier
     _aw->update(2, remove_upd, LID1, emptyCallback, on_update);
 
     auto assign_upd = make_update();
-    assign_upd.addFieldPathUpdate(fpupd(assign_upd, "a2[1]", "x"));
+    assign_upd.addFieldPathUpdate(field_path_assign(assign_upd, "a2[1]", "x"));
     _aw->update(3, assign_upd, LID1, emptyCallback, on_update);
     commit(3);
 
