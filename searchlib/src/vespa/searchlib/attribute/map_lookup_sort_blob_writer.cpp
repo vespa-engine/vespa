@@ -2,9 +2,7 @@
 
 #include "map_lookup_sort_blob_writer.h"
 
-#include "attribute_read_guard.h"
 #include "numeric_sort_blob_writer.h"
-#include "readable_attribute_vector.h"
 #include "string_sort_blob_writer.h"
 #include "string_to_number.h"
 #include "typify_basic_type.h"
@@ -39,14 +37,10 @@ constexpr uint32_t npos = std::numeric_limits<uint32_t>::max();
  * Finds the position of the selected key in the key array of a document.
  * The key attribute is enum backed, so the scan compares raw enum handles;
  * neither an enum store lookup nor a string compare is done per entry.
- *
- * The key handle is resolved under a stable enum guard owned by this object,
- * so the handle stays valid for as long as the finder lives.
  */
 class StringEnumKeyFinder {
     using EnumHandle = IAttributeVector::EnumHandle;
-    std::unique_ptr<AttributeReadGuard> _enum_guard; // declared first: taken before, and released after, the handle
-    const IArrayEnumReadView*           _view;
+    const IArrayEnumReadView* _view;
     std::optional<EnumHandle> _key_handle; // empty => key is not in the global enum dictionary, every document misses
 
     static std::optional<EnumHandle> find_key_handle(const IAttributeVector& key_attr, const std::string& key) {
@@ -58,13 +52,8 @@ class StringEnumKeyFinder {
     }
 
 public:
-    StringEnumKeyFinder(std::unique_ptr<AttributeReadGuard> enum_guard, const IArrayEnumReadView* view,
-                        const std::string& key)
-        : _enum_guard(std::move(enum_guard)), _view(view), _key_handle(find_key_handle(**_enum_guard, key)) {}
-    StringEnumKeyFinder(StringEnumKeyFinder&&) noexcept = default;
-    StringEnumKeyFinder(const StringEnumKeyFinder&) = delete;
-    StringEnumKeyFinder& operator=(const StringEnumKeyFinder&) = delete;
-    StringEnumKeyFinder& operator=(StringEnumKeyFinder&&) = delete;
+    StringEnumKeyFinder(const IAttributeVector& key_attr, const IArrayEnumReadView* view, const std::string& key)
+        : _view(view), _key_handle(find_key_handle(key_attr, key)) {}
     uint32_t position(uint32_t docid) const noexcept {
         if (!_key_handle.has_value()) {
             return npos; // globally unknown key, no scan needed
@@ -92,9 +81,9 @@ template <typename T, bool asc> class NumericMapLookupSortBlobWriter final : pub
     NumericSortBlobWriter<T, asc> _writer;
 
 public:
-    NumericMapLookupSortBlobWriter(Stash&& stash, StringEnumKeyFinder&& keys, const IArrayReadView<T>* values,
+    NumericMapLookupSortBlobWriter(Stash&& stash, const StringEnumKeyFinder& keys, const IArrayReadView<T>* values,
                                    MissingPolicy policy, T missing_value)
-        : _stash(std::move(stash)), _keys(std::move(keys)), _values(values), _writer(policy, missing_value, false) {}
+        : _stash(std::move(stash)), _keys(keys), _values(values), _writer(policy, missing_value, false) {}
     ~NumericMapLookupSortBlobWriter() override;
     long write(uint32_t docid, void* buf, long available) override {
         _writer.reset();
@@ -130,11 +119,11 @@ template <bool asc> class StringMapLookupSortBlobWriter final : public ISortBlob
     StringSortBlobWriter<asc> _writer;
 
 public:
-    StringMapLookupSortBlobWriter(Stash&& stash, StringEnumKeyFinder&& keys, const IArrayEnumReadView* values,
+    StringMapLookupSortBlobWriter(Stash&& stash, const StringEnumKeyFinder& keys, const IArrayEnumReadView* values,
                                   const IAttributeVector& value_attr, const common::BlobConverter* converter,
                                   MissingPolicy policy, std::string_view missing_value)
         : _stash(std::move(stash)),
-          _keys(std::move(keys)),
+          _keys(keys),
           _values(values),
           _value_attr(value_attr),
           _writer(converter, policy, missing_value, false) {}
@@ -174,7 +163,7 @@ using TypifyMapLookupWriter = vespalib::TypifyValue<TypifyBasicType, vespalib::T
 struct MakeMapLookupWriter {
     template <typename T, typename Ascending>
     static std::unique_ptr<ISortBlobWriter>
-    invoke(Stash&& stash, StringEnumKeyFinder&& keys, const IAttributeVector& value_attr,
+    invoke(Stash&& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
            const IMultiValueAttribute& value_mva, const FieldSortSpec& field_sort_spec) {
         constexpr bool asc = Ascending::value;
         if constexpr (std::is_same_v<T, TypifyBasicType::ComplexBasicType>) {
@@ -189,7 +178,7 @@ struct MakeMapLookupWriter {
                 return {};
             }
             return std::make_unique<StringMapLookupSortBlobWriter<asc>>(
-                std::move(stash), std::move(keys), values, value_attr, field_sort_spec._converter.get(),
+                std::move(stash), keys, values, value_attr, field_sort_spec._converter.get(),
                 field_sort_spec._missing_policy, field_sort_spec._missing_value);
         } else {
             auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayTag<T>(), stash);
@@ -199,7 +188,7 @@ struct MakeMapLookupWriter {
             }
             T missing_value = string_to_number<T>(field_sort_spec._missing_value);
             return std::make_unique<NumericMapLookupSortBlobWriter<T, asc>>(
-                std::move(stash), std::move(keys), values, field_sort_spec._missing_policy, missing_value);
+                std::move(stash), keys, values, field_sort_spec._missing_policy, missing_value);
         }
     }
 };
@@ -249,14 +238,6 @@ std::unique_ptr<ISortBlobWriter> make_map_lookup_sort_blob_writer(const IAttribu
                       key_attr.getName().c_str());
         return {};
     }
-    const auto* readable_key_attr = dynamic_cast<const ReadableAttributeVector*>(&key_attr);
-    if (readable_key_attr == nullptr) {
-        Issue::report("make_map_lookup_sort_blob_writer: Map key attribute vector '%s' cannot provide an enum guard",
-                      key_attr.getName().c_str());
-        return {};
-    }
-    // Taken here, before the key handle is resolved, and owned by the writer.
-    auto  enum_guard = readable_key_attr->makeReadGuard(true);
     Stash stash;
     auto* key_view = key_attr.as_multi_value_attribute()->make_read_view(IMultiValueAttribute::ArrayEnumTag(), stash);
     if (key_view == nullptr) {
@@ -264,12 +245,12 @@ std::unique_ptr<ISortBlobWriter> make_map_lookup_sort_blob_writer(const IAttribu
         report_missing_read_view(key_attr, "key array enum");
         return {};
     }
-    StringEnumKeyFinder keys(std::move(enum_guard), key_view, *field_sort_spec._map_key);
+    StringEnumKeyFinder keys(key_attr, key_view, *field_sort_spec._map_key);
     const auto&         value_mva = *value_attr.as_multi_value_attribute();
     try {
         return vespalib::typify_invoke<2, TypifyMapLookupWriter, MakeMapLookupWriter>(
-            value_attr.getBasicType(), field_sort_spec.is_ascending(), std::move(stash), std::move(keys), value_attr,
-            value_mva, field_sort_spec);
+            value_attr.getBasicType(), field_sort_spec.is_ascending(), std::move(stash), keys, value_attr, value_mva,
+            field_sort_spec);
     } catch (const IllegalArgumentException& e) {
         Issue::report("make_map_lookup_sort_blob_writer: For attribute vector '%s' (basic type %s): %s",
                       value_attr.getName().c_str(), BasicType(value_attr.getBasicType()).asString(), e.message());

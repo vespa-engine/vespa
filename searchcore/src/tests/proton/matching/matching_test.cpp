@@ -5,7 +5,6 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -21,7 +20,6 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -2659,7 +2657,7 @@ TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
 
 namespace {
 
-// Records each stable enum guard taken through the attribute context.
+// Records the thread taking each stable enum guard.
 class RecordingAttributeContext : public MockAttributeContext {
 public:
     mutable std::vector<std::pair<std::string, std::thread::id>> stable_enum_lookups;
@@ -2671,30 +2669,22 @@ public:
 
 } // namespace
 
-TEST(ResultProcessorTest, map_key_enum_guard_is_not_taken_through_the_attribute_context) {
-    // The guard holds a shared lock, which must be released by the thread that took it. The map
-    // lookup sort writer takes its own guard while the sort blobs are encoded, so no guard is
-    // cached in the per query attribute context, whatever the number of match threads.
-    auto keys = search::AttributeFactory::createAttribute(
-        "m.key", search::attribute::Config(BasicType::STRING, CollectionType::ARRAY));
-    auto values = search::AttributeFactory::createAttribute(
-        "m.value", search::attribute::Config(BasicType::INT64, CollectionType::ARRAY));
+TEST(ResultProcessorTest, map_key_enum_guard_is_taken_before_dispatch_for_any_thread_count) {
+    // The guard holds a shared lock, which must be released by the thread that took it, so it
+    // is taken here and not in a match thread, also when there is only one match thread.
     for (size_t num_threads : {1, 4}) {
         SCOPED_TRACE(num_threads);
-        RecordingAttributeContext ac;
-        ac.add(keys);
-        ac.add(values);
+        RecordingAttributeContext          ac;
         DocumentMetaStore                  meta_store(std::make_shared<bucketdb::BucketDBOwner>());
         SessionManager                     session_mgr(10);
         auto                               valid_lids = search::BitVector::create(0, 10);
         std::atomic<vespalib::steady_time> now(vespalib::steady_clock::now());
         search::grouping::GroupingContext  grouping(*valid_lids, now, vespalib::steady_time::max());
-        ResultProcessor rp(ac, meta_store, session_mgr, grouping, "", ParsedSortSpec("+m{\"k\"}"), 0, 10);
+        ResultProcessor rp(ac, meta_store, session_mgr, grouping, "", ParsedSortSpec("+m{\"k\"} +a"), 0, 10);
         rp.prepareThreadContextCreation(num_threads);
-        auto context = rp.createThreadContext(vespalib::Doom::never(), 0, 7, nullptr);
-        EXPECT_TRUE(context->sort->hasSortData());
-        EXPECT_TRUE(ac.stable_enum_lookups.empty());
-        EXPECT_FALSE(keys->hasActiveEnumGuards());
+        ASSERT_EQ(1u, ac.stable_enum_lookups.size());
+        EXPECT_EQ("m.key", ac.stable_enum_lookups[0].first);
+        EXPECT_EQ(std::this_thread::get_id(), ac.stable_enum_lookups[0].second);
     }
 }
 

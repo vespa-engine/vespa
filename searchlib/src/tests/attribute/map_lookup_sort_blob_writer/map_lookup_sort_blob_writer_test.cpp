@@ -504,24 +504,6 @@ TEST_F(MapLookupSortBlobWriterTest, valid_and_invalid_missing_as_values) {
     }
 }
 
-TEST_F(MapLookupSortBlobWriterTest, writer_holds_a_stable_enum_guard_on_the_key_attribute) {
-    auto values = make_int_values();
-    EXPECT_FALSE(_keys->hasActiveEnumGuards());
-    auto writer = make_map_lookup_sort_blob_writer(*_keys, *values, make_spec(true));
-    ASSERT_TRUE(writer);
-    EXPECT_TRUE(_keys->hasActiveEnumGuards());
-    EXPECT_FALSE(values->hasActiveEnumGuards());
-    writer.reset();
-    EXPECT_FALSE(_keys->hasActiveEnumGuards());
-
-    // A writer that cannot be made does not leave a guard behind.
-    auto single_value = make_attribute("m.value", BasicType::INT32, CollectionType::SINGLE, false);
-    EXPECT_FALSE(make_map_lookup_sort_blob_writer(*_keys, *single_value, make_spec(true)));
-    MockMultiValueAttribute bad_value("m.value", BasicType::BOOL, CollectionType::ARRAY, false, false);
-    EXPECT_FALSE(make_map_lookup_sort_blob_writer(*_keys, bad_value, make_spec(true)));
-    EXPECT_FALSE(_keys->hasActiveEnumGuards());
-}
-
 TEST_F(MapLookupSortBlobWriterTest, rejects_unsupported_attribute_combinations) {
     auto int_values = make_int_values();
 

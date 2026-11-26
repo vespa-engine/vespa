@@ -38,7 +38,9 @@ enum class UcaStrength : uint8_t { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDE
 // Both the sort spec parser and UcaConverter use this, so they accept the same names.
 UcaStrength to_uca_strength(std::string_view name);
 
-// The attributes holding the keys and the values of the map named in m{"k"}.
+// The attributes holding the keys and the values of the map named in m{"k"}. Everything that
+// looks these up must use these, so the m.key enum guard taken before dispatch is the one the
+// match threads find in the attribute context cache.
 std::string map_key_attribute_name(std::string_view map_name);
 std::string map_value_attribute_name(std::string_view map_name);
 

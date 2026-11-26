@@ -170,49 +170,8 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
                                      std::unique_ptr<search::attribute::ISortBlobWriter> writer,
                                      uint32_t                                            feature_ordinal) noexcept
-    : _type(type),
-      _vector(vector),
-      _writer(std::move(writer)),
-      _feature_ordinal(feature_ordinal),
-      _map_key_vector(nullptr) {
+    : _type(type), _vector(vector), _writer(std::move(writer)), _feature_ordinal(feature_ordinal) {
 }
-
-/*
- * Creates the sort blob writers of the map lookup levels, and destroys them again when the
- * scope ends. Each such writer holds a stable enum guard on its key attribute, which is a
- * shared lock that must be released by the thread that took it. Keeping the writers within
- * this scope makes the guard both taken and released by the thread encoding the sort blobs,
- * and held no longer than needed.
- */
-class FastS_SortSpec::MapLookupWriterScope {
-    FastS_SortSpec& _spec;
-
-public:
-    explicit MapLookupWriterScope(FastS_SortSpec& spec) : _spec(spec) {
-        auto field = _spec._sortSpec.begin();
-        for (auto& vec : _spec._vectors) {
-            // The levels follow the sort spec, but only map lookup levels need their field.
-            if (vec._map_key_vector != nullptr) {
-                CHECK(field != _spec._sortSpec.end());
-                vec._writer = make_map_lookup_sort_blob_writer(*vec._map_key_vector, *vec._vector, *field);
-                // Add() already made a writer from the same attributes and spec.
-                CHECK(vec._writer);
-            }
-            if (field != _spec._sortSpec.end()) {
-                ++field;
-            }
-        }
-    }
-    ~MapLookupWriterScope() {
-        for (auto& vec : _spec._vectors) {
-            if (vec._map_key_vector != nullptr) {
-                vec._writer.reset();
-            }
-        }
-    }
-    MapLookupWriterScope(const MapLookupWriterScope&) = delete;
-    MapLookupWriterScope& operator=(const MapLookupWriterScope&) = delete;
-};
 
 bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_sort_spec) {
     if (field_sort_spec._field.empty()) {
@@ -221,7 +180,6 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
 
     uint32_t                                            type = ASC_VECTOR;
     const IAttributeVector*                             vector(nullptr);
-    const IAttributeVector*                             map_key_vector(nullptr);
     std::unique_ptr<search::attribute::ISortBlobWriter> sort_blob_writer;
 
     if (field_sort_spec._map_key.has_value()) {
@@ -230,22 +188,19 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
         type = (field_sort_spec.is_ascending()) ? ASC_VECTOR : DESC_VECTOR;
         auto value_name = map_value_attribute_name(field_sort_spec._field);
         auto key_name = map_key_attribute_name(field_sort_spec._field);
-        // Both attributes are looked up with ordinary read guards. The writer takes its own
-        // stable enum guard on m.key, so it is only made here to check that it can be; the one
-        // used is made by MapLookupWriterScope when the sort blobs are encoded.
+        // The value is copied into the sort blob immediately, as in ordinary string sorting.
+        // The key handle is compared for the whole query, so only m.key needs a stable enum.
         vector = vecMan.getAttribute(value_name);
         if (!vector) {
             Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", value_name.c_str());
             return false;
         }
-        map_key_vector = vecMan.getAttribute(key_name);
-        if (!map_key_vector) {
+        const auto* key_vector = vecMan.getAttributeStableEnum(key_name);
+        if (!key_vector) {
             Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", key_name.c_str());
             return false;
         }
-        if (!make_map_lookup_sort_blob_writer(*map_key_vector, *vector, field_sort_spec)) {
-            return false;
-        }
+        sort_blob_writer = make_map_lookup_sort_blob_writer(*key_vector, *vector, field_sort_spec);
     } else if (field_sort_spec._is_rank_feature) {
         type = (field_sort_spec.is_ascending()) ? ASC_FEATURE : DESC_FEATURE;
     } else if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
@@ -271,7 +226,7 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
     if (!field_sort_spec._map_key.has_value() && !field_sort_spec._is_rank_feature) {
         sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
     }
-    if (vector != nullptr && map_key_vector == nullptr && !sort_blob_writer) {
+    if (vector != nullptr && !sort_blob_writer) {
         return false;
     }
 
@@ -279,7 +234,6 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
         field_sort_spec._field.c_str());
 
     _vectors.emplace_back(type, vector, std::move(sort_blob_writer));
-    _vectors.back()._map_key_vector = map_key_vector;
 
     return true;
 }
@@ -321,7 +275,6 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
     }
     _binarySortData.resize((fixedWidth + variableWidth) * n);
     _sortDataArray.resize(n);
-    MapLookupWriterScope map_lookup_writers(*this);
 
     // Feature levels need a provider bound by bind_numeric_provider() and not
     // yet consumed by an earlier sort. Without one the levels encode as a
@@ -467,6 +420,15 @@ bool FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider* provider) 
 
 FastS_SortSpec::~FastS_SortSpec() {
     freeSortData();
+}
+
+void FastS_SortSpec::prefetch_enum_guards(IAttributeContext& attr_ctx, const ParsedSortSpec& sort_spec) {
+    for (const auto& field : sort_spec) {
+        if (field._map_key.has_value()) {
+            attr_ctx.getAttributeStableEnum(map_key_attribute_name(field._field_or_name));
+            attr_ctx.getAttribute(map_value_attribute_name(field._field_or_name));
+        }
+    }
 }
 
 bool FastS_SortSpec::Init(const std::string& sortStr, IAttributeContext& vecMan) {
