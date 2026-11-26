@@ -183,6 +183,55 @@ class MultimodalEmbeddingSchemaTestCase {
     }
 
     @Test
+    void testVoyageEmbedderAcceptsImageOnlyWithMultimodalModel() {
+        String schema = """
+                schema product {
+                  document product {
+                    field title type string {
+                      indexing: summary | index
+                    }
+                    field image type raw {}
+                  }
+                  field product_embedding type tensor<float>(x[1024]) {
+                    indexing: input title, input image | embed myEmbedder | attribute
+                  }
+                }
+                """;
+        String multimodal = voyageServices("voyage-multimodal-3.5");
+        indexingScriptOf(schema, multimodal);
+        indexingScriptOf(schema.replace("input title, input image", "input image, input title"), multimodal);
+        indexingScriptOf(schema.replace("input title, input image", "input image"), multimodal);
+        indexingScriptOf(schema.replace("input title, input image", "input title"), multimodal);
+
+        var e = assertThrows(IllegalArgumentException.class, () -> indexingScriptOf(schema, voyageServices("voyage-3.5")));
+        assertTrue(e.getMessage().contains("uses the embedder with id 'myEmbedder', " +
+                                           "which accepts text, but is given text and image."), e.getMessage());
+    }
+
+    @Test
+    void testEmbedderOfIndexingClusterIsValidated() {
+        String schema = """
+                schema product {
+                  document product {
+                    field title type string {
+                      indexing: summary | index
+                    }
+                    field image type raw {}
+                  }
+                  field product_embedding type tensor<float>(x[1024]) {
+                    indexing: input title, input image | embed myEmbedder | attribute
+                  }
+                }
+                """;
+        indexingScriptOf(schema, servicesWithFeedAndQueryClusters("voyage-multimodal-3.5", "voyage-3.5"));
+
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> indexingScriptOf(schema, servicesWithFeedAndQueryClusters("voyage-3.5", "voyage-multimodal-3.5")));
+        assertTrue(e.getMessage().contains("uses the embedder with id 'myEmbedder', " +
+                                           "which accepts text, but is given text and image."), e.getMessage());
+    }
+
+    @Test
     void testTokenizerOnlyDeploysWithTextInput() {
         var services = MultimodalEmbeddingSchemaTestCase.services.replace(
                 """
@@ -242,6 +291,56 @@ class MultimodalEmbeddingSchemaTestCase {
                 """;
         String script = String.join("\n", indexingScriptOf(schema, servicesWithNoContainerCluster));
         assertTrue(script.contains("input title | embed | attribute title_embedding;"), script);
+    }
+
+    /** Returns services where the container cluster 'feed' indexes, and both container clusters have the same embedder id. */
+    private static String servicesWithFeedAndQueryClusters(String modelInFeed, String modelInQuery) {
+        String embedder = """
+                <component id="myEmbedder" type="voyage-ai-embedder">
+                  <model>%s</model>
+                  <api-key-secret-ref>voyage_key</api-key-secret-ref>
+                  <dimensions>1024</dimensions>
+                </component>
+                """;
+        return """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <services version="1.0">
+                  <container id="feed" version="1.0">
+                    %s
+                    <document-processing/>
+                    <document-api/>
+                  </container>
+                  <container id="query" version="1.0">
+                    %s
+                    <search/>
+                    <http>
+                      <server id="default" port="8081"/>
+                    </http>
+                  </container>
+                  <content id="test" version="1.0">
+                    <redundancy>1</redundancy>
+                    <documents>
+                      <document type="product" mode="index"/>
+                      <document-processing cluster="feed"/>
+                    </documents>
+                    <nodes count="1"/>
+                  </content>
+                </services>
+                """.formatted(embedder.formatted(modelInFeed), embedder.formatted(modelInQuery));
+    }
+
+    private static String voyageServices(String model) {
+        return services.replace(
+                """
+                <component id="myEmbedder" class="com.example.Embedder" bundle="example"/>
+                """.strip(),
+                """
+                <component id="myEmbedder" type="voyage-ai-embedder">
+                  <model>%s</model>
+                  <api-key-secret-ref>voyage_key</api-key-secret-ref>
+                  <dimensions>1024</dimensions>
+                </component>
+                """.formatted(model).strip());
     }
 
     private static List<String> indexingScriptOf(String schema) {

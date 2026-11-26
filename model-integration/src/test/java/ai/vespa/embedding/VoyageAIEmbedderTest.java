@@ -19,6 +19,7 @@ import java.nio.ByteOrder;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 
 import static ai.vespa.embedding.EmbedderTestUtils.createBase64EmbeddingResponse;
 import static ai.vespa.embedding.EmbedderTestUtils.createMockSecrets;
@@ -371,7 +372,93 @@ public class VoyageAIEmbedderTest {
         }
     }
 
+    @Test
+    public void testMultimodalTextAndImage() throws Exception {
+        enqueueFloatResponse(1);
+        embedder = createMultimodalEmbedder();
+
+        var input = Embedder.Input.of("A red shoe", new Embedder.Image(PNG));
+        var result = embedder.embed(input, new Embedder.Context("test-embedder"), FLOAT_TYPE);
+
+        assertEquals(FLOAT_TYPE, result.type());
+        assertEquals("""
+                     {"inputs":[{"content":[\
+                     {"type":"text","text":"A red shoe"},\
+                     {"type":"image_base64","image_base64":"data:image/png;base64,%s"}]}],\
+                     "model":"voyage-multimodal-3.5","input_type":"document","truncation":true,\
+                     "output_dimension":1024,"output_dtype":"float","encoding_format":"base64"}"""
+                             .formatted(Base64.getEncoder().encodeToString(PNG)),
+                     mockServer.takeRequest().getBody().readUtf8());
+    }
+
+    @Test
+    public void testMultimodalImageOnlyInQuery() throws Exception {
+        enqueueFloatResponse(1);
+        embedder = createMultimodalEmbedder();
+
+        embedder.embed(Embedder.Input.of(new Embedder.Image(PNG)), new Embedder.Context("query(q)"), FLOAT_TYPE);
+
+        assertEquals("""
+                     {"inputs":[{"content":[\
+                     {"type":"image_base64","image_base64":"data:image/png;base64,%s"}]}],\
+                     "model":"voyage-multimodal-3.5","input_type":"query","truncation":true,\
+                     "output_dimension":1024,"output_dtype":"float","encoding_format":"base64"}"""
+                             .formatted(Base64.getEncoder().encodeToString(PNG)),
+                     mockServer.takeRequest().getBody().readUtf8());
+    }
+
+    @Test
+    public void testMultimodalTextStillSendsOneTextItem() throws Exception {
+        enqueueFloatResponse(1);
+        embedder = createMultimodalEmbedder();
+
+        embedder.embed("A red shoe", new Embedder.Context("test-embedder"), FLOAT_TYPE);
+
+        var body = mockServer.takeRequest().getBody().readUtf8();
+        assertTrue(body.startsWith("{\"inputs\":[{\"content\":[{\"type\":\"text\",\"text\":\"A red shoe\"}]}],"), body);
+    }
+
+    @Test
+    public void testOnlyMultimodalModelAcceptsImage() {
+        embedder = createEmbedder();
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT)), embedder.supportedModalities());
+        embedder.deconstruct();
+
+        embedder = createMultimodalEmbedder();
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT),
+                            Set.of(Embedder.Modality.IMAGE),
+                            Set.of(Embedder.Modality.TEXT, Embedder.Modality.IMAGE)),
+                     embedder.supportedModalities());
+    }
+
+    @Test
+    public void testTextModelRejectsInputWithImage() {
+        embedder = createEmbedder();
+        var input = Embedder.Input.of("A red shoe", new Embedder.Image(PNG));
+
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> embedder.embed(input, new Embedder.Context("test-embedder"), FLOAT_TYPE));
+        assertEquals("This embedder accepts text, but is given text and image", e.getMessage());
+        assertEquals(0, mockServer.getRequestCount());
+    }
+
     // ===== Helper Methods =====
+
+    private static final TensorType FLOAT_TYPE = TensorType.fromSpec("tensor<float>(d0[1024])");
+
+    /** The 8 byte signature of a PNG file, followed by 4 bytes which stand in for the image data. */
+    private static final byte[] PNG = { (byte)0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3, 4 };
+
+    private void enqueueFloatResponse(int embeddings) {
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createFloatBatchSuccessResponse(embeddings, 1024)));
+    }
+
+    private VoyageAIEmbedder createMultimodalEmbedder() {
+        return new VoyageAIEmbedder(voyageConfigBuilder(1024).model("voyage-multimodal-3.5").build(), runtime, createMockSecrets());
+    }
 
     private VoyageAIEmbedder createEmbedder() { return createEmbedder(1024, "AUTO"); }
 
