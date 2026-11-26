@@ -78,6 +78,22 @@ class CloudResourceTagsTest {
         assertEquals("3", merged.asMap().get("c"));
     }
 
+    @Test
+    void customer_tags_exclude_platform_tags_ignoring_case() {
+        var tags = CloudResourceTags.from(Map.of("env", "prod", "vai_os_version", "9.4", "VAI_other", "x"));
+        assertEquals(CloudResourceTags.from(Map.of("env", "prod")), tags.customerTags());
+        assertEquals(CloudResourceTags.empty(), CloudResourceTags.from(Map.of("vai_os_version", "9.4")).customerTags());
+    }
+
+    @Test
+    void replacing_customer_tags_keeps_platform_tags() {
+        var tags = CloudResourceTags.from(Map.of("env", "prod", "team", "search", "vai_os_version", "9.4"));
+        assertEquals(CloudResourceTags.from(Map.of("env", "dev", "vai_os_version", "9.4")),
+                     tags.withCustomerTags(CloudResourceTags.from(Map.of("env", "dev"))));
+        assertEquals(CloudResourceTags.from(Map.of("vai_os_version", "9.4")),
+                     tags.withCustomerTags(CloudResourceTags.empty()));
+    }
+
     // --- Structural validation (from()) ---
 
     @Test
