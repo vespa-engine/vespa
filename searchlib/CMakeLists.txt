@@ -252,6 +252,7 @@ vespa_define_module(
     src/tests/sortresults
     src/tests/sortspec
     src/tests/tensor/dense_tensor_store
+    src/tests/tensor/direct_tensor_posting_attribute
     src/tests/tensor/direct_tensor_store
     src/tests/tensor/distance_calculator
     src/tests/tensor/distance_functions

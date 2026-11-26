@@ -138,6 +138,7 @@ uint32_t TensorAttribute::clearDoc(DocId docId) {
     EntryRef oldRef(elem_ref.load_relaxed());
     elem_ref.store_relaxed(EntryRef());
     if (oldRef.valid()) {
+        on_tensor_ref_change(docId, oldRef, EntryRef());
         _tensorStore.holdTensor(oldRef);
         return 1u;
     }
@@ -214,9 +215,13 @@ void TensorAttribute::setTensorRef(DocId docId, EntryRef ref) {
     auto&    elem_ref = _refVector[docId];
     EntryRef oldRef(elem_ref.load_relaxed());
     elem_ref.store_release(ref);
+    on_tensor_ref_change(docId, oldRef, ref);
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
     }
+}
+
+void TensorAttribute::on_tensor_ref_change(DocId, EntryRef, EntryRef) {
 }
 
 void TensorAttribute::internal_set_tensor(DocId docid, const Value& tensor) {
@@ -310,8 +315,9 @@ void TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
         AtomicEntryRef& atomic_ref = _refVector[lid];
         EntryRef        ref = atomic_ref.load_relaxed();
         if (ref.valid()) {
-            _tensorStore.holdTensor(ref);
             atomic_ref.store_release(EntryRef());
+            on_tensor_ref_change(lid, ref, EntryRef());
+            _tensorStore.holdTensor(ref);
         }
     }
 }

@@ -20,6 +20,10 @@ namespace vespalib::slime {
 struct Inserter;
 }
 
+namespace search {
+class IDocidWithFloatWeightPostingStore;
+}
+
 namespace search::tensor {
 
 struct DistanceFunctionFactory;
@@ -77,6 +81,11 @@ public:
 
     [[nodiscard]] virtual DistanceFunctionFactory& distance_function_factory() const = 0;
     [[nodiscard]] virtual const NearestNeighborIndex* nearest_neighbor_index() const { return nullptr; }
+    /**
+     * Returns the dictionary of tensor labels with posting lists ({docid, cell value}) per label,
+     * or nullptr if the attribute does not have label posting lists.
+     */
+    [[nodiscard]] virtual const IDocidWithFloatWeightPostingStore* label_posting_store() const { return nullptr; }
     using DistanceMetric = search::attribute::DistanceMetric;
     [[nodiscard]] virtual DistanceMetric distance_metric() const = 0;
     [[nodiscard]] virtual uint32_t get_num_docs() const = 0;

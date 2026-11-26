@@ -31,6 +31,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
       _fastAccess(false),
       _mutable(false),
       _paged(false),
+      _tensor_label_postings(false),
       _distance_metric(DistanceMetric::Euclidean),
       _match(Match::UNCASED),
       _dictionary(),
@@ -52,9 +53,9 @@ Config::~Config() = default;
 bool Config::operator==(const Config& b) const noexcept {
     return _basicType == b._basicType && _type == b._type && _fastSearch == b._fastSearch &&
            _isFilter == b._isFilter && _fastAccess == b._fastAccess && _mutable == b._mutable && _paged == b._paged &&
-           _maxUnCommittedMemory == b._maxUnCommittedMemory && _match == b._match && _dictionary == b._dictionary &&
-           _growStrategy == b._growStrategy && _compactionStrategy == b._compactionStrategy &&
-           _predicateParams == b._predicateParams &&
+           _tensor_label_postings == b._tensor_label_postings && _maxUnCommittedMemory == b._maxUnCommittedMemory &&
+           _match == b._match && _dictionary == b._dictionary && _growStrategy == b._growStrategy &&
+           _compactionStrategy == b._compactionStrategy && _predicateParams == b._predicateParams &&
            (_basicType.type() != BasicType::Type::TENSOR ||
             (_tensorType == b._tensorType && _unquantized_tensor_type == b._unquantized_tensor_type)) &&
            _distance_metric == b._distance_metric && _hnsw_index_params == b._hnsw_index_params &&

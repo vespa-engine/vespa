@@ -5,17 +5,26 @@
 #include "attributevector.h"
 
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributefactory");
 
 namespace search {
 
+using attribute::BasicType;
 using attribute::CollectionType;
+using vespalib::IllegalArgumentException;
 
 AttributeVector::SP AttributeFactory::createAttribute(string_view name_view, const Config& cfg) {
     std::string         name(name_view);
     AttributeVector::SP ret;
+    if (cfg.tensor_label_postings() && (cfg.basicType().type() != BasicType::TENSOR ||
+                                        cfg.collectionType().type() != CollectionType::SINGLE || !cfg.fastSearch()))
+    {
+        throw IllegalArgumentException("Tensor label postings for attribute " + name +
+                                       " require a single value tensor attribute with fast-search");
+    }
     if (cfg.collectionType().type() == CollectionType::ARRAY) {
         if (cfg.fastSearch()) {
             ret = createArrayFastSearch(name, cfg);

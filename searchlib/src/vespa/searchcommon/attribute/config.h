@@ -40,6 +40,11 @@ public:
     [[nodiscard]] CollectionType collectionType() const noexcept { return _type; }
     [[nodiscard]] bool fastSearch() const noexcept { return _fastSearch; }
     [[nodiscard]] bool paged() const noexcept { return _paged; }
+    /**
+     * Check if a sparse/mixed tensor attribute should also keep a dictionary of
+     * tensor labels with a posting list per label.
+     */
+    [[nodiscard]] bool tensor_label_postings() const noexcept { return _tensor_label_postings; }
     [[nodiscard]] const PredicateParams& predicateParams() const noexcept { return _predicateParams; }
     [[nodiscard]] const vespalib::eval::ValueType& tensorType() const noexcept { return _tensorType; }
     // If quantization_params() is empty, the returned type is equal to tensorType()
@@ -111,6 +116,10 @@ public:
         _paged = paged_in;
         return *this;
     }
+    Config& set_tensor_label_postings(bool v) {
+        _tensor_label_postings = v;
+        return *this;
+    }
     Config& setFastAccess(bool v) {
         _fastAccess = v;
         return *this;
@@ -149,6 +158,7 @@ private:
     bool                              _fastAccess : 1;
     bool                              _mutable : 1;
     bool                              _paged : 1;
+    bool                              _tensor_label_postings : 1;
     DistanceMetric                    _distance_metric;
     Match                             _match;
     DictionaryConfig                  _dictionary;

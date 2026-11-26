@@ -7,6 +7,8 @@
 
 #include <vespa/check_require.h>
 
+#include <type_traits>
+
 namespace search::attribute {
 
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
@@ -29,7 +31,7 @@ StringDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::lo
     if (find_result.first.valid()) {
         auto pidx = find_result.second;
         if (pidx.valid()) {
-            if constexpr (PostingStoreType::AggrCalcType::hasAggregated()) {
+            if constexpr (std::is_same_v<typename PostingStoreType::DataType, int32_t>) {
                 auto minmax = this->_posting_store.getAggregated(pidx);
                 return LookupResult(pidx, this->_posting_store.frozenSize(pidx), minmax.getMin(), minmax.getMax(),
                                     find_result.first);
