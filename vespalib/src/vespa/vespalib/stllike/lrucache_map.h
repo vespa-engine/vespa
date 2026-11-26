@@ -106,7 +106,7 @@ public:
     [[nodiscard]] iterator begin() noexcept { return iterator(this, _head); }
     [[nodiscard]] iterator end() noexcept { return iterator(this, LinkedValueBase::npos); }
     /// Hash bucket the key currently maps to; only meaningful until the table is resized. For testing.
-    [[nodiscard]] size_t bucket_of(const K& key) const noexcept { return HashTable::hash(key); }
+    [[nodiscard]] size_t bucket_of(const K& key) const noexcept { return HashTable::bucket_of(key); }
 
     /**
      * This fetches the object without modifying the lru list.

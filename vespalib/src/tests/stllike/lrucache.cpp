@@ -4,9 +4,12 @@
 
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 
+#include <gmock/gmock.h>
+
 #include <string>
 
 using namespace vespalib;
+using ::testing::ElementsAre;
 
 TEST(LruCacheMapTest, cache_basics) {
     lrucache_map<LruParam<int, std::string>> cache(7);
@@ -214,6 +217,8 @@ TEST(LruCacheMapTest, erase_if_present_invokes_callback_and_erases_only_existing
     cache.insert(15, "third");
     cache.insert(2, "other");
     EXPECT_EQ(lru_key_order(cache), "2 15 8 1");
+    // This test depends on its keys sharing a bucket to be really meaningful;
+    // unrelated changes in hash table code could break that assumption.
     // Verify the collision assumption above still holds for the current table sizing.
     ASSERT_EQ(cache.bucket_of(8), cache.bucket_of(1));
     ASSERT_EQ(cache.bucket_of(15), cache.bucket_of(1));
@@ -239,7 +244,7 @@ TEST(LruCacheMapTest, erase_if_present_invokes_callback_and_erases_only_existing
     EXPECT_TRUE(cache.empty());
     cache.verifyInternals();
 
-    EXPECT_EQ(seen, (std::vector<std::string>{"second", "first", "other", "third"}));
+    EXPECT_THAT(seen, ElementsAre("second", "first", "other", "third"));
 }
 
 TEST(LruCacheMapTest, find_no_ref_returns_ptr_if_present_and_does_not_update_lru) {

@@ -65,7 +65,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::~hashtable() = defaul
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key& key) noexcept {
-    return find_in_bucket(key, hash(key));
+    return find_in_bucket(key, bucket_of(key));
 }
 
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
@@ -86,7 +86,7 @@ template <typename Key, typename Value, typename Hash, typename Equal, typename 
 template <typename AltKey>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey& key) noexcept {
-    next_t h = hash(key);
+    next_t h = bucket_of(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
             if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
@@ -101,7 +101,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey& ke
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key& key) const noexcept {
-    next_t h = hash(key);
+    next_t h = bucket_of(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
             if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
@@ -118,7 +118,7 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key&
     const_iterator found(find(key));
     if (found != end()) {
         DefaultMoveHandler moveHandler;
-        erase(moveHandler, hash(key), found);
+        erase(moveHandler, bucket_of(key), found);
     }
 }
 
@@ -137,7 +137,7 @@ template <typename Key, typename Value, typename Hash, typename Equal, typename 
 template <typename V>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_result
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal(V&& node) {
-    const next_t h = hash(_keyExtractor(node));
+    const next_t h = bucket_of(_keyExtractor(node));
     if (!_nodes[h].valid()) [[likely]] {
         _nodes[h] = std::forward<V>(node);
         _count++;
@@ -170,7 +170,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal_cold(
 
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value&& value) {
-    const next_t h = hash(_keyExtractor(value));
+    const next_t h = bucket_of(_keyExtractor(value));
     if (!_nodes[h].valid()) [[likely]] {
         _nodes[h] = std::move(value);
         _count++;
@@ -192,7 +192,7 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHand
     size_t last(_nodes.size() - 1);
     if (last >= getTableSize()) {
         if (last != node) {
-            next_t h = hash(_keyExtractor(_nodes[last].getValue()));
+            next_t h = bucket_of(_keyExtractor(_nodes[last].getValue()));
             for (next_t n(_nodes[h].getNext()); n != last; n = _nodes[h].getNext()) {
                 h = n;
             }

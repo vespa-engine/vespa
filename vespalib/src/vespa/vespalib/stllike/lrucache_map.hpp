@@ -113,7 +113,7 @@ template <typename P> void lrucache_map<P>::erase_internal(next_t h, const inter
 }
 
 template <typename P> void lrucache_map<P>::erase(const K& key) {
-    next_t            h = HashTable::hash(key);
+    next_t            h = HashTable::bucket_of(key);
     internal_iterator it = HashTable::find_in_bucket(key, h);
     if (it != HashTable::end()) {
         erase_internal(h, it);
@@ -123,7 +123,7 @@ template <typename P> void lrucache_map<P>::erase(const K& key) {
 template <typename P>
 template <typename F>
 bool lrucache_map<P>::erase_if_present(const K& key, F&& before_erase) {
-    next_t            h = HashTable::hash(key);
+    next_t            h = HashTable::bucket_of(key);
     internal_iterator it = HashTable::find_in_bucket(key, h);
     if (it != HashTable::end()) {
         before_erase(std::as_const(it->second._value));
@@ -140,7 +140,7 @@ template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::erase(
         next++;
         // The iterator already pins the element; only its bucket needs computing.
         internal_iterator internal(this, it._current);
-        erase_internal(HashTable::hash(internal->first), internal);
+        erase_internal(HashTable::bucket_of(internal->first), internal);
         next = iterator(this, moves.movedTo(next._current));
     }
     return next;
