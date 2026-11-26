@@ -448,11 +448,72 @@
       "public void <init>(java.lang.String)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.Tensor embed(com.yahoo.language.process.Embedder$Input, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public java.util.Set supportedModalities()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public static java.util.function.Function factory()"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.language.process.Embedder$Image" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.nio.ByteBuffer)",
+      "public void <init>(byte[])",
+      "public java.nio.ByteBuffer data()",
+      "public java.lang.String mediaType()",
+      "public java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.Embedder$Input" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.util.Optional, java.util.Optional)",
+      "public static com.yahoo.language.process.Embedder$Input of(java.lang.String)",
+      "public static com.yahoo.language.process.Embedder$Input of(com.yahoo.language.process.Embedder$Image)",
+      "public static com.yahoo.language.process.Embedder$Input of(java.lang.String, com.yahoo.language.process.Embedder$Image)",
+      "public java.util.Set modalities()",
+      "public java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.util.Optional text()",
+      "public java.util.Optional image()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.Embedder$Modality" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.language.process.Embedder$Modality[] values()",
+      "public static com.yahoo.language.process.Embedder$Modality valueOf(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.language.process.Embedder$Modality TEXT",
+      "public static final enum com.yahoo.language.process.Embedder$Modality IMAGE"
+    ]
   },
   "com.yahoo.language.process.Embedder$Runtime" : {
     "superClass" : "java.lang.Object",
@@ -487,6 +548,9 @@
       "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
       "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
       "public java.util.List embed(java.util.List, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.Tensor embed(com.yahoo.language.process.Embedder$Input, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public java.util.Set supportedModalities()",
+      "public static java.util.Optional rejectionReason(java.util.Set, java.util.Set)",
       "public com.yahoo.language.process.Embedder$Batching batchingConfig()"
     ],
     "fields" : [

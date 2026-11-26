@@ -297,11 +297,23 @@ StatementExpression statement() :
     List<Expression> lst = new ArrayList<Expression>();
 }
  
-    ( exp = expression() { lst.add(exp); } ( <PIPE> consumeNL() exp = expression() { lst.add(exp); } )* )
+    ( exp = multipartExpression() { lst.add(exp); }
+      ( <PIPE> consumeNL() exp = multipartExpression() { lst.add(exp); } )* )
     { 
         thisProduction.expression = new StatementExpression(lst);
         return thisProduction.expression; 
     }
+;
+
+Expression multipartExpression() :
+{
+    Expression part;
+    List<Expression> parts = new ArrayList<Expression>();
+}
+ 
+    part = expression() { parts.add(part); }
+    ( <COMMA> consumeNL() part = expression() { parts.add(part); } )*
+    { return parts.size() == 1 ? parts.get(0) : new MultipartExpression(parts); }
 ;
 
 Expression expression() :

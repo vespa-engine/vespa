@@ -61,6 +61,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     @Override
     public DataType setInputType(DataType input, TypeContext context) {
+        verifyMultipartIsEmbedded();
         super.setInputType(input, context);
         var outputType = resolveForwards(context);
         resolveBackwards(context);
@@ -69,6 +70,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     @Override
     public DataType setOutputType(DataType output, TypeContext context) {
+        verifyMultipartIsEmbedded();
         super.setOutputType(output, context);
         var inputType = resolveBackwards(context);
         resolveForwards(context);
@@ -107,6 +109,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     @Override
     protected void doResolve(TypeContext context) {
         if (expressions().isEmpty()) return;
+        verifyMultipartIsEmbedded();
 
         var outputType = resolveForwards(context);
         assignOutputType(outputType);
@@ -114,6 +117,20 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
         for (Expression expression : expressions())
             context.resolve(expression);
+    }
+
+    /**
+     * Parts only have a meaning as the input to embed, so embed must directly follow them.
+     * Parentheses around the parts make a statement of their own, which the parts end, so they are rejected too.
+     */
+    private void verifyMultipartIsEmbedded() {
+        for (int i = 0; i < expressions().size(); i++) {
+            if ( ! (expressions().get(i) instanceof MultipartExpression)) continue;
+            boolean isEmbedded = i + 1 < expressions().size() && expressions().get(i + 1) instanceof EmbedExpression;
+            if ( ! isEmbedded)
+                throw new VerificationException(expressions().get(i), "A comma separates parts, and parts must be " +
+                                                                      "directly followed by '| embed'");
+        }
     }
 
     @Override
