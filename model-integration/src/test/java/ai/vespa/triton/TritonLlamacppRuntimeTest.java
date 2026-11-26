@@ -40,7 +40,8 @@ class TritonLlamacppRuntimeTest {
 
     // Each test uses its own seed, and thereby model name: under Podman on macOS, Triton may not see a model
     // directory that is deleted and created again with the same name.
-    // The test model does not pool by default, which llama-server's OpenAI embeddings endpoint requires.
+    // The test model has no pooling by default, but llama-server's OpenAI embeddings endpoint requires pooling,
+    // so the options set MEAN.
     private static LlamacppOptions options(int seed) {
         return new LlamacppOptions(1, 0, -1, -1, 0, Optional.of(LlamacppOptions.Pooling.MEAN), seed, 0, 0, false);
     }

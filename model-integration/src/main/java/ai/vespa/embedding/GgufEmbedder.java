@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class GgufEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(GgufEmbedder.class.getName());
-    private final LlamacppEvaluator model;
+    private final LlamacppEvaluator evaluator;
     private final int maxPromptTokens;
     private final TextPrepender prepender;
     private final boolean normalize;
@@ -49,13 +49,13 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, LlamacppRuntime runtime) {
         log.fine(() -> Text.format("Config: %s", config));
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
-        model = runtime.evaluatorOf(modelPath, options(config));
+        evaluator = runtime.evaluatorOf(modelPath, toLlamacppOptions(config));
         maxPromptTokens = config.maxPromptTokens();
         prepender = new TextPrepender(config.prependQuery(), config.prependDocument());
         normalize = config.normalize();
     }
 
-    static LlamacppOptions options(GgufEmbedderConfig config) {
+    static LlamacppOptions toLlamacppOptions(GgufEmbedderConfig config) {
         var pooling = config.poolingType() == GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED
                 ? Optional.<LlamacppOptions.Pooling>empty()
                 : Optional.of(LlamacppOptions.Pooling.valueOf(config.poolingType().name()));
@@ -101,19 +101,19 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String text, Context context) {
-        return Arrays.stream(wrapLlamaException(() -> model.tokenize(text, deadline(context))))
+        return Arrays.stream(wrapRuntimeException(() -> evaluator.tokenize(text, deadline(context))))
                 .boxed().toList();
     }
 
     @Override
     public String decode(List<Integer> tokens, Context context) {
         var tokenIds = tokens.stream().mapToInt(Integer::intValue).toArray();
-        return wrapLlamaException(() -> model.detokenize(tokenIds, deadline(context)));
+        return wrapRuntimeException(() -> evaluator.detokenize(tokenIds, deadline(context)));
     }
 
     @Override
     public void deconstruct() {
-        model.close();
+        evaluator.close();
     }
 
     /**
@@ -123,16 +123,16 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     private String prependAndTruncatePrompt(String text, Context context) {
         var prompt = prepender.prepend(text, context);
         if (maxPromptTokens <= 0) return prompt;
-        var tokens = wrapLlamaException(() -> model.tokenize(prompt, deadline(context)));
+        var tokens = wrapRuntimeException(() -> evaluator.tokenize(prompt, deadline(context)));
         var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token
         if (tokens.length <= maxTruncatedLength) return prompt;
         log.fine(() -> Text.format("Truncating prompt from %d to %d tokens", tokens.length, maxTruncatedLength));
         var truncatedTokens = Arrays.copyOfRange(tokens, 0, maxTruncatedLength);
-        return wrapLlamaException(() -> model.detokenize(truncatedTokens, deadline(context)));
+        return wrapRuntimeException(() -> evaluator.detokenize(truncatedTokens, deadline(context)));
     }
 
     private float[] generateRawEmbedding(String prompt, Context context) {
-        return wrapLlamaException(() -> model.embed(prompt, deadline(context)));
+        return wrapRuntimeException(() -> evaluator.embed(prompt, deadline(context)));
     }
 
     // The request deadline, or empty to use the runtime's default timeout.
@@ -141,7 +141,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     }
 
     // Illegal input, timeouts and overload keep their types, which callers act on.
-    private static <T> T wrapLlamaException(Supplier<T> supplier) {
+    private static <T> T wrapRuntimeException(Supplier<T> supplier) {
         try {
             return supplier.get();
         } catch (IllegalArgumentException | TimeoutException | OverloadException e) {

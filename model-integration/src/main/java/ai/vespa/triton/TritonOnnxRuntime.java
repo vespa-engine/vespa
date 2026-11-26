@@ -86,7 +86,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // The attention mask input Triton pools with unless the config names another.
     private static final String DEFAULT_POOLING_ATTENTION_MASK = "attention_mask";
 
-    private final TritonOnnxClient tritonClient;
+    private final TritonOnnxClient onnxClient;
     private final TritonModelRepositoryClient repositoryClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
@@ -116,8 +116,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Injectable clients for testing.
     // Takes ownership of the clients: deconstruct() closes them.
-    TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient, TritonModelRepositoryClient repositoryClient) {
-        this.tritonClient = tritonClient;
+    TritonOnnxRuntime(TritonConfig config, TritonOnnxClient onnxClient, TritonModelRepositoryClient repositoryClient) {
+        this.onnxClient = onnxClient;
         this.repositoryClient = repositoryClient;
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
@@ -152,7 +152,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions, pooling);
 
         try {
-            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, repositoryClient, isModelControlExplicit, pooling);
+            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, onnxClient, repositoryClient, isModelControlExplicit, pooling);
 
             if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions,
                     () -> hasNonZeroMaxBatchSize(modelName).orElseGet(() -> hasDynamicFirstDimension(modelPath))))
@@ -745,7 +745,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         try {
-            tritonClient.close();
+            onnxClient.close();
         } finally {
             repositoryClient.close();
         }

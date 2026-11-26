@@ -14,8 +14,8 @@ import java.util.Optional;
  * @param gpuLayers the maximum number of model layers to run on a GPU
  * @param pooling how token embeddings are pooled, empty to use the model's default
  * @param seed the random number generator seed
- * @param threads the number of threads used for generation
- * @param batchThreads the number of threads used for batch and prompt processing
+ * @param threads the number of threads used for a micro-batch of one token
+ * @param batchThreads the number of threads used for a micro-batch of several tokens
  * @param continuousBatching whether to batch sequences continuously
  *
  * @author ingridhabrekke

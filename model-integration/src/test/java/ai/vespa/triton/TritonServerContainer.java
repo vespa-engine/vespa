@@ -28,7 +28,7 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
     private static final int METRICS_PORT = 8002;
     private static final int OPENAI_PORT = 9000;
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("nvcr.io/nvidia/tritonserver:26.08-py3");
-    // Starts Triton in an image whose default command does not, such as NVIDIA's images.
+    // The command for images whose default command does not start Triton, such as NVIDIA's images.
     private static final String[] TRITON_COMMAND = {"tritonserver", "--model-repository=/models", "--model-control-mode=explicit"};
 
     // Overrides the image, e.g. to test against Vespa's Triton images: -DVESPA_TRITON_IMAGE=localhost/tritonserver:<tag>

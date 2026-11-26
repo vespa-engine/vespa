@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  * evaluators. Inference goes through Triton's OpenAI-compatible frontend, which relays it to the model's
  * llama-server, since Triton's KServe interface for llama.cpp has no tokenization.
  *
- * Both runtimes share Triton and its model repository, so each cleans up only its own leftovers,
+ * This runtime and TritonOnnxRuntime share Triton and its model repository, so each cleans up only its own leftovers,
  * telling the models apart by the backend in their configs, see {@link #isLlamacppModel}.
  * There should be only one instance, as for TritonOnnxRuntime, enforced by
  * RestartOnDeployForTritonRuntimeValidator.
@@ -226,7 +226,8 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     /**
      * Returns the Triton model config of an embedding model with the given options.
      * The backend runs one llama-server per model with one slot per model instance, so concurrency comes from
-     * the instance count. Its ctx-size is per slot, while the option is the total, as for llama.cpp itself.
+     * the instance count. The backend's ctx-size is per slot, while contextSize is the total for all slots,
+     * as in the embedded runtime, so it is divided by parallel.
      * Values the options leave unset are left to llama-server, except the GPU layers, where 0 means CPU only.
      */
     static String createModelConfig(String modelName, LlamacppOptions options) {
@@ -244,16 +245,16 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         if (options.seed() > -1) putFlag(builder, "seed", Integer.toString(options.seed()));
         if (options.threads() > 0) putFlag(builder, "threads", Integer.toString(options.threads()));
         if (options.batchThreads() > 0) putFlag(builder, "threads-batch", Integer.toString(options.batchThreads()));
-        // llama-server batches continuously by default.
         return builder.build().toString();
     }
 
     /**
-     * One instance per llama-server slot. The kind only decides where Triton counts the instances,
-     * e.g. the gpu_uuid label of its metrics, since llama-server places the model on the GPU itself.
-     * A model that may use a GPU gets KIND_AUTO, which Triton resolves to KIND_GPU when there is a GPU, and
-     * to KIND_CPU otherwise, as llama.cpp falls back to the CPU. It cannot name GPU 0: Triton refuses a GPU list
-     * once it has resolved the kind to KIND_CPU. So a host with several GPUs gets the count per GPU, i.e. more slots.
+     * One instance per llama-server slot. llama-server chooses the GPU itself, so the kind only affects how
+     * Triton reports the instances, e.g. the gpu_uuid label of its metrics.
+     * A model that may use a GPU gets KIND_AUTO, which Triton resolves to KIND_GPU on a host with a GPU, and to
+     * KIND_CPU otherwise. The group cannot be pinned to GPU 0, since Triton rejects
+     * a GPU list when the kind resolves to KIND_CPU. As a consequence, on a host with several GPUs, Triton creates
+     * the instance count per GPU, i.e. more slots.
      */
     private static ModelInstanceGroup instanceGroup(LlamacppOptions options) {
         var group = ModelInstanceGroup.newBuilder().setCount(options.parallel());

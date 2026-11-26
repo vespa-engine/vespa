@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client of Triton's OpenAI-compatible frontend, which relays requests for a llama.cpp model
- * to the model's llama-server. Model management goes through {@link TritonModelRepositoryClient} instead.
+ * to the model's llama-server. Model management goes through {@link TritonModelRepositoryClient}.
  *
  * @author ingridhabrekke
  */
@@ -53,7 +53,7 @@ class TritonLlamacppClient implements AutoCloseable {
 
     /**
      * Returns the model's embedding of the text.
-     * llama-server normalizes a pooled embedding to unit length by default, as LlamacppEvaluator.embed specifies.
+     * llama-server normalizes pooled embeddings to unit length (L2) by default, as LlamacppEvaluator.embed requires.
      */
     float[] embed(String modelName, String text, Optional<Instant> deadline) {
         var response = post("/v1/embeddings", Map.of("model", modelName, "input", new String[] { text }), deadline);
@@ -68,7 +68,7 @@ class TritonLlamacppClient implements AutoCloseable {
 
     /** Returns the model's token ids of the text, without special tokens. */
     int[] tokenize(String modelName, String text, Optional<Instant> deadline) {
-        // llama-server ignores the model name, which Triton's frontend routes by.
+        // Triton's frontend routes the request by the model name. llama-server itself ignores it.
         var response = post("/tokenize", Map.of("model", modelName, "content", text, "add_special", false), deadline);
         var tokens = response.path("tokens");
         if ( ! tokens.isArray())
@@ -98,7 +98,7 @@ class TritonLlamacppClient implements AutoCloseable {
     private JsonNode post(String path, Map<String, Object> body, Optional<Instant> deadline) {
         var effectiveTimeout = deadline.map(d -> Duration.between(Instant.now(), d)).orElse(defaultTimeout);
         if (effectiveTimeout.toMillis() <= 0)
-            throw new TimeoutException("Request deadline exceeded before llama.cpp inference in Triton");
+            throw new TimeoutException("Request deadline exceeded before request to " + path);
 
         var request = new Request.Builder()
                 .url(endpoint + path)
@@ -110,11 +110,9 @@ class TritonLlamacppClient implements AutoCloseable {
         try (var response = call.execute()) {
             var responseBody = response.body() != null ? response.body().string() : "";
             if (response.isSuccessful()) return objectMapper.readTree(responseBody);
-            // llama-server reports invalid input, e.g. longer than the context, as 400 with an OpenAI-style error,
-            // except input longer than the micro-batch of an embedding model, which it reports as 500.
-            // Triton's frontend reports its own errors as {"detail": ...}, among them a model it has not loaded
-            // as 400 "Unknown model", which must stay a Triton failure so that the evaluator reloads the model.
-            // The backend answers 503 while it loads or restarts llama-server, e.g. in its backoff after a crash.
+            // 503: llama-server is loading or restarting.
+            // 400, or 500 "too large to process", with {"error": {"message": ...}}: llama-server rejects the input.
+            // 400 with {"detail": ...}: Triton's own error, e.g. an unknown model, which the evaluator reloads.
             if (response.code() == 503)
                 throw new OverloadException("llama.cpp in Triton is unavailable, e.g. while loading or restarting the model: " + responseBody);
             var message = llamaServerErrorMessage(responseBody);

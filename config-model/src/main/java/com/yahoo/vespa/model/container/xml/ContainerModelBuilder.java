@@ -1037,7 +1037,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     ContainerModelEvaluation.EMBEDDED_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
         }
 
-        /* The Llamacpp runtime is always available for injection to any component */
+        /* The llama.cpp runtime is always available for injection to any component */
         if (cluster.usesTritonForLlamacpp()) {
             cluster.addSimpleComponent(
                     ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
