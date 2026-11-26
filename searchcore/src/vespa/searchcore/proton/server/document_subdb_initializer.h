@@ -26,14 +26,14 @@ private:
     DocumentSubDbInitializerResult        _result;
     initializer::InitializerTask::SP      _documentMetaStoreInitTask;
     IDocumentSubDB&                       _subDB;
-    searchcorespi::index::IThreadService& _main;
+    searchcorespi::index::IThreadService& _main_thread_service;
 
 public:
     using SP = std::shared_ptr<DocumentSubDbInitializer>;
     using UP = std::unique_ptr<DocumentSubDbInitializer>;
     using InitTask = initializer::InitializerTask;
 
-    DocumentSubDbInitializer(IDocumentSubDB& subDB, searchcorespi::index::IThreadService& main);
+    DocumentSubDbInitializer(IDocumentSubDB& subDB, searchcorespi::index::IThreadService& main_thread_service);
     const DocumentSubDbInitializerResult& result() const { return _result; }
 
     DocumentSubDbInitializerResult& writableResult() { return _result; }
