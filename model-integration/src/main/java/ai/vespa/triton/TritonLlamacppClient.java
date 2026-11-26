@@ -2,9 +2,11 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import ai.vespa.modelintegration.llamacpp.LlamacppEvaluator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvalidInputException;
 import com.yahoo.language.process.OverloadException;
 import com.yahoo.language.process.TimeoutException;
@@ -17,6 +19,8 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +61,20 @@ class TritonLlamacppClient implements AutoCloseable {
      */
     float[] embed(String modelName, String text, Optional<Instant> deadline) {
         var response = post("/v1/embeddings", Map.of("model", modelName, "input", new String[] { text }), deadline);
+        return embeddingOf(response, modelName);
+    }
+
+    /**
+     * Returns the model's embedding of the parts, as one input in llama-server's multimodal format.
+     * llama-server applies no template, so the parts are read in the given order.
+     */
+    float[] embed(String modelName, List<LlamacppEvaluator.Part> parts, Optional<Instant> deadline) {
+        var content = parts.stream().map(TritonLlamacppClient::contentOf).toList();
+        var response = post("/v1/embeddings", Map.of("model", modelName, "input", List.of(Map.of("content", content))), deadline);
+        return embeddingOf(response, modelName);
+    }
+
+    private static float[] embeddingOf(JsonNode response, String modelName) {
         var embedding = response.path("data").path(0).path("embedding");
         if ( ! embedding.isArray())
             throw new TritonException("No embedding in the response of model " + modelName + ": " + response);
@@ -64,6 +82,18 @@ class TritonLlamacppClient implements AutoCloseable {
         for (int i = 0; i < result.length; i++)
             result[i] = (float) embedding.get(i).asDouble();
         return result;
+    }
+
+    private static Map<String, Object> contentOf(LlamacppEvaluator.Part part) {
+        if (part instanceof LlamacppEvaluator.Part.Text text) return Map.of("type", "text", "text", text.text());
+        var image = ((LlamacppEvaluator.Part.Image) part).image();
+        return Map.of("type", "image_url", "image_url", Map.of("url", dataUrl(image)));
+    }
+
+    private static String dataUrl(Embedder.Image image) {
+        var bytes = new byte[image.data().remaining()];
+        image.data().get(bytes);
+        return "data:" + image.mediaType() + ";base64," + Base64.getEncoder().encodeToString(bytes);
     }
 
     /** Returns the model's token ids of the text, without special tokens. */

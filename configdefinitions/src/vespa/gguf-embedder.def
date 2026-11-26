@@ -3,6 +3,19 @@ package=ai.vespa.embedding.config
 # GGUF embedding model
 embeddingModel model
 
+# The multimodal projector (mmproj) of the embedding model, which lets the model embed images.
+# At most one. It is an array, since configgen supports no optional model field.
+# The array holds a struct, since configgen gives no model reference for the elements of a model array.
+mmproj[].model model
+
+# Whether the image comes before the text, when an input has both.
+# llama.cpp applies no template to embeddings, so this order must be the one the model was trained with.
+imageFirst bool default=true
+
+# The minimum and maximum number of tokens an image becomes (default: 0 = the projector's default).
+imageMinTokens int default=0
+imageMaxTokens int default=0
+
 # Maximum number of model layers to run on GPU (default: -1 = llama.cpp default, 0 = CPU-only).
 # The default uses a GPU if there is one.
 gpuLayers int default=-1

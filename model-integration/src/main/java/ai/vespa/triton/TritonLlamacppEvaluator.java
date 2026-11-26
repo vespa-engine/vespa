@@ -6,6 +6,7 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.language.process.TimeoutException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -25,14 +26,26 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
     private final TritonLlamacppClient llamacppClient;
     private final TritonModelRepositoryClient repositoryClient;
     private final boolean isExplicitControl;
+    private final boolean acceptsImages;
 
     TritonLlamacppEvaluator(String modelName, ResourceReference modelReference, TritonLlamacppClient llamacppClient,
-                         TritonModelRepositoryClient repositoryClient, boolean isExplicitControl) {
+                         TritonModelRepositoryClient repositoryClient, boolean isExplicitControl, boolean acceptsImages) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.llamacppClient = llamacppClient;
         this.repositoryClient = repositoryClient;
         this.isExplicitControl = isExplicitControl;
+        this.acceptsImages = acceptsImages;
+    }
+
+    @Override
+    public boolean acceptsImages() { return acceptsImages; }
+
+    @Override
+    public float[] embed(List<Part> parts, Optional<Instant> deadline) {
+        if ( ! acceptsImages)
+            throw new UnsupportedOperationException("Model " + modelName + " has no multimodal projector");
+        return withReload(() -> llamacppClient.embed(modelName, parts, deadline));
     }
 
     @Override

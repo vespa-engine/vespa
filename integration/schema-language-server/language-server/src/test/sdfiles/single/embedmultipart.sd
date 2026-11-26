@@ -1,0 +1,21 @@
+schema embedmultipart {
+    document embedmultipart {
+        field title type string {
+            indexing: index | summary
+        }
+
+        field body type string {
+            indexing: index | summary
+        }
+
+        field image type raw {}
+    }
+
+    field image_embedding type tensor<float>(d0[50]) {
+        indexing: input image | embed embedder | attribute
+    }
+
+    field embedding type tensor<float>(d0[50]) {
+        indexing: input title . " " . input body, input image | embed embedder | attribute
+    }
+}

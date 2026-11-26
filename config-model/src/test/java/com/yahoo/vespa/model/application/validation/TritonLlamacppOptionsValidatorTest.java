@@ -24,6 +24,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,6 +72,16 @@ class TritonLlamacppOptionsValidatorTest {
                      unsupportedOptions(config().parallel(3).physicalMaxBatchSize(1024)));
         assertEquals(List.of("parallel 3 must divide llama.cpp's default physicalMaxBatchSize 512"),
                      unsupportedOptions(config().parallel(3)));
+    }
+
+    @Test
+    void image_tokens_above_half_the_micro_batch_are_lowered() {
+        assertEquals(Optional.empty(), TritonLlamacppOptionsValidator.loweredImageTokens(config().build()));
+        assertEquals(Optional.empty(), TritonLlamacppOptionsValidator.loweredImageTokens(
+                config().imageMinTokens(250).imageMaxTokens(280).physicalMaxBatchSize(2048).build()));
+        assertEquals(Optional.of("an image of up to 280 tokens (imageMinTokens 250, imageMaxTokens 280) is above half of " +
+                                 "physicalMaxBatchSize 512, so llama-server lowers it to 256 for a non-causal model"),
+                     TritonLlamacppOptionsValidator.loweredImageTokens(config().imageMinTokens(250).imageMaxTokens(280).build()));
     }
 
     @Test

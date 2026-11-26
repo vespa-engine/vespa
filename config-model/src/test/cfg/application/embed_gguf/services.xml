@@ -5,6 +5,10 @@
 
         <component id="gguf-full" type="gguf-embedder">
             <transformer-model model-id="llama-3.2-1b" url="https://my/url/model.gguf"/>
+            <mmproj-model url="https://my/url/mmproj.gguf"/>
+            <image-first>false</image-first>
+            <image-min-tokens>250</image-min-tokens>
+            <image-max-tokens>280</image-max-tokens>
             <max-tokens>512</max-tokens>
             <normalize>true</normalize>
             <pooling-strategy>last</pooling-strategy>

@@ -17,9 +17,11 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -36,6 +38,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     private final int maxPromptTokens;
     private final TextPrepender prepender;
     private final boolean normalize;
+    private final boolean imageFirst;
 
     public static class Exception extends RuntimeException {
         public Exception(Throwable cause) { super(cause.getMessage(), cause); }
@@ -49,10 +52,22 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper, LlamacppRuntime runtime) {
         log.fine(() -> Text.format("Config: %s", config));
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
-        evaluator = runtime.evaluatorOf(modelPath, toLlamacppOptions(config));
+        if (config.mmproj().size() > 1)
+            throw new IllegalArgumentException("A GGUF embedder has at most one multimodal projector, but got " +
+                                               config.mmproj().size());
+        if ( ! config.mmproj().isEmpty() && ! runtime.loadsMmproj())
+            log.warning("The llama.cpp runtime of this container does not load the multimodal projector of " + modelPath +
+                        ", so the embedder embeds text only");
+        // A projector can be hundreds of megabytes, so it is only resolved for a runtime that loads it.
+        var mmprojPath = config.mmproj().stream()
+                               .filter(__ -> runtime.loadsMmproj())
+                               .map(mmproj -> helper.getModelPathResolvingIfNecessary(mmproj.modelReference()).toString())
+                               .findFirst();
+        evaluator = runtime.evaluatorOf(modelPath, mmprojPath, toLlamacppOptions(config));
         maxPromptTokens = config.maxPromptTokens();
         prepender = new TextPrepender(config.prependQuery(), config.prependDocument());
         normalize = config.normalize();
+        imageFirst = config.imageFirst();
     }
 
     static LlamacppOptions toLlamacppOptions(GgufEmbedderConfig config) {
@@ -68,7 +83,9 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
                                 config.seed(),
                                 config.threads() != 0 ? calculateThreadCount(config.threads()) : 0,
                                 config.batchThreads() != 0 ? calculateThreadCount(config.batchThreads()) : 0,
-                                config.continuousBatching());
+                                config.continuousBatching(),
+                                config.imageMinTokens(),
+                                config.imageMaxTokens());
     }
 
     @Override
@@ -77,6 +94,10 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         record CacheKey(String embedderId, String text){}
         var cacheKey = new CacheKey(context.getEmbedderId(), prompt);
         var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> generateRawEmbedding(prompt, context));
+        return toTensor(rawEmbedding, tensorType);
+    }
+
+    private Tensor toTensor(float[] rawEmbedding, TensorType tensorType) {
         if (tensorType.dimensions().size() != 1) {
             throw new IllegalArgumentException(
                     Text.format("Error in embedding to type '%s': should only have one dimension.", tensorType));
@@ -100,6 +121,47 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     }
 
     @Override
+    public Set<Set<Modality>> supportedModalities() {
+        if ( ! evaluator.acceptsImages()) return Set.of(Set.of(Modality.TEXT));
+        return Set.of(Set.of(Modality.TEXT), Set.of(Modality.IMAGE), Set.of(Modality.TEXT, Modality.IMAGE));
+    }
+
+    /** Embeds a text, an image, or a text with an image, as one input. */
+    @Override
+    public Tensor embed(Input input, Context context, TensorType tensorType) {
+        if (input.image().isEmpty()) return embed(input.text().get(), context, tensorType);
+        var rejection = Embedder.rejectionReason(input.modalities(), supportedModalities());
+        if (rejection.isPresent()) throw new IllegalArgumentException("This GGUF embedder " + rejection.get());
+        var parts = parts(input, context);
+        record CacheKey(String embedderId, List<LlamacppEvaluator.Part> parts) { }
+        var rawEmbedding = context.computeCachedValueIfAbsent(new CacheKey(context.getEmbedderId(), parts),
+                                                              () -> wrapRuntimeException(() -> evaluator.embed(parts, deadline(context))));
+        return toTensor(rawEmbedding, tensorType);
+    }
+
+    /**
+     * Returns the parts of an input with an image, in the order the model reads them.
+     * llama.cpp applies no template to embeddings, so the prefix comes first, and a space separates the text
+     * from the image. The tokens of an image cannot be counted before the embedding, so maxPromptTokens
+     * truncates the text alone.
+     */
+    List<LlamacppEvaluator.Part> parts(Input input, Context context) {
+        var prefix = prepender.prepend("", context);
+        var image = new LlamacppEvaluator.Part.Image(input.image().get());
+        var text = input.text().map(t -> truncate(t, context));
+        var parts = new ArrayList<LlamacppEvaluator.Part>();
+        if (text.isPresent() && ! imageFirst) {
+            parts.add(new LlamacppEvaluator.Part.Text(prefix + text.get() + " "));
+            parts.add(image);
+            return parts;
+        }
+        if ( ! prefix.isEmpty()) parts.add(new LlamacppEvaluator.Part.Text(prefix));
+        parts.add(image);
+        text.ifPresent(t -> parts.add(new LlamacppEvaluator.Part.Text(" " + t)));
+        return parts;
+    }
+
+    @Override
     public List<Integer> embed(String text, Context context) {
         return Arrays.stream(wrapRuntimeException(() -> evaluator.tokenize(text, deadline(context))))
                 .boxed().toList();
@@ -116,12 +178,15 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         evaluator.close();
     }
 
+    private String prependAndTruncatePrompt(String text, Context context) {
+        return truncate(prepender.prepend(text, context), context);
+    }
+
     /**
-     * Add prefix to prompt if configured, then do naive truncation of the prompt to the maximum number of tokens.
+     * Naive truncation of the prompt to the maximum number of tokens.
      * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
      */
-    private String prependAndTruncatePrompt(String text, Context context) {
-        var prompt = prepender.prepend(text, context);
+    private String truncate(String prompt, Context context) {
         if (maxPromptTokens <= 0) return prompt;
         var tokens = wrapRuntimeException(() -> evaluator.tokenize(prompt, deadline(context)));
         var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token

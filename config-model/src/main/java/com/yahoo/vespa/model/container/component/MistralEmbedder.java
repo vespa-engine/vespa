@@ -17,7 +17,7 @@ import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.p
  *
  * @author bjorncs
  */
-public class MistralEmbedder extends TypedComponent implements MistralEmbedderConfig.Producer {
+public class MistralEmbedder extends TypedComponent implements MistralEmbedderConfig.Producer, EmbedderComponent {
 
     private final String apiKeySecretRef;
     private final String model;

@@ -4,10 +4,12 @@ package com.yahoo.vespa.model.container.component;
 import ai.vespa.embedding.config.GgufEmbedderConfig;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.text.XML.getChildValue;
@@ -17,18 +19,24 @@ import static com.yahoo.vespa.model.container.component.EmbedderPrependConfig.pa
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.GGUF_MODEL;
 
 /**
- * The gguf-embedder component type, which embeds text with a GGUF model through llama.cpp.
+ * The gguf-embedder component type, which embeds text with a GGUF model through llama.cpp,
+ * and images too with a multimodal projector.
  * The transformer-model element sets embeddingModel, max-tokens sets maxPromptTokens, pooling-strategy sets poolingType,
- * and prepend sets prependQuery and prependDocument.
+ * prepend sets prependQuery and prependDocument, and mmproj-model sets the model of the one mmproj entry.
  * Each other element sets the gguf-embedder config field of the same name in camel case.
  * An element that is not given leaves the config field's default.
  *
  * @author ingridhabrekke
  * @author glebashnik
  */
-public class GgufEmbedder extends TypedComponent implements GgufEmbedderConfig.Producer {
+public class GgufEmbedder extends TypedComponent implements GgufEmbedderConfig.Producer, EmbedderComponent {
 
+    private final ApplicationContainerCluster cluster;
     private final ModelReference embeddingModel;
+    private final Optional<ModelReference> mmprojModel;
+    private final Boolean imageFirst;
+    private final Integer imageMinTokens;
+    private final Integer imageMaxTokens;
     private final Integer maxPromptTokens;
     private final Boolean normalize;
     private final GgufEmbedderConfig.PoolingType.Enum poolingType;
@@ -44,7 +52,12 @@ public class GgufEmbedder extends TypedComponent implements GgufEmbedderConfig.P
 
     public GgufEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super(GGUF_EMBEDDER_CLASS, INTEGRATION_BUNDLE_NAME, xml);
+        this.cluster = cluster;
         embeddingModel = Model.fromXml(state, xml, "transformer-model", Set.of(GGUF_MODEL)).orElseThrow().modelReference();
+        mmprojModel = Model.fromXml(state, xml, "mmproj-model", Set.of(GGUF_MODEL)).map(Model::modelReference);
+        imageFirst = getChildValue(xml, "image-first").map(Boolean::parseBoolean).orElse(null);
+        imageMinTokens = getChildValue(xml, "image-min-tokens").map(Integer::parseInt).orElse(null);
+        imageMaxTokens = getChildValue(xml, "image-max-tokens").map(Integer::parseInt).orElse(null);
         maxPromptTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
         poolingType = getChildValue(xml, "pooling-strategy")
@@ -64,6 +77,10 @@ public class GgufEmbedder extends TypedComponent implements GgufEmbedderConfig.P
     @Override
     public void getConfig(GgufEmbedderConfig.Builder b) {
         b.embeddingModel(embeddingModel);
+        mmprojModel.ifPresent(reference -> b.mmproj(new GgufEmbedderConfig.Mmproj.Builder().model(reference)));
+        if (imageFirst != null) b.imageFirst(imageFirst);
+        if (imageMinTokens != null) b.imageMinTokens(imageMinTokens);
+        if (imageMaxTokens != null) b.imageMaxTokens(imageMaxTokens);
         if (maxPromptTokens != null) b.maxPromptTokens(maxPromptTokens);
         if (normalize != null) b.normalize(normalize);
         if (poolingType != null) b.poolingType(poolingType);
@@ -76,6 +93,15 @@ public class GgufEmbedder extends TypedComponent implements GgufEmbedderConfig.P
         if (seed != null) b.seed(seed);
         if (threads != null) b.threads(threads);
         if (batchThreads != null) b.batchThreads(batchThreads);
+    }
+
+
+    /** Images need the multimodal projector, and only the llama.cpp runtime in Triton loads it. */
+    @Override
+    public Set<Set<Embedder.Modality>> supportedModalities() {
+        if (mmprojModel.isEmpty() || ! cluster.usesTritonForLlamacpp()) return Set.of(Set.of(Embedder.Modality.TEXT));
+        return Set.of(Set.of(Embedder.Modality.TEXT), Set.of(Embedder.Modality.IMAGE),
+                      Set.of(Embedder.Modality.TEXT, Embedder.Modality.IMAGE));
     }
 
 }

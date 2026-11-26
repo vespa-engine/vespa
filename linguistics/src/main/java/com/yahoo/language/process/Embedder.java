@@ -5,15 +5,23 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * An embedder converts a text string to a tensor
+ * An embedder converts a text string, or an input with a text, an image or both, to a tensor
  *
  * @author bratseth
+ * @author glebashnik
  */
 public interface Embedder {
 
@@ -77,6 +85,124 @@ public interface Embedder {
         return texts.stream()
                 .map(text -> embed(text, context, tensorType))
                 .toList();
+    }
+
+    /**
+     * Converts input into a tensor.
+     * An embedder which accepts an image overrides this method and {@link #supportedModalities()}.
+     *
+     * @throws IllegalArgumentException if this embedder does not accept the input
+     */
+    @Beta
+    default Tensor embed(Input input, Context context, TensorType tensorType) {
+        if (input.image().isEmpty())
+            return embed(input.text().get(), context, tensorType);
+        throw new IllegalArgumentException("This embedder accepts text, but is given " + input);
+    }
+
+    /**
+     * Returns the combinations of modalities this embedder accepts in one input.
+     * E.g. an embedder which embeds a text, an image, or a text with an image returns
+     * {@code Set.of(Set.of(TEXT), Set.of(IMAGE), Set.of(TEXT, IMAGE))}.
+     * A caller must only give this embedder input which this embedder accepts, see {@link #rejectionReason}.
+     */
+    @Beta
+    default Set<Set<Modality>> supportedModalities() { return Set.of(Set.of(Modality.TEXT)); }
+
+    /** Returns why an embedder rejects input, or empty if the embedder accepts the input. */
+    @Beta
+    static Optional<String> rejectionReason(Set<Modality> inputModalities, Set<Set<Modality>> supportedModalities) {
+        if (supportedModalities.contains(inputModalities)) return Optional.empty();
+        // A set has no order, and the message must be the same every time
+        String accepted = supportedModalities.stream().map(Embedder::describe).sorted()
+                                             .collect(Collectors.joining(" or "));
+        return Optional.of("accepts " + accepted + ", but is given " + describe(inputModalities));
+    }
+
+    private static String describe(Set<Modality> modalities) {
+        return new TreeSet<>(modalities).stream().map(Modality::toString).collect(Collectors.joining(" and "));
+    }
+
+    /** A modality of input to an embedder. */
+    @Beta
+    enum Modality {
+
+        TEXT, IMAGE;
+
+        @Override
+        public String toString() { return name().toLowerCase(Locale.ROOT); }
+
+    }
+
+    /** The input to an embedder: A text, an image, or both. */
+    @Beta
+    record Input(Optional<String> text, Optional<Image> image) {
+
+        public Input {
+            if (text.isEmpty() && image.isEmpty())
+                throw new IllegalArgumentException("Embedder input must have a text or an image");
+        }
+
+        public static Input of(String text) { return new Input(Optional.of(text), Optional.empty()); }
+
+        public static Input of(Image image) { return new Input(Optional.empty(), Optional.of(image)); }
+
+        public static Input of(String text, Image image) { return new Input(Optional.of(text), Optional.of(image)); }
+
+        public Set<Modality> modalities() {
+            Set<Modality> modalities = EnumSet.noneOf(Modality.class);
+            if (text.isPresent()) modalities.add(Modality.TEXT);
+            if (image.isPresent()) modalities.add(Modality.IMAGE);
+            return modalities;
+        }
+
+        @Override
+        public String toString() { return describe(modalities()); }
+
+    }
+
+    /** An encoded image, in one of the formats JPEG, PNG and GIF. */
+    @Beta
+    record Image(ByteBuffer data) {
+
+        /** @throws IllegalArgumentException if the data is not an image in one of the formats of this type */
+        public Image {
+            data = data.asReadOnlyBuffer();
+            if (mediaTypeOf(data).isEmpty())
+                throw new IllegalArgumentException("Binary data to embed must be a JPEG, PNG or GIF image");
+        }
+
+        public Image(byte[] data) { this(ByteBuffer.wrap(data)); }
+
+        /**
+         * Returns a new buffer over the data on each call.
+         * ByteBuffer equality uses the remaining bytes, so a reader that advanced a shared buffer
+         * would change the equality of this image.
+         */
+        @Override
+        public ByteBuffer data() { return data.duplicate(); }
+
+        /** Returns the media type of this image, detected from its first bytes, e.g. "image/jpeg". */
+        public String mediaType() { return mediaTypeOf(data).get(); }
+
+        private static Optional<String> mediaTypeOf(ByteBuffer data) {
+            if (startsWith(data, 0xFF, 0xD8, 0xFF)) return Optional.of("image/jpeg");
+            if (startsWith(data, 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A)) return Optional.of("image/png");
+            if (startsWith(data, 'G', 'I', 'F', '8')) return Optional.of("image/gif");
+            return Optional.empty();
+        }
+
+        private static boolean startsWith(ByteBuffer data, int... bytes) {
+            if (data.remaining() < bytes.length) return false;
+            for (int i = 0; i < bytes.length; i++) {
+                if ((data.get(data.position() + i) & 0xFF) != bytes[i]) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() { return "image (" + data.remaining() + " bytes)"; }
+
     }
 
     /** Batching configuration of embed requests. */
@@ -174,6 +300,17 @@ public interface Embedder {
         @Override
         public Tensor embed(String text, Context context, TensorType tensorType) {
             throw new IllegalStateException(message);
+        }
+
+        @Override
+        public Tensor embed(Input input, Context context, TensorType tensorType) {
+            throw new IllegalStateException(message);
+        }
+
+        /** Returns every combination: This embedder stands in for an embedder whose accepted input is not known. */
+        @Override
+        public Set<Set<Modality>> supportedModalities() {
+            return Set.of(Set.of(Modality.TEXT), Set.of(Modality.IMAGE), Set.of(Modality.TEXT, Modality.IMAGE));
         }
 
         @Override

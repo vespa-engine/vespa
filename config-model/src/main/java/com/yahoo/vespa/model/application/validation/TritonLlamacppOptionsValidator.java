@@ -6,10 +6,13 @@ import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * Fails the deployment if a GGUF embedder that runs in Triton has options that Triton's llama.cpp backend
  * does not accept. Without this check, the container would fail later, when it loads the model or embeds.
+ * Warns about image token options that llama-server may lower.
  * Validates the generated GgufEmbedderConfig, so that it covers embedders declared with type="gguf-embedder"
  * as well as those declared with the GgufEmbedder class.
  *
@@ -31,8 +34,25 @@ public class TritonLlamacppOptionsValidator implements Validator {
                 for (var problem : unsupportedOptions(config))
                     context.illegal("GGUF embedder '" + component.getComponentId() + "' in cluster '" + cluster.getName() +
                                     "' runs in Triton, which does not support its options: " + problem);
+                loweredImageTokens(config).ifPresent(warning -> context.deployState().getDeployLogger().logApplicationPackage(
+                        Level.WARNING, "GGUF embedder '" + component.getComponentId() + "' in cluster '" + cluster.getName() +
+                                       "': " + warning));
             }
         });
+    }
+
+    /**
+     * Returns why llama-server may use fewer image tokens than the options give, empty if it uses them.
+     * For a non-causal model, llama-server lowers the image tokens to half the micro-batch without an error.
+     * This is a warning, since the config does not tell whether the model is causal.
+     */
+    static Optional<String> loweredImageTokens(GgufEmbedderConfig config) {
+        int ubatch = config.physicalMaxBatchSize() > 0 ? config.physicalMaxBatchSize() : LLAMA_SERVER_DEFAULT_UBATCH;
+        int imageTokens = Math.max(config.imageMinTokens(), config.imageMaxTokens());
+        if (imageTokens <= ubatch / 2) return Optional.empty();
+        return Optional.of("an image of up to " + imageTokens + " tokens (imageMinTokens " + config.imageMinTokens() +
+                           ", imageMaxTokens " + config.imageMaxTokens() + ") is above half of physicalMaxBatchSize " +
+                           ubatch + ", so llama-server lowers it to " + ubatch / 2 + " for a non-causal model");
     }
 
     /**

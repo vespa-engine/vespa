@@ -109,6 +109,10 @@ PrependResources = element prepend {
 GgufEmbedder =
    attribute type { "gguf-embedder" } &
    element transformer-model { ModelReference } &
+   element mmproj-model { ModelReference }? &
+   element image-first { xsd:boolean }? &
+   element image-min-tokens { xsd:positiveInteger }? &
+   element image-max-tokens { xsd:positiveInteger }? &
    element max-tokens { xsd:positiveInteger }? &
    element normalize { xsd:boolean }? &
    EmbedderPoolingStrategy &

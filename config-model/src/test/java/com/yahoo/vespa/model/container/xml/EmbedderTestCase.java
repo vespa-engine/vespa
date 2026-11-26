@@ -321,6 +321,11 @@ public class EmbedderTestCase {
 
         var config = ggufEmbedderConfig(cluster, "gguf-full");
         assertEquals("https://my/url/model.gguf", modelReference(config, "embeddingModel").url().orElseThrow().value());
+        assertEquals(1, config.mmproj().size());
+        assertEquals("https://my/url/mmproj.gguf", config.mmproj(0).modelReference().url().orElseThrow().value());
+        assertFalse(config.imageFirst());
+        assertEquals(250, config.imageMinTokens());
+        assertEquals(280, config.imageMaxTokens());
         assertEquals(512, config.maxPromptTokens());
         assertTrue(config.normalize());
         assertEquals(GgufEmbedderConfig.PoolingType.Enum.LAST, config.poolingType());
@@ -342,6 +347,10 @@ public class EmbedderTestCase {
 
         var config = ggufEmbedderConfig(cluster, "gguf-minimal");
         assertEquals("models/embedder.gguf", modelReference(config, "embeddingModel").path().orElseThrow().value());
+        assertEquals(0, config.mmproj().size());
+        assertTrue(config.imageFirst());
+        assertEquals(0, config.imageMinTokens());
+        assertEquals(0, config.imageMaxTokens());
         assertEquals(0, config.maxPromptTokens());
         assertFalse(config.normalize());
         assertEquals(GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED, config.poolingType());

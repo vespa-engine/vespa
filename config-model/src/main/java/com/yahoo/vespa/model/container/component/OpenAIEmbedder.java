@@ -16,7 +16,7 @@ import static com.yahoo.vespa.model.container.component.EmbedderPrependConfig.pa
  *
  * @author bjorncs
  */
-public class OpenAIEmbedder extends TypedComponent implements OpenaiEmbedderConfig.Producer {
+public class OpenAIEmbedder extends TypedComponent implements OpenaiEmbedderConfig.Producer, EmbedderComponent {
 
     private final String apiKeySecretRef;
     private final String model;
