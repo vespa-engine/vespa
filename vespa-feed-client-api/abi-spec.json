@@ -109,7 +109,9 @@
       "public abstract void resetStats()",
       "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State circuitBreakerState()",
       "public abstract void close(boolean)",
-      "public void close()"
+      "public void close()",
+      "public ai.vespa.feed.client.ShutdownHandle closeAsync(boolean)",
+      "public ai.vespa.feed.client.ShutdownHandle termination()"
     ],
     "fields" : [ ]
   },
@@ -404,6 +406,57 @@
     "methods" : [
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.feed.client.ShutdownHandle$Phase" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.feed.client.ShutdownHandle$Phase[] values()",
+      "public static ai.vespa.feed.client.ShutdownHandle$Phase valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.feed.client.ShutdownHandle$Phase OPEN",
+      "public static final enum ai.vespa.feed.client.ShutdownHandle$Phase DRAINING",
+      "public static final enum ai.vespa.feed.client.ShutdownHandle$Phase ABORTING",
+      "public static final enum ai.vespa.feed.client.ShutdownHandle$Phase TERMINATED",
+      "public static final enum ai.vespa.feed.client.ShutdownHandle$Phase FAILED"
+    ]
+  },
+  "ai.vespa.feed.client.ShutdownHandle$Snapshot" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.feed.client.ShutdownHandle$Phase, java.lang.Throwable, int, int)",
+      "public ai.vespa.feed.client.ShutdownHandle$Phase phase()",
+      "public java.util.Optional failure()",
+      "public int pendingAdmissions()",
+      "public int outstandingOperations()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.feed.client.ShutdownHandle" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract ai.vespa.feed.client.ShutdownHandle$Snapshot snapshot()",
+      "public abstract void await()",
+      "public abstract void await(java.time.Duration)"
     ],
     "fields" : [ ]
   }

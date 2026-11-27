@@ -10,6 +10,7 @@ import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.ResultException;
 import ai.vespa.feed.client.ResultParseException;
+import ai.vespa.feed.client.ShutdownHandle;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonParser;
@@ -29,8 +30,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -57,7 +58,8 @@ class HttpFeedClient implements FeedClient {
 
     private final Map<String, Supplier<String>> requestHeaders;
     private final RequestStrategy requestStrategy;
-    private final AtomicBoolean closed = new AtomicBoolean();
+    private final ShutdownLifecycle lifecycle;
+    private final ThreadFactory shutdownThreads;
     private final boolean speedTest;
     private final LongSupplier nanoClock;
 
@@ -71,8 +73,15 @@ class HttpFeedClient implements FeedClient {
     }
 
     HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, RequestStrategy requestStrategy) throws IOException {
+        this(builder, clusterFactory, requestStrategy, task -> new Thread(task, "feed-client-shutdown"));
+    }
+
+    HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, RequestStrategy requestStrategy,
+                   ThreadFactory shutdownThreads) throws IOException {
+        this.shutdownThreads = shutdownThreads;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
+        this.lifecycle = new ShutdownLifecycle(() -> requestStrategy != null && requestStrategy.isProgressThread());
         this.speedTest = builder.speedTest;
         this.nanoClock = builder.nanoClock;
         try {
@@ -116,41 +125,85 @@ class HttpFeedClient implements FeedClient {
 
     @Override
     public void close(boolean graceful) {
-        closed.set(true);
-        if (graceful)
-            requestStrategy.await();
+        closeAsync(graceful);
+        try { lifecycle.await(); }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new FeedException("Interrupted waiting for feed client shutdown", e);
+        }
+    }
 
-        requestStrategy.destroy();
+    @Override
+    public ShutdownHandle termination() { return lifecycle; }
+
+    @Override
+    public ShutdownHandle closeAsync(boolean graceful) {
+        if (lifecycle.request(graceful)) {
+            try {
+                Thread worker = shutdownThreads.newThread(this::shutdown);
+                worker.start();
+            } catch (Throwable failure) {
+                // Inline cleanup could block a progress thread; FAILED does not certify release.
+                lifecycle.finish(failure);
+            }
+        }
+        return lifecycle;
+    }
+
+    private void shutdown() {
+        lifecycle.cleanupStarted();
+        Throwable failure = null;
+        try {
+            if (lifecycle.awaitAdmissions()) {
+                requestStrategy.await(lifecycle::draining);
+                lifecycle.awaitOperations(lifecycle::draining);
+            }
+        } catch (Throwable t) { failure = t; }
+        try { requestStrategy.destroy(); }
+        catch (Throwable t) {
+            if (failure == null) failure = t;
+            else if (failure != t) failure.addSuppressed(t);
+        }
+        if (failure == null) {
+            try { lifecycle.awaitOperations(() -> true); }
+            catch (InterruptedException e) { Thread.currentThread().interrupt(); failure = e; }
+        }
+        lifecycle.finish(failure);
     }
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
-        if (closed.get())
-            throw new IllegalStateException("Client is closed");
+        ShutdownLifecycle.Operation operation = lifecycle.admit();
+        try {
 
-        HttpRequest request = new HttpRequest(method,
-                                              getPath(documentId),
-                                              getQuery(params, speedTest),
-                                              requestHeaders,
-                                              operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
-                                              params.timeout().orElse(maxTimeout),
-                                              nanoClock);
+            HttpRequest request = new HttpRequest(method,
+                                                  getPath(documentId),
+                                                  getQuery(params, speedTest),
+                                                  requestHeaders,
+                                                  operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
+                                                  params.timeout().orElse(maxTimeout),
+                                                  nanoClock);
 
-        CompletableFuture<Result> promise = new CompletableFuture<>();
-        requestStrategy.enqueue(documentId, request)
-                       .thenApply(response -> toResult(request, response, documentId))
-                       .whenComplete((result, thrown) -> {
-                           if (thrown != null) {
-                               while (thrown instanceof CompletionException)
-                                   thrown = thrown.getCause();
-                               var finalThrown = thrown;
-                               log.log(Level.FINE, () -> String.format(Locale.ROOT, "Request %s failed: %s", request, finalThrown));
-                               promise.completeExceptionally(thrown);
-                           } else {
-                               log.log(Level.FINE, () -> String.format(Locale.ROOT, "Request %s completed successfully: %s", request, result));
-                               promise.complete(result);
-                           }
-                       });
-        return promise;
+            requestStrategy.enqueue(documentId, request)
+                           .thenApply(response -> toResult(request, response, documentId))
+                           .whenComplete((result, thrown) -> {
+                               if (thrown != null) {
+                                   while (thrown instanceof CompletionException)
+                                       thrown = thrown.getCause();
+                                   var finalThrown = thrown;
+                                   log.log(Level.FINE, () -> String.format(Locale.ROOT, "Request %s failed: %s", request, finalThrown));
+                                   operation.publish(null, thrown);
+                               } else {
+                                   log.log(Level.FINE, () -> String.format(Locale.ROOT, "Request %s completed successfully: %s", request, result));
+                                   operation.publish(result, null);
+                               }
+                           });
+            return operation.result;
+        } catch (Throwable failure) {
+            operation.publish(null, failure);
+            throw failure;
+        } finally {
+            lifecycle.registered(operation);
+        }
     }
 
     private void verifyConnection(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
