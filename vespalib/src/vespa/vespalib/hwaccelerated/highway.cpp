@@ -430,9 +430,15 @@ HWY_API void bf16_centroids_from_indexes(const Meta meta, const DU8 du8, const D
     // It can also de-dupe LUT registers since it can see that the const memory
     // loaded is the same.
     const VU8 bf16_msb_lut = hn::LoadDup128(du8, bf16_lut);
-    const VU8 bf16_lsb_lut = hn::LoadDup128(du8, bf16_lut + 16);
     VU8       bf16_msb = hn::TableLookupBytes(bf16_msb_lut, idx);
-    VU8       bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, idx);
+    VU8       bf16_lsb;
+    if constexpr (Bits > 1) {
+        const VU8 bf16_lsb_lut = hn::LoadDup128(du8, bf16_lut + 16);
+        bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, idx);
+    } else {
+        // Only the sign bit of the MSB differs for 1-bit centroids, so we can use a hard-coded LSB
+        bf16_lsb = hn::Set(du8, bf16_lut[16]); // First LSB entry
+    }
 
     if constexpr (ZeroOutOfBounds && meta.is_partial()) {
         const auto in_bounds = hn::FirstN(du8, meta.partial_count());
