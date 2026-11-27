@@ -112,7 +112,7 @@ uint32_t SkipMinFeatureGeneric::next() {
 
 SkipMinFeature::UP SkipMinFeature::create(const uint8_t* min_feature, FeatureCounts counts) {
 #ifdef __x86_64__
-    return std::make_unique<SkipMinFeatureSSE2>(min_feature, count_vector);
+    return std::make_unique<SkipMinFeatureSSE2>(min_feature, counts);
 #else
     return std::make_unique<SkipMinFeatureGeneric>(min_feature, counts);
 #endif
