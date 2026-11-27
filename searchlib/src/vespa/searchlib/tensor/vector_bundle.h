@@ -34,6 +34,8 @@ public:
           _subspace_size(subspace_type.size()) {}
     ~VectorBundle() = default;
     uint32_t subspaces() const noexcept { return _subspaces; }
+    size_t subspace_size() const noexcept { return _subspace_size; }
+    size_t num_cells() const noexcept { return _subspaces * _subspace_size; }
     vespalib::eval::TypedCells cells(uint32_t subspace) const noexcept {
         return {static_cast<const char*>(_data) + _subspace_mem_size * subspace, _cell_type, _subspace_size};
     }
