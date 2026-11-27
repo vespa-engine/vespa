@@ -105,8 +105,8 @@ inline NumericChangeData<double>::NumericChangeData(double v)
 
 /**
  * Maintains a list of changes.
- * You can select to view the in insert order,
- * or unordered, but changes to the same docid are adjacent and ordered by insertion order.
+ * You can select to view the changes in insert order,  or unordered, but changes
+ * to the same docid are adjacent and ordered by insertion order.
  */
 template <typename T> class ChangeVectorT {
 private:
@@ -132,8 +132,29 @@ public:
     private:
         const Vector& _v;
     };
+
+    /**
+     * The changes are sorted into runs by docids where each run internally is
+     * sorted on insert order.
+     */
     class DocIdInsertOrder {
-        using AdjacentDocIds = std::vector<uint64_t>;
+
+        /**
+         * Packed docid and index.
+         */
+        class DocIdIndex {
+            uint64_t _value;
+
+        public:
+            constexpr DocIdIndex(uint32_t doc_id, uint32_t index) noexcept
+                : _value((static_cast<uint64_t>(doc_id) << 32) | index) {}
+
+            [[nodiscard]] constexpr uint32_t doc_id() const noexcept { return _value >> 32; }
+            [[nodiscard]] constexpr uint32_t index() const noexcept { return static_cast<uint32_t>(_value); }
+            constexpr auto operator<=>(const DocIdIndex&) const noexcept = default;
+        };
+
+        using AdjacentDocIds = std::vector<DocIdIndex>;
 
     public:
         class const_iterator {
@@ -159,7 +180,7 @@ public:
             [[nodiscard]] const T* operator->() const { return &v(); }
 
         private:
-            const T& v() const { return (*_v)[(*_o)[_cur] & 0xffffffff]; }
+            const T& v() const { return (*_v)[(*_o)[_cur].index()]; }
             const Vector*         _v;
             const AdjacentDocIds* _o;
             uint32_t              _cur;
