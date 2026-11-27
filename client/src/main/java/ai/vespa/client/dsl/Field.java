@@ -250,6 +250,31 @@ public class Field extends QueryChain {
     }
 
     /**
+     * Contains text query: The text is tokenized and processed by linguistics into terms searching this field.
+     * https://docs.vespa.ai/en/reference/querying/yql.html#text
+     *
+     * @param text the text to search for, or a reference to a request parameter containing it if prefixed by '@'
+     * @return the query
+     */
+    public Query text(String text) {
+        return text(A.empty(), text);
+    }
+
+    /**
+     * Contains text query: The text is tokenized and processed by linguistics into terms searching this field.
+     * https://docs.vespa.ai/en/reference/querying/yql.html#text
+     *
+     * @param annotation the annotation, e.g. grammar, targetHits, language or label
+     * @param text the text to search for, or a reference to a request parameter containing it if prefixed by '@'
+     * @return the query
+     */
+    public Query text(Annotation annotation, String text) {
+        if (text.startsWith("@"))
+            return common("text", annotation, (Object) text);
+        return common("text", annotation, text);
+    }
+
+    /**
      * Matches query.
      * https://docs.vespa.ai/en/reference/querying/yql.html#matches
      *
@@ -665,6 +690,10 @@ public class Field extends QueryChain {
                     : Text.format("nearestNeighbor(%s, %s)", fieldName, valuesStr);
             case "fuzzy":
                 return Text.format("%s contains (%sfuzzy(%s))", fieldName, annotation, values.get(0));
+            case "text":
+                return hasAnnotation
+                       ? Text.format("%s contains (%stext(%s))", fieldName, annotation, values.get(0))
+                       : Text.format("%s contains text(%s)", fieldName, values.get(0));
             default:
                 Object value = values.get(0);
                 if (value instanceof Boolean && fieldName.isEmpty()) { // where true/false

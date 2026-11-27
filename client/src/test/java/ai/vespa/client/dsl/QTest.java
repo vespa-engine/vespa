@@ -512,6 +512,40 @@ class QTest {
     }
 
     @Test
+    void text() {
+        String q = Q.p("title").text("yoni jo dima").build();
+        assertEquals("yql=select * from sources * where title contains text(\"yoni jo dima\")", q);
+    }
+
+    @Test
+    void text_with_reference() {
+        String q = Q.p("title").text("@q").build();
+        assertEquals("yql=select * from sources * where title contains text(@q)", q);
+    }
+
+    @Test
+    void text_with_annotation() {
+        String q = Q.p("title").text(A.a("grammar", "all"), "a b").build();
+        assertEquals("yql=select * from sources * where title contains ({\"grammar\":\"all\"}text(\"a b\"))", q);
+    }
+
+    @Test
+    void text_with_annotation_and_reference() {
+        String q = Q.p("title").text(A.a("targetHits", 50), "@q").build();
+        assertEquals("yql=select * from sources * where title contains ({\"targetHits\":50}text(@q))", q);
+    }
+
+    @Test
+    void text_combined() {
+        String q = Q.select("*")
+                    .from("sd1")
+                    .where("title").text(A.a("grammar", "weakAnd"), "a b")
+                    .and("year").ge(2020)
+                    .build();
+        assertEquals("yql=select * from sd1 where title contains ({\"grammar\":\"weakAnd\"}text(\"a b\")) and year >= 2020", q);
+    }
+
+    @Test
     void use_contains_instead_of_contains_equiv_when_input_size_is_1() {
         String q = Q.p("f1").containsEquiv(List.of("p1")).build();
         assertEquals("yql=select * from sources * where f1 contains \"p1\"", q);
