@@ -175,9 +175,8 @@ public interface Embedder {
         public Image(byte[] data) { this(ByteBuffer.wrap(data)); }
 
         /**
-         * Returns a new buffer over the data on each call.
-         * ByteBuffer equality uses the remaining bytes, so a reader that advanced a shared buffer
-         * would change the equality of this image.
+         * Returns a duplicate, since reading a buffer moves its position,
+         * and equals and hashCode use the bytes after the position.
          */
         @Override
         public ByteBuffer data() { return data.duplicate(); }

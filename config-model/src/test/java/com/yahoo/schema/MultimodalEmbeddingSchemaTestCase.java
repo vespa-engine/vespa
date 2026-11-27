@@ -150,7 +150,7 @@ class MultimodalEmbeddingSchemaTestCase {
                                            "which accepts text, but is given image."), e.getMessage());
         indexingScriptOf(textSchema.replace("input title | embed myEmbedder", "input title | embed"), services);
 
-        // Every 'embed' of a statement is validated, not only the last one
+        // The invalid 'embed' is not the last one of the statement
         var twoEmbedsSchema = textSchema.replace(
                 "input title | embed myEmbedder",
                 "(input image | embed myEmbedder) || (input title | embed myEmbedder)");

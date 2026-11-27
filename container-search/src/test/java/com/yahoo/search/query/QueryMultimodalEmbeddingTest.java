@@ -100,7 +100,7 @@ class QueryMultimodalEmbeddingTest {
                 ValueCase.image(" " + jpeg + "\n", 3),
                 ValueCase.image(jpeg + "\nAAEC", 6), // Wrapped lines, as from GNU base64
                 ValueCase.image(jpeg + "\r\nAAEC", 6),
-                ValueCase.image(jpeg + "    ", 6), // "/9j/++++" whose '+' arrived as spaces
+                ValueCase.image(jpeg + "    ", 6), // Each space reads as a '+': /9j/++++
                 ValueCase.image("data:image/jpeg;base64,/9j/AAE", 5), // Missing padding
                 ValueCase.image("data:image/jpeg;base64,/9j/AA==", 4),
                 // Errors for an embedder which accepts images

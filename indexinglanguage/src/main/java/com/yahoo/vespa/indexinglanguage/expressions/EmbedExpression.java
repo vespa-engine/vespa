@@ -284,7 +284,7 @@ public class EmbedExpression extends Expression  {
         if (text.isEmpty() && image.isEmpty()) return Optional.empty();
 
         var input = new Embedder.Input(text, image);
-        // A document which lacks a part gives the embedder other modalities than the statement does
+        // A document which lacks a part gives fewer modalities than the statement
         rejectionReason(input.modalities()).ifPresent(rejection -> { throw new InvalidInputException(rejection); });
 
         // ExecutionContext.resolveLanguage detects the language from the string form of the current value

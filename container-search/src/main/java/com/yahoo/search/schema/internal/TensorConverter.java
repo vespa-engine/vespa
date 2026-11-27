@@ -182,7 +182,8 @@ public class TensorConverter {
     }
 
     private static boolean isBase64Image(String value) {
-        // decodeBase64 reads a space as a '+'. A text such as "/9j/ starts a JPEG" then decodes to a JPEG.
+        // decodeBase64 reads a space as a '+'.
+        // A text such as "/9j/ starts a JPEG" then decodes to a JPEG.
         if (value.contains(" ")) return false;
         try {
             new Embedder.Image(decodeBase64(value));
@@ -193,7 +194,8 @@ public class TensorConverter {
     }
 
     /**
-     * A URL query parameter without URL encoding turns each '+' into a space, and base64 has no space.
+     * In a URL query parameter which is not URL encoded, each '+' arrives as a space.
+     * Base64 has no space.
      * Tools such as GNU base64 wrap their output in lines, which Base64.getDecoder() rejects.
      */
     private static byte[] decodeBase64(String data) {

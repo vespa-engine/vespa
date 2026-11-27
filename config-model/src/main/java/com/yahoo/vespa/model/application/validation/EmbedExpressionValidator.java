@@ -99,10 +99,7 @@ public class EmbedExpressionValidator implements Validator {
                                  "with id '%s', which %s.", fieldName, schemaName, embedderId, rejection)));
     }
 
-    /**
-     * Only the built-in embedders are known here.
-     * Another container cluster than the indexing one may have another embedder with the same id.
-     */
+    /** Another container cluster may have another embedder with the same id, so only the indexing cluster counts. */
     private static Map<String, EmbedderComponent> embeddersOfIndexingCluster(ContentCluster contentCluster,
                                                                              Validation.Context context) {
         String indexingClusterName = contentCluster.getSearch().getIndexingDocproc().getClusterName(contentCluster.getName());

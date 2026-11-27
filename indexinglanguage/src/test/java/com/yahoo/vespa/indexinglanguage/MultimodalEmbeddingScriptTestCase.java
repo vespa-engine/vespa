@@ -260,7 +260,7 @@ public class MultimodalEmbeddingScriptTestCase {
                          () -> embed(textOnly, "input myText, input myImage | embed emb1 | attribute 'myTensor'", "hello", image));
         assertEquals("Embedder 'emb1' accepts text, but is given text and image", e.getCause().getMessage());
 
-        // The input type of the statement decides the rejection, also for a document without the image
+        // The rejection names the parts of the statement, also for a document without the image
         e = assertThrows(IllegalArgumentException.class,
                          () -> embed(textOnly, "input myText, input myImage | embed emb1 | attribute 'myTensor'", "hello", null));
         assertEquals("Embedder 'emb1' accepts text, but is given text and image", e.getCause().getMessage());
