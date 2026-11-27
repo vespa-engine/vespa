@@ -10,6 +10,7 @@ import com.yahoo.search.result.PositionsData;
 /**
  * Class converting data (historically XML-encoded) from a document summary field.
  * This has only been used to represent geographical positions.
+ *
  * @author Steinar Knutsen
  */
 public class XMLField extends DocsumField {
@@ -34,5 +35,5 @@ public class XMLField extends DocsumField {
         }
         return convert(value.asString(""));
     }
-        
+
 }

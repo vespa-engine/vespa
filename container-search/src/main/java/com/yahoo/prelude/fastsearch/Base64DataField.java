@@ -7,7 +7,8 @@ import com.yahoo.prelude.hitfield.RawBase64;
 
 /**
  * Represents a binary field that is presented as base64
- * @author baldersheim
+ *
+ * @author Henning Baldersheim
  */
 public class Base64DataField extends DocsumField {
     public Base64DataField(String name) {
