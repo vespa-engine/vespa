@@ -87,9 +87,9 @@ template <typename Posting, typename Key, typename DocId> class PostingVectorIte
 public:
     // Handle both move and copy construction
     PostingVectorIterator(PostingVectorIterator&&) = default;
-    PostingVectorIterator& operator=(PostingVectorIterator&&) = default;
+    PostingVectorIterator& operator=(PostingVectorIterator&&) = delete;
     PostingVectorIterator(const PostingVectorIterator&) = default;
-    PostingVectorIterator& operator=(const PostingVectorIterator&) = default;
+    PostingVectorIterator& operator=(const PostingVectorIterator&) = delete;
 
     explicit PostingVectorIterator(const PostingVector& vector, size_t size)
         : _vector(&vector.acquire_elem_ref(0)), _size(size) {
@@ -97,6 +97,7 @@ public:
         linearSeek(1);
     }
 
+    void begin() { linearSeek(1); }
     bool valid() const { return _pos < _size; }
     DocId getKey() const { return _pos; }
     Posting getData() const { return _data; }

@@ -27,6 +27,14 @@ public:
     bool next(uint32_t doc_id) override;
     bool nextInterval() override;
     VESPA_DLL_LOCAL uint32_t getInterval() const override { return _interval; }
+    void reset() override {
+        _iterator.begin();
+        _current_interval = nullptr;
+        _interval_count = 0;
+        _interval = 0;
+        _prev_interval = 0;
+        setDocId(0);
+    }
 };
 
 template <typename Iterator>

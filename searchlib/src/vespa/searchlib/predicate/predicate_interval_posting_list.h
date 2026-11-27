@@ -34,6 +34,12 @@ public:
     VESPA_DLL_LOCAL uint32_t getInterval() const override {
         return _current_interval ? _current_interval->interval : 0;
     }
+    void reset() override {
+        _iterator.begin();
+        _current_interval = nullptr;
+        _interval_count = 0;
+        setDocId(0);
+    }
 };
 
 template <typename Iterator>

@@ -20,6 +20,10 @@ public:
     bool next(uint32_t doc_id) override;
     bool nextInterval() override { return false; }
     VESPA_DLL_LOCAL uint32_t getInterval() const override { return 0x00010001; }
+    void reset() override {
+        _iterator.begin();
+        setDocId(0);
+    }
 };
 
 } // namespace search::predicate

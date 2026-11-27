@@ -8,6 +8,7 @@
 #include <vespa/searchlib/predicate/predicate_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 
+#include <span>
 #include <vector>
 
 namespace search::fef {
@@ -33,6 +34,7 @@ using IntervalRange = uint16_t;
 
 class PredicateSearch : public SearchIterator {
     SkipMinFeature::UP                               _skip;
+    uint32_t                                         _skip_offset; // _skip scans the docid space from here
     std::vector<predicate::PredicatePostingList::UP> _posting_lists;
     std::vector<uint16_t>                            _sorted_indexes;
     std::vector<uint16_t>                            _sorted_indexes_merge_buffer;
@@ -44,12 +46,17 @@ class PredicateSearch : public SearchIterator {
     fef::TermFieldMatchData*                         _termFieldMatchData;
     const uint8_t*                                   _min_feature_vector;
     const IntervalRange*                             _interval_range_vector;
+    std::span<const uint8_t>                         _kv;
+    // The posting lists are past this docid, and may have used up its intervals. Ranges starting at or before it
+    // rewind.
+    uint32_t _posting_lists_at;
 
     VESPA_DLL_LOCAL bool advanceOneTo(uint32_t doc_id, size_t index);
     VESPA_DLL_LOCAL void advanceAllTo(uint32_t doc_id);
     VESPA_DLL_LOCAL bool evaluateHit(uint32_t doc_id, uint32_t k);
     VESPA_DLL_LOCAL size_t sortIntervals(uint32_t doc_id, uint32_t k);
     VESPA_DLL_LOCAL void skipMinFeature(uint32_t doc_id) __attribute__((noinline));
+    VESPA_DLL_LOCAL void rewind_posting_lists();
 
 public:
     PredicateSearch(const uint8_t* minFeature, const IntervalRange* interval_range_vector,
@@ -58,8 +65,13 @@ public:
                     const fef::TermFieldMatchDataArray&              tfmda);
     ~PredicateSearch() override;
 
+    // A range starting at or before where the posting lists are (as work sharing between match threads gives)
+    // resets them to their start.
+    void initRange(uint32_t begin_id, uint32_t end_id) override;
+
     void doSeek(uint32_t doc_id) override;
     void doUnpack(uint32_t doc_id) override;
+    vespalib::Trinary is_strict() const override { return vespalib::Trinary::True; }
 };
 
 } // namespace search::queryeval

@@ -12,6 +12,7 @@ vespa_add_executable(searchlib_predicate_search_test_app TEST
     predicate_search_test.cpp
     DEPENDS
     vespa_searchlib
+    searchlib_test
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_predicate_search_test_app COMMAND searchlib_predicate_search_test_app)
