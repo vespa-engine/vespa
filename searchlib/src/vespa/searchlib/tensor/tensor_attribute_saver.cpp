@@ -44,22 +44,25 @@ bool TensorAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
         _index_saver.reset();
     }
 
-    auto dat_writer = saveTarget.datWriter().allocBufferWriter();
-    auto dense_tensor_store = _tensor_store.as_dense();
-    if (dense_tensor_store != nullptr) {
-        save_dense_tensor_store(*dat_writer, *dense_tensor_store);
-    } else {
-        save_tensor_store(*dat_writer);
-    }
+    auto              dat_writer = saveTarget.datWriter().allocBufferWriter();
+    auto              dense_tensor_store = _tensor_store.as_dense();
+    TensorStoreCounts counts = (dense_tensor_store != nullptr)
+                                   ? save_dense_tensor_store(*dat_writer, *dense_tensor_store)
+                                   : save_tensor_store(*dat_writer);
+    // The .dat file header was written with placeholder values; it is
+    // patched with the counts when the file is closed.
+    saveTarget.get_mutable_header().set_tensor_counts(counts.subspaces, counts.cells);
     return true;
 }
 
-void TensorAttributeSaver::save_tensor_store(BufferWriter& writer) const {
+TensorStoreCounts TensorAttributeSaver::save_tensor_store(BufferWriter& writer) const {
     CHECK(get_header_version() == TENSOR_ATTRIBUTE_VERSION);
     auto                refs_span = _ref_vector_snapshot.span();
     const uint32_t      docid_limit(refs_span.size());
     vespalib::nbostream stream;
+    TensorStoreCounts   counts;
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
+        counts += _tensor_store.get_counts(refs_span[lid]);
         if (_tensor_store.encode_stored_tensor(refs_span[lid], stream)) {
             uint32_t sz = stream.size();
             writer.write(&sz, sizeof(sz));
@@ -71,15 +74,18 @@ void TensorAttributeSaver::save_tensor_store(BufferWriter& writer) const {
         }
     }
     writer.flush();
+    return counts;
 }
 
-void TensorAttributeSaver::save_dense_tensor_store(BufferWriter&           writer,
-                                                   const DenseTensorStore& dense_tensor_store) const {
+TensorStoreCounts TensorAttributeSaver::save_dense_tensor_store(BufferWriter&           writer,
+                                                                const DenseTensorStore& dense_tensor_store) const {
     CHECK(get_header_version() == DENSE_TENSOR_ATTRIBUTE_VERSION);
-    auto           raw_size = dense_tensor_store.getBufSize();
-    auto           refs_span = _ref_vector_snapshot.span();
-    const uint32_t docid_limit(refs_span.size());
+    auto              raw_size = dense_tensor_store.getBufSize();
+    auto              refs_span = _ref_vector_snapshot.span();
+    const uint32_t    docid_limit(refs_span.size());
+    TensorStoreCounts counts;
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
+        counts += dense_tensor_store.get_counts(refs_span[lid]);
         if (refs_span[lid].valid()) {
             auto raw = dense_tensor_store.getRawBuffer(refs_span[lid]);
             writer.write(&tensorIsPresent, sizeof(tensorIsPresent));
@@ -89,6 +95,7 @@ void TensorAttributeSaver::save_dense_tensor_store(BufferWriter&           write
         }
     }
     writer.flush();
+    return counts;
 }
 
 } // namespace search::tensor
