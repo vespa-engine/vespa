@@ -163,8 +163,8 @@ func loginPKCEFlow(cli *CLI, ctx context.Context, a *auth0.Client, noBrowser boo
 		return err
 	})
 	if err != nil {
-		if err.Error() == "600" {
-			return auth.Result{}, errSSORequired()
+		if denied := errLoginDenied(err); denied != nil {
+			return auth.Result{}, denied
 		}
 		return auth.Result{}, errHint(fmt.Errorf("login error: %w", err), deviceFlowHint)
 	}
@@ -209,17 +209,26 @@ func loginDeviceFlow(cli *CLI, ctx context.Context, a *auth0.Client, noBrowser b
 		})
 	}
 	if err != nil {
-		if err.Error() == "600" {
-			return auth.Result{}, errSSORequired()
+		if denied := errLoginDenied(err); denied != nil {
+			return auth.Result{}, denied
 		}
 		return auth.Result{}, fmt.Errorf("login error: %w", err)
 	}
 	return res, nil
 }
 
-func errSSORequired() error {
-	return errHint(fmt.Errorf("Your organization require SSO for Vespa Cloud access"),
-		"Please login by entering your email in the email address field")
+// errLoginDenied returns the error to show the user when Vespa Cloud denied the login, which it
+// reports as a three-digit code, or nil when err is any other failure.
+func errLoginDenied(err error) error {
+	switch err.Error() {
+	case "600":
+		return errHint(fmt.Errorf("Your organization require SSO for Vespa Cloud access"),
+			"Please login by entering your email in the email address field")
+	case "601":
+		return errHint(fmt.Errorf("Disposable email addresses are not allowed for Vespa Cloud access"),
+			"Please sign up with a permanent email address")
+	}
+	return nil
 }
 
 func isBrowserOpenPossible() bool {
