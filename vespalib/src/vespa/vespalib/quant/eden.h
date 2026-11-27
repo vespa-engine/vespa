@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "eden_evaluator.h"
 #include "rotator.h"
 
 #include <cstddef>
@@ -50,6 +51,9 @@ enum class QuantMode : uint8_t {
  *
  * Thread safety: non-const/static methods are NOT thread safe since certain
  * internal operations require the use of object-level temporary data structures.
+ * A thread-safe, all-const EdenEvaluator instance can be used standalone for
+ * computing distances between quantized vectors or pre-rotated queries and quantized
+ * vectors.
  *
  * References:
  *  [0] Shay Vargaftik, Ran Ben Basat, Amit Portnoy, Gal Mendelson, Yaniv Ben-Itzhak
@@ -60,24 +64,17 @@ enum class QuantMode : uint8_t {
  *      Portnoy and Shay Vargaftik. A Note on TurboQuant and the Earlier DRIVE/EDEN
  *      Line of Work, 2026. https://arxiv.org/abs/2604.18555
  */
-class EdenQuantizer {
-    const size_t         _dimensions;
-    const size_t         _quantized_size;
+class EdenQuantizer : public EdenEvaluator {
     const Rotator        _rotator;
     std::vector<float>   _rot_tmp;
     std::vector<uint8_t> _idx_tmp;
     const uint64_t       _seed;
     const float          _sqrt_d; // Precomputed sqrt(dimensions)
-    const uint8_t        _bits;
 
     // Returns the shared, fixed N(0, 1) codebook for the configured quantizer bit count
     [[nodiscard]] std::span<const float> my_codebook() const noexcept;
 
-    // We allocate space for 2 vectors worth of centroid index runs. The first run is used for
-    // quantized left hand side arguments, or when there's only a single vector. The second
-    // run is for when we need to unpack a right hand side argument as well.
-    [[nodiscard]] uint8_t* lhs_scratch_idx_space() noexcept { return _idx_tmp.data(); }
-    [[nodiscard]] uint8_t* rhs_scratch_idx_space() noexcept { return _idx_tmp.data() + _dimensions; }
+    [[nodiscard]] uint8_t* scratch_idx_space() noexcept { return _idx_tmp.data(); }
 
     struct ScaleAndCentroidIndexesPtr {
         float          scale;
@@ -85,12 +82,7 @@ class EdenQuantizer {
     };
     // Precondition: `bits.size() == quantized_size()`
     // Returns [scale factor, unpacked centroid index ptr]
-    [[nodiscard]] ScaleAndCentroidIndexesPtr
-    unary_unpack_bits_to_scratch_space(std::span<const uint8_t> bits) noexcept;
-    // Precondition: `lhs.size() == rhs.size() == quantized_size()`
-    // Returns [[lhs scale, lhs unpacked index ptr], [rhs scale, rhs unpacked index ptr]]
-    [[nodiscard]] std::pair<ScaleAndCentroidIndexesPtr, ScaleAndCentroidIndexesPtr>
-    binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs, std::span<const uint8_t> rhs) noexcept;
+    [[nodiscard]] ScaleAndCentroidIndexesPtr unpack_bits_to_scratch_space(std::span<const uint8_t> bits) noexcept;
 
 public:
     EdenQuantizer(size_t dimensions, uint8_t bits, uint64_t seed);
@@ -144,72 +136,6 @@ public:
      *  - vec.size() == dimensions()
      */
     void rotate_vector_inplace(std::span<float> vec) const noexcept;
-
-    /*
-     * Computes the dot product between a quantized vector and a _pre-rotated_ query
-     * vector. This is much more efficient than doing dequantize() followed by an
-     * explicit dot product, as we don't have to perform any expensive rotations.
-     *
-     * `query` must have had a spin in the `rotate_vector_inplace` function prior to use,
-     * i.e. it must be rotated into the same frame of reference as `quant_vec`.
-     *
-     * Only makes sense if `quant_vec` was originally quantized with `QuantMode::InnerProduct`.
-     *
-     * Preconditions:
-     *  - query.size() == dimensions()
-     *  - quant_vec.size() == quantized_size()
-     *
-     */
-    [[nodiscard]] float pre_rotated_query_dot_product(std::span<const float>   query,
-                                                      std::span<const uint8_t> quant_vec) const noexcept;
-
-    /*
-     * Computes the dot product between two quantized vectors that were both quantized
-     * using the (logically) same quantizer as `this`. This is more efficient than
-     * explicitly dequantizing the vectors (and then running a float32 dot product) since
-     * it does not involve any rotations.
-     *
-     * Only makes sense if `lhs` and `rhs` were originally both quantized with
-     * `QuantMode::InnerProduct`.
-     *
-     * Preconditions:
-     *  - lhs.size() == quantized_size()
-     *  - rhs.size() == quantized_size()
-     */
-    [[nodiscard]] float quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
-                                                      std::span<const uint8_t> rhs) const noexcept;
-
-    /*
-     * Computes the squared Euclidean distance between a quantized vector and a
-     * _pre-rotated_ query vector. This is much more efficient than doing dequantize()
-     * followed by an explicit float32 squared Euclidean distance computation, as we
-     * don't have to perform any expensive rotations.
-     *
-     * `query` must have had a spin in the `rotate_vector_inplace` function prior to use,
-     * i.e. it must be rotated into the same frame of reference as `quant_vec`.
-     *
-     * TODO determine the best quantization mode for Euclidean distance.
-     *
-     * Preconditions:
-     *  - query.size() == dimensions()
-     *  - quant_vec.size() == quantized_size()
-     */
-    [[nodiscard]] float
-    pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
-                                                 std::span<const uint8_t> quant_vec) const noexcept;
-
-    /*
-     * Computes the squared Euclidean distance between two quantized vectors that were both
-     * quantized using the (logically) same quantizer as `this`. This is more efficient than
-     * explicitly dequantizing the vectors (and then running a float32 squared Euclidean
-     * distance) since it does not involve any rotations.
-     *
-     * Preconditions:
-     *  - lhs.size() == quantized_size()
-     *  - rhs.size() == quantized_size()
-     */
-    [[nodiscard]] float quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
-                                                                     std::span<const uint8_t> rhs) const noexcept;
 };
 
 } // namespace vespalib::quant
