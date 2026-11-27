@@ -20,9 +20,13 @@ namespace search::queryeval {
 class SkipMinFeature {
 public:
     using UP = std::unique_ptr<SkipMinFeature>;
+
+    // The K in the Wang et. al. paper "Indexing Boolean Expressions".
+    using FeatureCounts = std::span<const uint8_t>;
+
     virtual ~SkipMinFeature() = default;
     VESPA_DLL_LOCAL virtual uint32_t next() = 0;
-    static SkipMinFeature::UP create(const uint8_t* min_feature, const uint8_t* kv, size_t sz);
+    static SkipMinFeature::UP create(const uint8_t* min_feature, FeatureCounts feature_counts);
 };
 
 /**
@@ -53,7 +57,7 @@ class PredicateSearch : public SearchIterator {
 
 public:
     PredicateSearch(const uint8_t* minFeature, const IntervalRange* interval_range_vector,
-                    IntervalRange max_interval_range, std::span<uint8_t> kV,
+                    IntervalRange max_interval_range, SkipMinFeature::FeatureCounts counts,
                     std::vector<predicate::PredicatePostingList::UP> posting_lists,
                     const fef::TermFieldMatchDataArray&              tfmda);
     ~PredicateSearch() override;

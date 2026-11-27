@@ -24,7 +24,7 @@ namespace {
 #ifdef __x86_64__
 class SkipMinFeatureSSE2 : public SkipMinFeature {
 public:
-    SkipMinFeatureSSE2(const uint8_t* min_feature, const uint8_t* kv, size_t sz);
+    SkipMinFeatureSSE2(const uint8_t* min_feature, FeatureCounts counts);
 
 private:
     typedef char v16u8 __attribute__((vector_size(16)));
@@ -42,10 +42,10 @@ private:
     uint32_t     _last32;
 };
 
-SkipMinFeatureSSE2::SkipMinFeatureSSE2(const uint8_t* min_feature, const uint8_t* kv, size_t sz)
+SkipMinFeatureSSE2::SkipMinFeatureSSE2(const uint8_t* min_feature, FeatureCounts counts)
     : _min_feature(reinterpret_cast<const v16u8*>(min_feature)),
-      _kv(reinterpret_cast<const v16u8*>(kv)),
-      _sz(sz),
+      _kv(reinterpret_cast<const v16u8*>(counts.data())),
+      _sz(counts.size()),
       _chunk(0),
       _last32(0) {
     advance();
@@ -85,22 +85,21 @@ uint32_t SkipMinFeatureSSE2::next() {
 #else
 class SkipMinFeatureGeneric : public SkipMinFeature {
     const uint8_t* _min_feature;
-    const uint8_t* _kv;
-    const uint32_t _sz;
+    FeatureCounts  _feature_counts;
     uint32_t       _cur;
 
 public:
-    SkipMinFeatureGeneric(const uint8_t* min_feature, const uint8_t* kv, size_t sz);
+    SkipMinFeatureGeneric(const uint8_t* min_feature, FeatureCounts count_vector);
     uint32_t next() override;
 };
 
-SkipMinFeatureGeneric::SkipMinFeatureGeneric(const uint8_t* min_feature, const uint8_t* kv, size_t sz)
-    : _min_feature(min_feature), _kv(kv), _sz(sz), _cur(0) {
+SkipMinFeatureGeneric::SkipMinFeatureGeneric(const uint8_t* min_feature, FeatureCounts counts)
+    : _min_feature(min_feature), _feature_counts(counts), _cur(0) {
 }
 
 uint32_t SkipMinFeatureGeneric::next() {
-    while (_cur < _sz) {
-        if (_kv[_cur] >= _min_feature[_cur]) {
+    while (_cur < _feature_counts.size()) {
+        if (_feature_counts[_cur] >= _min_feature[_cur]) {
             return _cur++;
         }
         ++_cur;
@@ -111,19 +110,19 @@ uint32_t SkipMinFeatureGeneric::next() {
 
 } // namespace
 
-SkipMinFeature::UP SkipMinFeature::create(const uint8_t* min_feature, const uint8_t* kv, size_t sz) {
+SkipMinFeature::UP SkipMinFeature::create(const uint8_t* min_feature, FeatureCounts counts) {
 #ifdef __x86_64__
-    return std::make_unique<SkipMinFeatureSSE2>(min_feature, kv, sz);
+    return std::make_unique<SkipMinFeatureSSE2>(min_feature, count_vector);
 #else
-    return std::make_unique<SkipMinFeatureGeneric>(min_feature, kv, sz);
+    return std::make_unique<SkipMinFeatureGeneric>(min_feature, counts);
 #endif
 }
 
 PredicateSearch::PredicateSearch(const uint8_t* minFeatureVector, const IntervalRange* interval_range_vector,
-                                 IntervalRange max_interval_range, std::span<uint8_t> kV,
+                                 IntervalRange max_interval_range, SkipMinFeature::FeatureCounts count_vector,
                                  vector<PredicatePostingList::UP>    posting_lists,
                                  const fef::TermFieldMatchDataArray& tfmda)
-    : _skip(SkipMinFeature::create(minFeatureVector, kV.data(), kV.size())),
+    : _skip(SkipMinFeature::create(minFeatureVector, count_vector)),
       _posting_lists(std::move(posting_lists)),
       _sorted_indexes(_posting_lists.size()),
       _sorted_indexes_merge_buffer(_posting_lists.size()),
