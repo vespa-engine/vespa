@@ -5,6 +5,7 @@
 #include "numeric_sort_blob_writer.h"
 #include "string_sort_blob_writer.h"
 #include "string_to_number.h"
+#include "typify_basic_type.h"
 
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
@@ -14,8 +15,11 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/typify.h>
 
 #include <limits>
+#include <optional>
+#include <type_traits>
 
 using search::common::FieldSortSpec;
 using search::common::sortspec::MissingPolicy;
@@ -35,26 +39,29 @@ constexpr uint32_t npos = std::numeric_limits<uint32_t>::max();
  * neither an enum store lookup nor a string compare is done per entry.
  */
 class StringEnumKeyFinder {
+    using EnumHandle = IAttributeVector::EnumHandle;
     const IArrayEnumReadView* _view;
-    uint32_t                  _key_handle;
-    bool                      _usable; // false => key is not in the global enum dictionary, every document misses
+    std::optional<EnumHandle> _key_handle; // empty => key is not in the global enum dictionary, every document misses
+
+    static std::optional<EnumHandle> find_key_handle(const IAttributeVector& key_attr, const std::string& key) {
+        EnumHandle handle = 0;
+        if (key_attr.findEnum(key.c_str(), handle)) {
+            return handle;
+        }
+        return std::nullopt;
+    }
 
 public:
     StringEnumKeyFinder(const IAttributeVector& key_attr, const IArrayEnumReadView* view, const std::string& key)
-        : _view(view), _key_handle(0), _usable(false) {
-        IAttributeVector::EnumHandle handle = 0;
-        if (key_attr.findEnum(key.c_str(), handle)) {
-            _key_handle = handle;
-            _usable = true;
-        }
-    }
+        : _view(view), _key_handle(find_key_handle(key_attr, key)) {}
     uint32_t position(uint32_t docid) const noexcept {
-        if (!_usable) {
+        if (!_key_handle.has_value()) {
             return npos; // globally unknown key, no scan needed
         }
-        auto keys = _view->get_values(docid);
+        const EnumHandle key_handle = *_key_handle;
+        auto             keys = _view->get_values(docid);
         for (uint32_t i = 0; i < keys.size(); ++i) {
-            if (keys[i].load_acquire().ref() == _key_handle) {
+            if (keys[i].load_acquire().ref() == key_handle) {
                 return i;
             }
         }
@@ -83,8 +90,12 @@ public:
         auto pos = _keys.position(docid);
         if (pos != npos) {
             auto values = _values->get_values(docid);
+            // The key and value arrays are separate attributes and a concurrent update may be visible in
+            // one but not yet the other. The bounds check prevents out of bounds reads; the selected value
+            // may transiently belong to another key (same as map lookup in grouping).
             // A selected undefined value counts as missing, matching single value attribute sorting.
-            // isUndefined() also covers NaN for float and double.
+            // isUndefined() also covers NaN for float and double. It is needed even though candidate()
+            // ignores NaN, since candidate() does not treat undefined integer values as missing.
             if (pos < values.size() && !isUndefined(values[pos])) {
                 _writer.candidate(values[pos]);
             }
@@ -122,6 +133,7 @@ public:
         auto pos = _keys.position(docid);
         if (pos != npos) {
             auto handles = _values->get_values(docid);
+            // See NumericMapLookupSortBlobWriter::write() about key/value misalignment during concurrent updates.
             if (pos < handles.size()) {
                 const char* value = _value_attr.getStringFromEnum(handles[pos].load_acquire().ref());
                 // isUndefined(const char*) is null or empty, matching single value string attribute sorting.
@@ -142,46 +154,50 @@ void report_missing_read_view(const IAttributeVector& attr, const char* role) {
                   role, attr.getName().c_str(), BasicType(attr.getBasicType()).asString());
 }
 
-template <typename T>
-std::unique_ptr<ISortBlobWriter>
-make_numeric_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
-                    const IMultiValueAttribute& value_mva, const FieldSortSpec& field_sort_spec) {
-    auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayTag<T>(), stash);
-    if (values == nullptr) {
-        report_missing_read_view(value_attr, "value array");
-        return {};
-    }
-    T missing_value = string_to_number<T>(field_sort_spec._missing_value);
-    if (field_sort_spec.is_ascending()) {
-        return std::make_unique<NumericMapLookupSortBlobWriter<T, true>>(
-            std::move(stash), keys, values, field_sort_spec._missing_policy, missing_value);
-    }
-    return std::make_unique<NumericMapLookupSortBlobWriter<T, false>>(std::move(stash), keys, values,
-                                                                      field_sort_spec._missing_policy, missing_value);
-}
+using TypifyMapLookupWriter = vespalib::TypifyValue<TypifyBasicType, vespalib::TypifyBool>;
 
-std::unique_ptr<ISortBlobWriter>
-make_string_writer(Stash& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
-                   const IMultiValueAttribute& value_mva, const FieldSortSpec& field_sort_spec) {
-    auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayEnumTag(), stash);
-    if (values == nullptr) {
-        report_missing_read_view(value_attr, "value array enum");
-        return {};
+/*
+ * Target for typify_invoke, templated on the map value type (see TypifyBasicType)
+ * and the sort order (ascending).
+ */
+struct MakeMapLookupWriter {
+    template <typename T, typename Ascending>
+    static std::unique_ptr<ISortBlobWriter>
+    invoke(Stash&& stash, const StringEnumKeyFinder& keys, const IAttributeVector& value_attr,
+           const IMultiValueAttribute& value_mva, const FieldSortSpec& field_sort_spec) {
+        constexpr bool asc = Ascending::value;
+        if constexpr (std::is_same_v<T, TypifyBasicType::ComplexBasicType>) {
+            Issue::report("make_map_lookup_sort_blob_writer: Map value attribute vector '%s' has basic type %s, "
+                          "which is not supported",
+                          value_attr.getName().c_str(), BasicType(value_attr.getBasicType()).asString());
+            return {};
+        } else if constexpr (std::is_same_v<T, TypifyBasicType::String>) {
+            auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayEnumTag(), stash);
+            if (values == nullptr) {
+                report_missing_read_view(value_attr, "value array enum");
+                return {};
+            }
+            return std::make_unique<StringMapLookupSortBlobWriter<asc>>(
+                std::move(stash), keys, values, value_attr, field_sort_spec._converter.get(),
+                field_sort_spec._missing_policy, field_sort_spec._missing_value);
+        } else {
+            auto* values = value_mva.make_read_view(IMultiValueAttribute::ArrayTag<T>(), stash);
+            if (values == nullptr) {
+                report_missing_read_view(value_attr, "value array");
+                return {};
+            }
+            T missing_value = string_to_number<T>(field_sort_spec._missing_value);
+            return std::make_unique<NumericMapLookupSortBlobWriter<T, asc>>(
+                std::move(stash), keys, values, field_sort_spec._missing_policy, missing_value);
+        }
     }
-    if (field_sort_spec.is_ascending()) {
-        return std::make_unique<StringMapLookupSortBlobWriter<true>>(
-            std::move(stash), keys, values, value_attr, field_sort_spec._converter.get(),
-            field_sort_spec._missing_policy, field_sort_spec._missing_value);
-    }
-    return std::make_unique<StringMapLookupSortBlobWriter<false>>(
-        std::move(stash), keys, values, value_attr, field_sort_spec._converter.get(), field_sort_spec._missing_policy,
-        field_sort_spec._missing_value);
-}
+};
 
 bool is_supported_component(const IAttributeVector& attr, const char* role) {
     if (attr.isImported()) {
-        Issue::report("make_map_lookup_sort_blob_writer: %s attribute vector '%s' is imported, which is not supported",
-                      role, attr.getName().c_str());
+        Issue::report(
+            "make_map_lookup_sort_blob_writer: %s attribute vector '%s' is imported, which is not supported", role,
+            attr.getName().c_str());
         return false;
     }
     if (attr.getCollectionType() != CollectionType::ARRAY) {
@@ -232,29 +248,11 @@ std::unique_ptr<ISortBlobWriter> make_map_lookup_sort_blob_writer(const IAttribu
     StringEnumKeyFinder keys(key_attr, key_view, *field_sort_spec._map_key);
     const auto&         value_mva = *value_attr.as_multi_value_attribute();
     try {
-        switch (value_attr.getBasicType()) {
-        case BasicType::INT8:
-            return make_numeric_writer<int8_t>(stash, keys, value_attr, value_mva, field_sort_spec);
-        case BasicType::INT16:
-            return make_numeric_writer<int16_t>(stash, keys, value_attr, value_mva, field_sort_spec);
-        case BasicType::INT32:
-            return make_numeric_writer<int32_t>(stash, keys, value_attr, value_mva, field_sort_spec);
-        case BasicType::INT64:
-            return make_numeric_writer<int64_t>(stash, keys, value_attr, value_mva, field_sort_spec);
-        case BasicType::FLOAT:
-            return make_numeric_writer<float>(stash, keys, value_attr, value_mva, field_sort_spec);
-        case BasicType::DOUBLE:
-            return make_numeric_writer<double>(stash, keys, value_attr, value_mva, field_sort_spec);
-        case BasicType::STRING:
-            return make_string_writer(stash, keys, value_attr, value_mva, field_sort_spec);
-        default:
-            Issue::report("make_map_lookup_sort_blob_writer: Map value attribute vector '%s' has basic type %s, "
-                          "which is not supported",
-                          value_attr.getName().c_str(), BasicType(value_attr.getBasicType()).asString());
-            return {};
-        }
+        return vespalib::typify_invoke<2, TypifyMapLookupWriter, MakeMapLookupWriter>(
+            value_attr.getBasicType(), field_sort_spec.is_ascending(), std::move(stash), keys, value_attr, value_mva,
+            field_sort_spec);
     } catch (const IllegalArgumentException& e) {
-        Issue::report("make_map_lookup_sort_blob_writer: For attribute vector %s (basic type %s): %s",
+        Issue::report("make_map_lookup_sort_blob_writer: For attribute vector '%s' (basic type %s): %s",
                       value_attr.getName().c_str(), BasicType(value_attr.getBasicType()).asString(), e.message());
         return {};
     }
