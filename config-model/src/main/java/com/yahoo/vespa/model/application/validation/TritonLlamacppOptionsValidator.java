@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Fails the deployment if a GGUF embedder that runs in Triton has options that Triton's llama.cpp backend
- * does not accept. Without this check, the container would fail later, when it loads the model or embeds.
+ * does not accept. Without this check, the GGUF embedder would fail later, when it loads the model or embeds.
  * Validates the generated GgufEmbedderConfig, so that it covers embedders declared with type="gguf-embedder"
  * as well as those declared with the GgufEmbedder class.
  *
@@ -18,8 +18,8 @@ import java.util.List;
  */
 public class TritonLlamacppOptionsValidator implements Validator {
 
-    // llama-server's micro-batch size when none is given.
-    private static final int LLAMA_SERVER_DEFAULT_UBATCH = 512;
+    // llama.cpp's micro-batch size when none is given.
+    private static final int LLAMACPP_DEFAULT_UBATCH = 512;
 
     @Override
     public void validate(Validation.Context context) {
@@ -37,9 +37,10 @@ public class TritonLlamacppOptionsValidator implements Validator {
 
     /**
      * Returns why the llama.cpp backend of Triton would refuse the options, empty if it accepts them.
-     * The backend runs one llama-server slot per parallel sequence (the parallel option), and gives each slot
-     * contextSize / parallel of the context. A slot must hold a whole input, i.e. at least the micro-batch,
-     * and llama-server aborts unless the number of slots divides the micro-batch.
+     * A GGUF embedder in Triton runs parallel model instances, each with contextSize / parallel of the context.
+     * Triton's llama.cpp backend refuses an embedding model whose context per instance is smaller than the
+     * micro-batch, or whose instance count does not divide the micro-batch.
+     * On a host with several GPUs, Triton runs parallel instances per GPU, which this check does not cover.
      */
     static List<String> unsupportedOptions(GgufEmbedderConfig config) {
         var problems = new ArrayList<String>();
@@ -51,7 +52,7 @@ public class TritonLlamacppOptionsValidator implements Validator {
             problems.add("parallel " + parallel + " is below 1");
             return problems;
         }
-        int ubatch = config.physicalMaxBatchSize() > 0 ? config.physicalMaxBatchSize() : LLAMA_SERVER_DEFAULT_UBATCH;
+        int ubatch = config.physicalMaxBatchSize() > 0 ? config.physicalMaxBatchSize() : LLAMACPP_DEFAULT_UBATCH;
         var ubatchSource = config.physicalMaxBatchSize() > 0 ? "physicalMaxBatchSize " + ubatch
                                                              : "llama.cpp's default physicalMaxBatchSize " + ubatch;
         if (config.contextSize() > 0 && config.contextSize() / parallel < ubatch)

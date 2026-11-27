@@ -11,11 +11,12 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Runs GGUF embedding models with llama.cpp in the container, through its Java bindings.
+ * Runs GGUF embedding models with llama.cpp, through its Java bindings.
  * Each evaluator loads its own copy of the model.
  *
  * @author bjorncs
  * @author ingridhabrekke
+ * @author glebashnik
  */
 public class EmbeddedLlamacppRuntime extends AbstractComponent implements LlamacppRuntime {
 

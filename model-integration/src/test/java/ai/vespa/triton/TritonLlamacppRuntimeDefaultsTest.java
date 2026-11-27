@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -20,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests the model configs and names that TritonLlamacppRuntime generates, without Triton.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 class TritonLlamacppRuntimeDefaultsTest {
 
@@ -33,7 +36,7 @@ class TritonLlamacppRuntimeDefaultsTest {
             new LlamacppOptions(1, 0, -1, -1, -1, Optional.empty(), -1, 0, 0, false);
 
     @Test
-    void default_options_give_an_embedding_model_with_one_slot_on_a_gpu_if_there_is_one() throws IOException {
+    void default_options_give_an_embedding_model_with_one_instance_on_a_gpu_if_there_is_one() throws IOException {
         var config = parse(TritonLlamacppRuntime.createModelConfig("model_abc", DEFAULT_OPTIONS));
 
         assertEquals("model_abc", config.getName());
@@ -54,9 +57,9 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertEquals(Map.of("llamacpp.embeddings", "", "llamacpp.n-gpu-layers", "0"), parameters(config));
     }
 
-    // llama-server batches the requests of its slots continuously, so Triton must not batch them as well.
+    // llama.cpp batches concurrent requests continuously, so Triton must not batch them as well.
     @Test
-    void triton_does_not_batch_and_llama_server_batches_continuously() throws IOException {
+    void triton_does_not_batch_and_llamacpp_batches_continuously() throws IOException {
         for (boolean continuousBatching : List.of(false, true)) {
             var options = new LlamacppOptions(4, 8192, 2048, 1024, 0, Optional.empty(), -1, 0, 0, continuousBatching);
             var config = parse(TritonLlamacppRuntime.createModelConfig("model_abc", options));
@@ -79,14 +82,14 @@ class TritonLlamacppRuntimeDefaultsTest {
     }
 
     @Test
-    void options_map_to_llama_server_flags_with_one_slot_per_instance() throws IOException {
+    void options_map_to_llamacpp_flags_with_the_context_per_instance() throws IOException {
         var options = new LlamacppOptions(4, 8192, 2048, 1024, 99, Optional.of(LlamacppOptions.Pooling.LAST), 42, 8, 6, true);
         var config = parse(TritonLlamacppRuntime.createModelConfig("model_abc", options));
 
         assertEquals(4, config.getInstanceGroup(0).getCount());
         assertEquals(Map.of("llamacpp.embeddings", "",
                             "llamacpp.pooling", "last",
-                            "llamacpp.ctx-size", "2048", // The context per slot, 8192 / 4
+                            "llamacpp.ctx-size", "2048", // The context per instance, 8192 / 4
                             "llamacpp.batch-size", "2048",
                             "llamacpp.ubatch-size", "1024",
                             "llamacpp.n-gpu-layers", "99",
@@ -107,6 +110,28 @@ class TritonLlamacppRuntimeDefaultsTest {
         assertEquals(name, TritonLlamacppRuntime.generateModelName(model.toString(), DEFAULT_OPTIONS));
         assertNotEquals(name, TritonLlamacppRuntime.generateModelName(model.toString(), otherOptions));
         assertNotEquals(hashOf(name), hashOf(TritonLlamacppRuntime.generateModelName(otherModel.toString(), DEFAULT_OPTIONS)));
+    }
+
+    // llama.cpp batches continuously by default, so the option changes nothing and must not load the model twice.
+    @Test
+    void model_name_does_not_depend_on_continuous_batching(@TempDir Path directory) throws IOException {
+        var model = Files.writeString(directory.resolve("embedder.gguf"), "model contents");
+        var continuousBatching = new LlamacppOptions(1, 0, -1, -1, -1, Optional.empty(), -1, 0, 0, true);
+
+        assertEquals(TritonLlamacppRuntime.generateModelName(model.toString(), DEFAULT_OPTIONS),
+                     TritonLlamacppRuntime.generateModelName(model.toString(), continuousBatching));
+    }
+
+    @Test
+    void model_name_has_only_ascii_characters(@TempDir Path directory) throws IOException {
+        // The JVM can only create a file with a non-ASCII name when it encodes file names in UTF-8.
+        assumeTrue("UTF-8".equalsIgnoreCase(System.getProperty("sun.jnu.encoding")));
+        var model = Files.writeString(directory.resolve("модель вложений-ü".repeat(4) + ".gguf"), "model contents");
+
+        var name = TritonLlamacppRuntime.generateModelName(model.toString(), DEFAULT_OPTIONS);
+        assertTrue(name.matches("[A-Za-z0-9._-]+_[0-9a-f]+"), name);
+        assertEquals(name.length(), name.getBytes(StandardCharsets.UTF_8).length);
+        assertTrue(name.startsWith("_".repeat(15) + "-_"), name);
     }
 
     @Test

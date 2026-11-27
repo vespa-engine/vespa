@@ -2,12 +2,12 @@
 package ai.vespa.modelintegration.llamacpp;
 
 /**
- * Runs GGUF embedding models with llama.cpp, either in the container (EmbeddedLlamacppRuntime)
- * or in a Triton Inference Server sidecar (TritonLlamacppRuntime).
+ * Runs GGUF embedding models with llama.cpp, either through its Java bindings (EmbeddedLlamacppRuntime)
+ * or in Triton Inference Server (TritonLlamacppRuntime).
  * The counterpart of OnnxRuntime for GGUF models.
- * The config model adds exactly one of them to each container cluster, as it does for OnnxRuntime.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 public interface LlamacppRuntime {
 

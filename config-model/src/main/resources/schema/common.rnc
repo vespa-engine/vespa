@@ -226,7 +226,7 @@ OnnxBatchingParams =
         attribute padding-buckets { list { xsd:positiveInteger+ } }?
     }?
 
-EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "last" | "none" | "rank" }?
+EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "last" | "none" }?
 
 EmbedderQuantization = element quantization { "auto" | "float" | "int8" | "binary" }?
 

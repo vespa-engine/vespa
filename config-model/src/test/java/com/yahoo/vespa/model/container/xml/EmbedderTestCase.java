@@ -401,12 +401,13 @@ public class EmbedderTestCase {
                      exception.getMessage());
     }
 
+    // A GGUF embedder with rank pooling returns a vector of zeros, with either llama.cpp runtime.
     @Test
-    void huggingfaceEmbedderRejectsRankPoolingStrategy() {
+    void ggufEmbedderRejectsRankPoolingStrategy() {
         var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_hf_rank_pooling/").create());
-        assertEquals("Unsupported pooling-strategy 'rank' for hugging-face-embedder, supported values are [cls, mean, last, none]",
-                     exception.getMessage());
+                                     () -> new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_gguf_rank_pooling/").create());
+        assertTrue(exception.getMessage().startsWith("Invalid XML according to XML schema"), exception.getMessage());
+        assertTrue(exception.getMessage().contains("<pooling-strategy>rank</pooling-strategy>"), exception.getMessage());
     }
 
     @Test

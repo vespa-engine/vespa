@@ -42,8 +42,8 @@ class TritonOnnxAndLlamacppTest {
             "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0.0, 0.0, 0.0, 0.0, 0.0]"));
     private static final String TEXT = "This is a test";
 
-    // Two slots, so llama-server runs two requests concurrently;
-    // each slot (1024/2) holds a whole micro-batch (256), as the backend requires.
+    // Two instances, so Triton runs two llama.cpp requests at once;
+    // the context of each (1024/2) holds a whole micro-batch (256), as the backend requires.
     private static final LlamacppOptions LLAMACPP_OPTIONS =
             new LlamacppOptions(2, 1024, -1, 256, -1, Optional.of(LlamacppOptions.Pooling.MEAN), -1, 0, 0, false);
 
@@ -61,7 +61,7 @@ class TritonOnnxAndLlamacppTest {
         if (tritonContainer != null) tritonContainer.stop();
     }
 
-    // Triton batches the ONNX requests dynamically, while llama-server batches the llama.cpp requests.
+    // Triton batches the ONNX requests dynamically, while llama.cpp batches its requests continuously.
     @Test
     void serves_onnx_and_llamacpp_models_at_the_same_time() throws Exception {
         var onnxRuntime = new TritonOnnxRuntime(config());

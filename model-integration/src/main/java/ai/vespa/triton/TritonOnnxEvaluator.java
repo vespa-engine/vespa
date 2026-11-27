@@ -33,7 +33,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final ResourceReference modelReference;
     private final TritonOnnxClient onnxClient;
     private final TritonModelRepositoryClient repositoryClient;
-    private final boolean isExplicitControl;
+    private final boolean isModelControlExplicit;
     private final Optional<OnnxPoolingOptions> runtimePooling;
 
     private TritonOnnxClient.ModelMetadata modelMetadata;
@@ -43,13 +43,13 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             ResourceReference modelReference,
             TritonOnnxClient onnxClient,
             TritonModelRepositoryClient repositoryClient,
-            boolean isExplicitControl,
+            boolean isModelControlExplicit,
             Optional<OnnxPoolingOptions> runtimePooling) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.onnxClient = onnxClient;
         this.repositoryClient = repositoryClient;
-        this.isExplicitControl = isExplicitControl;
+        this.isModelControlExplicit = isModelControlExplicit;
         this.runtimePooling = runtimePooling;
         modelMetadata = onnxClient.getModelMetadata(modelName);
         runtimePooling.ifPresent(this::requirePooled);
@@ -88,7 +88,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         try {
             return onnxClient.evaluate(modelName, modelMetadata, inputs, deadline);
         } catch (TritonException e) {
-            if (!isExplicitControl) {
+            if (!isModelControlExplicit) {
                 throw e;
             }
 

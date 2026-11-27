@@ -17,11 +17,7 @@ import static com.yahoo.vespa.model.container.component.EmbedderPrependConfig.pa
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.GGUF_MODEL;
 
 /**
- * The gguf-embedder component type, which embeds text with a GGUF model through llama.cpp.
- * The transformer-model element sets embeddingModel, max-tokens sets maxPromptTokens, pooling-strategy sets poolingType,
- * and prepend sets prependQuery and prependDocument.
- * Each other element sets the gguf-embedder config field of the same name in camel case.
- * An element that is not given leaves the config field's default.
+ * Configuration builder for the GGUF embedder component, which embeds text with a GGUF model through llama.cpp.
  *
  * @author ingridhabrekke
  * @author glebashnik

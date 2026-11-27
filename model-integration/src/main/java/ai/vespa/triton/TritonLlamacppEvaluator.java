@@ -12,9 +12,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A GGUF embedding model that llama.cpp serves in Triton.
+ * A llama.cpp evaluator that uses Triton server for inference.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 class TritonLlamacppEvaluator implements LlamacppEvaluator {
 
@@ -24,15 +25,15 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
     private final ResourceReference modelReference;
     private final TritonLlamacppClient llamacppClient;
     private final TritonModelRepositoryClient repositoryClient;
-    private final boolean isExplicitControl;
+    private final boolean isModelControlExplicit;
 
     TritonLlamacppEvaluator(String modelName, ResourceReference modelReference, TritonLlamacppClient llamacppClient,
-                         TritonModelRepositoryClient repositoryClient, boolean isExplicitControl) {
+                         TritonModelRepositoryClient repositoryClient, boolean isModelControlExplicit) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.llamacppClient = llamacppClient;
         this.repositoryClient = repositoryClient;
-        this.isExplicitControl = isExplicitControl;
+        this.isModelControlExplicit = isModelControlExplicit;
     }
 
     @Override
@@ -53,16 +54,14 @@ class TritonLlamacppEvaluator implements LlamacppEvaluator {
     /**
      * Retries once after loading the model again if Triton no longer has it, e.g. after Triton restarted.
      * Triton's OpenAI frontend does not report a model it does not have with a distinct status,
-     * so this asks Triton after any failure other than invalid input and timeouts.
-     * A model that Triton has, but whose llama-server is restarting, is not reloaded:
-     * the backend restarts llama-server itself.
+     * so this asks Triton after any failure other than invalid input, timeouts and overload.
      * The retry keeps the request's deadline, so a retry after a slow reload times out.
      */
     private <T> T withReload(Supplier<T> request) {
         try {
             return request.get();
         } catch (TritonException e) {
-            if ( ! isExplicitControl || isModelReady()) throw e;
+            if ( ! isModelControlExplicit || isModelReady()) throw e;
 
             log.log(Level.WARNING, "Failed to run llama.cpp model " + modelName + " in Triton, will retry after reload.", e);
             repositoryClient.loadUntilModelReady(modelName);

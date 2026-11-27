@@ -42,15 +42,13 @@ import java.util.logging.Logger;
  *
  * Models are managed like in {@link TritonOnnxRuntime}: in EXPLICIT model control mode, each model is copied to the
  * model repository with a generated config, loaded through Triton's KServe gRPC API, and reference counted by its
- * evaluators. Inference goes through Triton's OpenAI-compatible frontend, which relays it to the model's
- * llama-server, since Triton's KServe interface for llama.cpp has no tokenization.
+ * evaluators. Inference goes through Triton's OpenAI-compatible frontend.
  *
- * This runtime and TritonOnnxRuntime share Triton and its model repository, so each cleans up only its own leftovers,
- * telling the models apart by the backend in their configs, see {@link #isLlamacppModel}.
- * There should be only one instance, as for TritonOnnxRuntime, enforced by
- * RestartOnDeployForTritonRuntimeValidator.
+ * There should be only one instance at a time, since in EXPLICIT model control mode, a new instance unloads
+ * the llama.cpp models in the repository, also those that another instance still uses.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 public class TritonLlamacppRuntime extends AbstractComponent implements LlamacppRuntime {
 
@@ -59,14 +57,15 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     static final String BACKEND = "llamacpp";
     private static final String MODEL_FILE_NAME = "model.gguf";
     private static final String CONFIG_FILE_NAME = "config.pbtxt";
-    // Each llamacpp.<flag> parameter becomes the llama-server flag --<flag>, an empty value a switch.
+    // Each llamacpp.<flag> parameter sets the llama.cpp option --<flag>, an empty value a switch.
     private static final String FLAG_PREFIX = "llamacpp.";
-    // The llama.cpp backend binds a Unix socket at a path that contains the model name, and Linux limits such a path
-    // to 107 bytes. A model name keeps at most this many characters of the file name, so that it fits in that path.
+    // Triton's llama.cpp backend fails to load a model whose name is longer than about 80 bytes.
+    // A model name keeps at most this many characters of the file name, each one byte, since a non-ASCII
+    // character takes several bytes in UTF-8.
     static final int MAX_BASE_NAME_LENGTH = 40;
 
-    private final TritonModelRepositoryClient repositoryClient;
     private final TritonLlamacppClient llamacppClient;
+    private final TritonModelRepositoryClient repositoryClient;
     private final boolean isModelControlExplicit;
     private final Path modelRepositoryPath;
 
@@ -76,13 +75,13 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
 
     @Inject
     public TritonLlamacppRuntime(TritonConfig config) {
-        this(config, new TritonModelRepositoryClient(config), new TritonLlamacppClient(config));
+        this(config, new TritonLlamacppClient(config), new TritonModelRepositoryClient(config));
     }
 
     // Takes ownership of the clients: deconstruct() closes them.
-    TritonLlamacppRuntime(TritonConfig config, TritonModelRepositoryClient repositoryClient, TritonLlamacppClient llamacppClient) {
-        this.repositoryClient = repositoryClient;
+    TritonLlamacppRuntime(TritonConfig config, TritonLlamacppClient llamacppClient, TritonModelRepositoryClient repositoryClient) {
         this.llamacppClient = llamacppClient;
+        this.repositoryClient = repositoryClient;
         this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         this.modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
         log.info("Creating Triton llama.cpp runtime with endpoint " + config.llamacppEndpoint());
@@ -154,17 +153,20 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
             log.log(Level.WARNING, e, () -> "Failed to unload model " + modelName + ", keeping its files");
             return;
         }
-        deleteModelDir(modelRepositoryPath.resolve(modelName));
+        deleteModelFilesFromModelRepository(modelName);
     }
 
     // Best-effort cleanup of the llama.cpp models left by a previous process. TritonOnnxRuntime cleans up the others.
     private void cleanUpLeftovers() {
         try {
-            repositoryClient.unloadModels(modelName -> isLlamacppModel(modelRepositoryPath.resolve(modelName)));
+            repositoryClient.unloadModels(modelName -> isLlamacppModel(getModelDirInModelRepository(modelName)));
+            deleteAllModelFilesFromModelRepository();
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, () -> "Skipped unloading leftover llama.cpp models: " + Exceptions.toMessageString(e));
-            return; // The models may still be loaded, so keep their files
+            log.log(Level.WARNING, () -> "Skipped cleaning up leftover llama.cpp models: " + Exceptions.toMessageString(e));
         }
+    }
+
+    private void deleteAllModelFilesFromModelRepository() {
         if ( ! Files.exists(modelRepositoryPath)) return;
         try (var modelDirs = Files.list(modelRepositoryPath)) {
             modelDirs.filter(TritonLlamacppRuntime::isLlamacppModel).forEach(modelDir -> {
@@ -172,7 +174,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
                 deleteModelDir(modelDir);
             });
         } catch (IOException e) {
-            log.log(Level.WARNING, e, () -> "Failed to list files in Triton model repository: " + modelRepositoryPath);
+            log.log(Level.SEVERE, e, () -> "Failed to list files in Triton model repository: " + modelRepositoryPath);
         }
     }
 
@@ -196,7 +198,8 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     static String generateModelName(String modelPath, LlamacppOptions options) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var extensionIndex = fileName.lastIndexOf('.');
-        var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
+        var baseName = (extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex))
+                .replaceAll("[^A-Za-z0-9._-]", "_");
         if (baseName.length() > MAX_BASE_NAME_LENGTH) baseName = baseName.substring(0, MAX_BASE_NAME_LENGTH);
         var identity = ByteBuffer.allocate(2 * Long.BYTES)
                 .putLong(ModelPathOrData.of(modelPath).calculateHash())
@@ -214,8 +217,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
                        ", pooling=" + options.pooling().map(Enum::name).orElse("") +
                        ", seed=" + options.seed() +
                        ", threads=" + options.threads() +
-                       ", batchThreads=" + options.batchThreads() +
-                       ", continuousBatching=" + options.continuousBatching() + "]";
+                       ", batchThreads=" + options.batchThreads() + "]";
         return hash(encoding.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -225,11 +227,11 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
 
     /**
      * Returns the Triton model config of an embedding model with the given options.
-     * The backend runs one llama-server per model with one slot per model instance, so concurrency comes from
-     * the instance count. The backend's ctx-size is per slot, while contextSize is the total for all slots,
+     * Each model instance serves one request at a time, so the instance count is parallel.
+     * The backend's ctx-size is the context of one instance, while contextSize is the total for all instances,
      * as in the embedded runtime, so it is divided by parallel.
-     * Values the options leave unset are left to llama-server. For the GPU layers, that means offloading the
-     * model to a GPU if there is one, as for ONNX models, while 0 means CPU only.
+     * Values the options leave unset are left to llama.cpp. For the GPU layers, that means using a GPU
+     * if there is one, while 0 means no layers on a GPU.
      */
     static String createModelConfig(String modelName, LlamacppOptions options) {
         var builder = ModelConfig.newBuilder()
@@ -250,12 +252,11 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
     }
 
     /**
-     * One instance per llama-server slot. llama-server chooses the GPU itself, so the kind only affects how
-     * Triton reports the instances, e.g. the gpu_uuid label of its metrics.
+     * The kind does not decide whether llama.cpp uses a GPU; the GPU layers do.
      * A model that may use a GPU gets KIND_AUTO, which Triton resolves to KIND_GPU on a host with a GPU, and to
-     * KIND_CPU otherwise. The group cannot be pinned to GPU 0, since Triton rejects
-     * a GPU list when the kind resolves to KIND_CPU. As a consequence, on a host with several GPUs, Triton creates
-     * the instance count per GPU, i.e. more slots.
+     * KIND_CPU otherwise. The group cannot be pinned to GPU 0, since Triton rejects a GPU list when the kind
+     * resolves to KIND_CPU. As a consequence, on a host with several GPUs, Triton creates the instance count
+     * per GPU.
      */
     private static ModelInstanceGroup instanceGroup(LlamacppOptions options) {
         var group = ModelInstanceGroup.newBuilder().setCount(options.parallel());
@@ -271,7 +272,7 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
      * The config is written first, see {@link #isLlamacppModel}.
      */
     private void copyModelFilesToModelRepository(String modelName, String modelPath, String modelConfig) {
-        var modelDirPath = modelRepositoryPath.resolve(modelName);
+        var modelDirPath = getModelDirInModelRepository(modelName);
         var modelVersionPath = modelDirPath.resolve("1");
         var modelFilePath = modelVersionPath.resolve(MODEL_FILE_NAME);
         var modelConfigPath = modelDirPath.resolve(CONFIG_FILE_NAME);
@@ -286,6 +287,14 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
+    }
+
+    private Path getModelDirInModelRepository(String modelName) {
+        return modelRepositoryPath.resolve(modelName);
+    }
+
+    private void deleteModelFilesFromModelRepository(String modelName) {
+        deleteModelDir(getModelDirInModelRepository(modelName));
     }
 
     private static void deleteModelDir(Path modelDir) {
@@ -308,8 +317,11 @@ public class TritonLlamacppRuntime extends AbstractComponent implements Llamacpp
                 return null;
             });
         }
-        llamacppClient.close();
-        repositoryClient.close();
+        try {
+            llamacppClient.close();
+        } finally {
+            repositoryClient.close();
+        }
     }
 
 }

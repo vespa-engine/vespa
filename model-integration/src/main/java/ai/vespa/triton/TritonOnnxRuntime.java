@@ -55,8 +55,8 @@ import java.util.logging.Logger;
 /**
  * ONNX Runtime implementation that uses Triton Inference Server for inference.
  * It is responsible for managing model repository and owns reference-counted models loaded in Triton.
- * There should be only one instance of TritonOnnxRuntime component, enforced by
- * RestartOnDeployForTritonRuntimeValidator.
+ * There should be only one instance at a time, since in EXPLICIT model control mode, a new instance unloads
+ * the ONNX models in the repository, also those that another instance still uses.
  *
  * @author bjorncs
  * @author glebashnik
@@ -360,7 +360,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Leaves the llama.cpp models to TritonLlamacppRuntime, which shares Triton and the model repository.
     private void cleanUpLeftovers() {
         try {
-            repositoryClient.unloadModels(modelName -> ! TritonLlamacppRuntime.isLlamacppModel(modelRepositoryPath.resolve(modelName)));
+            repositoryClient.unloadModels(modelName -> ! TritonLlamacppRuntime.isLlamacppModel(getModelDirInModelRepository(modelName)));
             deleteAllModelFilesFromModelRepository();
         } catch (RuntimeException e) {
             // Triton may be down or not needed at all (no ONNX models in the app).

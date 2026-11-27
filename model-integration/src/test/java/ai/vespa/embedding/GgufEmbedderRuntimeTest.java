@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests GgufEmbedder with a fake llama.cpp runtime, i.e. what it does regardless of where the model runs.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 class GgufEmbedderRuntimeTest {
 

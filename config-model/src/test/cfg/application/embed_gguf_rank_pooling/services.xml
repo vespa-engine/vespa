@@ -2,9 +2,8 @@
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
   <container id="container" version="1.0">
-    <component id="hf-embedder" type="hugging-face-embedder">
-      <transformer-model url="https://my/url/model.onnx"/>
-      <tokenizer-model url="https://my/url/tokenizer.json"/>
+    <component id="gguf" type="gguf-embedder">
+      <transformer-model url="https://my/url/model.gguf"/>
       <pooling-strategy>rank</pooling-strategy>
     </component>
     <nodes>

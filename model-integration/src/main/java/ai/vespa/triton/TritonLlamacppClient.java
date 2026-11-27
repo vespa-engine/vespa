@@ -22,10 +22,11 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Client of Triton's OpenAI-compatible frontend, which relays requests for a llama.cpp model
- * to the model's llama-server. Model management goes through {@link TritonModelRepositoryClient}.
+ * Client of Triton's OpenAI-compatible frontend, for llama.cpp models.
+ * Model management goes through {@link TritonModelRepositoryClient}.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 class TritonLlamacppClient implements AutoCloseable {
 
@@ -51,10 +52,6 @@ class TritonLlamacppClient implements AutoCloseable {
                 .build();
     }
 
-    /**
-     * Returns the model's embedding of the text.
-     * llama-server normalizes pooled embeddings to unit length (L2) by default, as LlamacppEvaluator.embed requires.
-     */
     float[] embed(String modelName, String text, Optional<Instant> deadline) {
         var response = post("/v1/embeddings", Map.of("model", modelName, "input", new String[] { text }), deadline);
         var embedding = response.path("data").path(0).path("embedding");
@@ -68,7 +65,7 @@ class TritonLlamacppClient implements AutoCloseable {
 
     /** Returns the model's token ids of the text, without special tokens. */
     int[] tokenize(String modelName, String text, Optional<Instant> deadline) {
-        // Triton's frontend routes the request by the model name. llama-server itself ignores it.
+        // Triton's frontend routes the request by the model name.
         var response = post("/tokenize", Map.of("model", modelName, "content", text, "add_special", false), deadline);
         var tokens = response.path("tokens");
         if ( ! tokens.isArray())
@@ -90,9 +87,9 @@ class TritonLlamacppClient implements AutoCloseable {
     /**
      * Posts the body as JSON and returns the response.
      *
-     * @throws InvalidInputException if llama-server rejects the input, e.g. because it is longer than the context
+     * @throws InvalidInputException if llama.cpp rejects the input, e.g. because it is longer than the context
      * @throws TimeoutException if the deadline passes
-     * @throws OverloadException if Triton or llama-server is loading or restarting the model, which is temporary
+     * @throws OverloadException if Triton is loading or restarting the model, which is temporary
      * @throws TritonException on any other failure, e.g. a model that Triton has not loaded
      */
     private JsonNode post(String path, Map<String, Object> body, Optional<Instant> deadline) {
@@ -105,24 +102,29 @@ class TritonLlamacppClient implements AutoCloseable {
                 .post(RequestBody.create(toJson(body), JSON))
                 .build();
         var call = httpClient.newCall(request);
-        call.timeout().timeout(effectiveTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        var timeoutMillis = effectiveTimeout.toMillis();
+        call.timeout().timeout(timeoutMillis, TimeUnit.MILLISECONDS);
+        var startNanos = System.nanoTime();
 
         try (var response = call.execute()) {
             var responseBody = response.body() != null ? response.body().string() : "";
             if (response.isSuccessful()) return objectMapper.readTree(responseBody);
-            // 503: llama-server is loading or restarting.
-            // 400, or 500 "too large to process", with {"error": {"message": ...}}: llama-server rejects the input.
-            // 400 with {"detail": ...}: Triton's own error, e.g. an unknown model, which the evaluator reloads.
+            // 503: Triton is loading or restarting the model.
+            // 400, or 500 "too large to process", with {"error": {"message": ...}}: llama.cpp rejects the input.
+            // 400 with {"detail": ...}: Triton's own error, e.g. an unknown model.
             if (response.code() == 503)
                 throw new OverloadException("llama.cpp in Triton is unavailable, e.g. while loading or restarting the model: " + responseBody);
-            var message = llamaServerErrorMessage(responseBody);
+            var message = llamacppErrorMessage(responseBody);
             if (message.isPresent() &&
                 (response.code() == 400 || (response.code() == 500 && message.get().contains("too large to process"))))
                 throw new InvalidInputException("llama.cpp in Triton rejected the input: " + message.get());
             throw new TritonException(
                     "Request to " + path + " failed with status " + response.code() + ": " + responseBody);
         } catch (InterruptedIOException e) {
-            throw new TimeoutException("Request to " + path + " timed out after " + effectiveTimeout.toMillis() + " ms", e);
+            // OkHttp throws this when the call timeout passes, and also on a connect timeout or an interrupt.
+            if (System.nanoTime() - startNanos >= TimeUnit.MILLISECONDS.toNanos(timeoutMillis))
+                throw new TimeoutException("Request to " + path + " timed out after " + timeoutMillis + " ms", e);
+            throw new TritonException("Request to " + path + " failed: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new TritonException("Request to " + path + " failed: " + e.getMessage(), e);
         }
@@ -136,8 +138,7 @@ class TritonLlamacppClient implements AutoCloseable {
         }
     }
 
-    /** Returns the message of an OpenAI-style error from llama-server, or empty if the body is not one. */
-    private static Optional<String> llamaServerErrorMessage(String body) {
+    private static Optional<String> llamacppErrorMessage(String body) {
         try {
             var message = objectMapper.readTree(body).path("error").path("message");
             return message.isTextual() ? Optional.of(message.asText()) : Optional.empty();

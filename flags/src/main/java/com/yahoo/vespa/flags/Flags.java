@@ -172,8 +172,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
-            List.of("glebashnik"), "2025-04-30", "2026-12-01",
-            "Whether to use Triton as ONNX runtime",
+            List.of("glebashnik"), "2025-04-30", "2027-03-01",
+            "Whether to run ONNX models and GGUF embedders in Triton",
             "Takes effect at redeployment (requires restart)",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );

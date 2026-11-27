@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 /**
  * Embedder using GGUF file format through llama.cpp.
- * The injected LlamacppRuntime runs the model, in the container or in a Triton Inference Server sidecar.
+ * The injected LlamacppRuntime runs the model, through llama.cpp's Java bindings or in Triton Inference Server.
  *
  * @author bjorncs
  */

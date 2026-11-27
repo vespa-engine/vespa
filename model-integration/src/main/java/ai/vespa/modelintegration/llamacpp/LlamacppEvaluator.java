@@ -6,9 +6,10 @@ import java.util.Optional;
 
 /**
  * A GGUF embedding model loaded by a {@link LlamacppRuntime}.
- * An empty deadline means the runtime's default timeout; a runtime in the container ignores the deadline.
+ * An empty deadline means the runtime's default timeout; {@link EmbeddedLlamacppRuntime} ignores the deadline.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 public interface LlamacppEvaluator extends AutoCloseable {
 

@@ -73,8 +73,7 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
     public static TritonServerContainer withLlamacpp() throws IOException {
         var container = new TritonServerContainer();
         container.addExposedPort(OPENAI_PORT);
-        // OpenAI requests reach llama.cpp through Triton's Python backend, whose shared memory in /dev/shm
-        // must hold the largest bodies of every instance; the container default of 64 MiB is too small.
+        // Triton's llama.cpp backend needs more shared memory in /dev/shm than the container default of 64 MiB.
         container.withSharedMemorySize(1024L * 1024 * 1024);
         return container;
     }

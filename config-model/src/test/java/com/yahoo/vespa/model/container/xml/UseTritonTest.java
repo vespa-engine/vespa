@@ -230,14 +230,14 @@ public class UseTritonTest {
     @Test
     void cluster_with_onnx_embedder_uses_triton(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), EMBEDDER_SERVICES);
-        assertUsesTriton(containerCluster(appDir));
+        assertUsesTritonForOnnx(containerCluster(appDir));
     }
 
     @Test
     void cluster_with_model_evaluation_onnx_model_uses_triton(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), MODEL_EVALUATION_SERVICES);
         copy(TEST_APP.resolve("models/mul.onnx"), appDir.resolve("models/mul.onnx"));
-        assertUsesTriton(containerCluster(appDir));
+        assertUsesTritonForOnnx(containerCluster(appDir));
     }
 
     @Test
@@ -245,7 +245,7 @@ public class UseTritonTest {
         write(appDir.resolve("services.xml"), GLOBAL_PHASE_SERVICES);
         write(appDir.resolve("schemas/test.sd"), GLOBAL_PHASE_SCHEMA);
         copy(TEST_APP.resolve("files/add.onnx"), appDir.resolve("files/add.onnx"));
-        assertUsesTriton(containerCluster(appDir));
+        assertUsesTritonForOnnx(containerCluster(appDir));
     }
 
     @Test
@@ -253,7 +253,7 @@ public class UseTritonTest {
         write(appDir.resolve("services.xml"), GLOBAL_PHASE_SERVICES);
         write(appDir.resolve("schemas/test.sd"), INHERITED_GLOBAL_PHASE_SCHEMA);
         copy(TEST_APP.resolve("files/add.onnx"), appDir.resolve("files/add.onnx"));
-        assertUsesTriton(containerCluster(appDir));
+        assertUsesTritonForOnnx(containerCluster(appDir));
     }
 
     @Test
@@ -279,9 +279,9 @@ public class UseTritonTest {
     void cluster_with_gguf_embedder_runs_it_in_triton(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), GGUF_EMBEDDER_SERVICES);
         var cluster = containerCluster(appDir);
-        // Gets the sidecar, but the ONNX runtime stays in the container, since there are no ONNX models
+        // Gets the sidecar, but keeps the embedded ONNX runtime, since there are no ONNX models
         assertEquals(List.of(TRITON_SIDECAR), cluster.getSpec().sidecars());
-        assertFalse(hasTritonRuntime(cluster));
+        assertFalse(hasTritonOnnxRuntime(cluster));
         assertTrue(cluster.usesTritonForLlamacpp());
         assertEquals(Set.of(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
         assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
@@ -301,14 +301,14 @@ public class UseTritonTest {
     void cluster_with_gguf_and_onnx_embedders_runs_both_in_triton(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), GGUF_AND_ONNX_EMBEDDER_SERVICES);
         var cluster = containerCluster(appDir);
-        assertUsesTriton(cluster);
+        assertUsesTritonForOnnx(cluster);
         assertTrue(cluster.usesTritonForLlamacpp());
         assertEquals(Set.of(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
         assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_ONNX_CAPABILITY, TRITON_LLAMACPP_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
     }
 
     @Test
-    void cluster_with_gguf_embedder_runs_it_in_the_container_without_triton(@TempDir Path appDir) {
+    void cluster_with_gguf_embedder_runs_it_embedded_without_triton(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), GGUF_EMBEDDER_SERVICES);
         var cluster = containerCluster(appDir, false);
         assertDoesNotUseTriton(cluster);
@@ -317,10 +317,10 @@ public class UseTritonTest {
     }
 
     @Test
-    void cluster_with_onnx_embedder_runs_llamacpp_in_the_container(@TempDir Path appDir) {
+    void cluster_with_onnx_embedder_has_the_embedded_llamacpp_runtime(@TempDir Path appDir) {
         write(appDir.resolve("services.xml"), EMBEDDER_SERVICES);
         var cluster = containerCluster(appDir);
-        assertUsesTriton(cluster);
+        assertUsesTritonForOnnx(cluster);
         assertFalse(cluster.usesTritonForLlamacpp());
         assertEquals(Set.of(ContainerModelEvaluation.EMBEDDED_LLAMACPP_RUNTIME_CLASS), llamacppRuntimes(cluster));
         assertEquals(Map.of(TRITON_SIDECAR_NAME, Set.of(TRITON_ONNX_CAPABILITY)), sidecarProvider.sidecarNamesWithCapabilities);
@@ -343,17 +343,18 @@ public class UseTritonTest {
                       .collect(Collectors.toSet());
     }
 
-    private static void assertUsesTriton(ApplicationContainerCluster cluster) {
+    private static void assertUsesTritonForOnnx(ApplicationContainerCluster cluster) {
         assertEquals(List.of(TRITON_SIDECAR), cluster.getSpec().sidecars());
-        assertTrue(hasTritonRuntime(cluster));
+        assertTrue(hasTritonOnnxRuntime(cluster));
     }
 
     private static void assertDoesNotUseTriton(ApplicationContainerCluster cluster) {
         assertEquals(List.of(), cluster.getSpec().sidecars());
-        assertFalse(hasTritonRuntime(cluster));
+        assertFalse(hasTritonOnnxRuntime(cluster));
+        assertFalse(llamacppRuntimes(cluster).contains(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS));
     }
 
-    private static boolean hasTritonRuntime(ApplicationContainerCluster cluster) {
+    private static boolean hasTritonOnnxRuntime(ApplicationContainerCluster cluster) {
         return cluster.getComponentsMap().containsKey(ComponentId.fromString(ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS));
     }
 

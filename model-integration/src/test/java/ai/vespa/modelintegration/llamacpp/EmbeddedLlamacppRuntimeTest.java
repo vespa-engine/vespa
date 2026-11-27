@@ -26,7 +26,7 @@ class EmbeddedLlamacppRuntimeTest {
     }
 
     @Test
-    void zero_gpu_layers_run_the_model_on_cpu() {
+    void zero_gpu_layers_put_no_layers_on_a_gpu() {
         assertEquals("0", gpuLayersOf(argumentsOf(0)));
     }
 

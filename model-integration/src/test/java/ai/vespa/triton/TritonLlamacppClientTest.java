@@ -23,10 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests the requests TritonLlamacppClient sends and how it reads llama-server's responses and errors.
- * The response bodies are as llama-server returns them through Triton's OpenAI frontend.
+ * Tests the requests TritonLlamacppClient sends, and how it reads the responses and errors of Triton's
+ * OpenAI-compatible frontend for llama.cpp models.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 class TritonLlamacppClientTest {
 
@@ -49,7 +50,7 @@ class TritonLlamacppClientTest {
     }
 
     @Test
-    void embeds_one_text_with_llama_servers_default_normalization() throws Exception {
+    void embeds_one_text_with_llamacpps_default_normalization() throws Exception {
         server.enqueue(json(200, """
                 {"model":"m","object":"list","usage":{"prompt_tokens":2,"total_tokens":2},
                  "data":[{"embedding":[-1.5,1.25,0.5],"index":0,"object":"embedding"}]}"""));
@@ -89,7 +90,7 @@ class TritonLlamacppClientTest {
     }
 
     @Test
-    void input_rejected_by_llama_server_is_invalid_input() {
+    void input_rejected_by_llamacpp_is_invalid_input() {
         server.enqueue(json(400, """
                 {"error":{"code":400,"message":"request (23891 tokens) exceeds the available context size (4096 tokens), try increasing it",
                  "type":"exceed_context_size_error","n_prompt_tokens":23891,"n_ctx":4096}}"""));
@@ -135,7 +136,7 @@ class TritonLlamacppClientTest {
 
     @Test
     void unavailable_engine_is_overload() {
-        // The backend answers 503 while it loads or restarts llama-server, e.g. in its backoff after a crash.
+        // Triton answers 503 while it loads or restarts the model.
         server.enqueue(json(503, "{\"error\":{\"code\":503,\"message\":\"Loading model\",\"type\":\"unavailable_error\"}}"));
 
         assertThrows(OverloadException.class, () -> client.embed("m", "text", Optional.empty()));
@@ -151,7 +152,22 @@ class TritonLlamacppClientTest {
     void slow_response_times_out() {
         server.enqueue(json(200, "{\"tokens\":[1]}").setHeadersDelay(2, TimeUnit.SECONDS));
 
-        assertThrows(TimeoutException.class, () -> client.tokenize("m", "text", Optional.of(Instant.now().plusMillis(200))));
+        var exception = assertThrows(TimeoutException.class,
+                                     () -> client.tokenize("m", "text", Optional.of(Instant.now().plusMillis(200))));
+        assertTrue(exception.getMessage().startsWith("Request to /tokenize timed out after "), exception.getMessage());
+    }
+
+    @Test
+    void interrupted_request_is_a_triton_failure() {
+        server.enqueue(json(200, "{\"tokens\":[1]}"));
+        Thread.currentThread().interrupt();
+        try {
+            var exception = assertThrows(TritonException.class,
+                                         () -> client.tokenize("m", "text", Optional.of(Instant.now().plusSeconds(60))));
+            assertEquals("Request to /tokenize failed: interrupted", exception.getMessage());
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     private static MockResponse json(int code, String body) {

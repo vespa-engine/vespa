@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /**
  * How llama.cpp runs a GGUF embedding model. A value that is not positive leaves llama.cpp's default,
- * except gpuLayers, where 0 means CPU only, and seed, where a negative value means a random seed.
+ * except gpuLayers, where 0 means no layers on a GPU, and seed, where a negative value means a random seed.
  *
  * @param parallel the number of sequences decoded in parallel, at least 1
  * @param contextSize the total context size shared by the parallel sequences, 0 to use the model's
@@ -17,9 +17,11 @@ import java.util.Optional;
  * @param seed the random number generator seed
  * @param threads the number of threads used for a micro-batch of one token
  * @param batchThreads the number of threads used for a micro-batch of several tokens
- * @param continuousBatching whether to batch sequences continuously
+ * @param continuousBatching whether to batch sequences continuously, which has no effect, since llama.cpp
+ *                           batches sequences continuously by default
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 public record LlamacppOptions(int parallel, int contextSize, int logicalMaxBatchSize, int physicalMaxBatchSize,
                            int gpuLayers, Optional<Pooling> pooling, int seed, int threads, int batchThreads,

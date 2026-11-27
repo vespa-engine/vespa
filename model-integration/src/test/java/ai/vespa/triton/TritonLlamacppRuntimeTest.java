@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * -DVESPA_USE_TRITON=true -DVESPA_TRITON_IMAGE=<image with llamacpp in its name>
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 @EnabledIfSystemProperty(named = "VESPA_USE_TRITON", matches = "true")
 @ExtendWith(ContainerEnvironmentAvailableCondition.class)
@@ -40,7 +41,7 @@ class TritonLlamacppRuntimeTest {
 
     // Each test uses its own seed, and thereby model name: under Podman on macOS, Triton may not see a model
     // directory that is deleted and created again with the same name.
-    // The test model has no pooling by default, but llama-server's OpenAI embeddings endpoint requires pooling,
+    // The test model has no pooling by default, but Triton's OpenAI embeddings endpoint requires pooling,
     // so the options set MEAN.
     private static LlamacppOptions options(int seed) {
         return new LlamacppOptions(1, 0, -1, -1, -1, Optional.of(LlamacppOptions.Pooling.MEAN), seed, 0, 0, false);
@@ -77,18 +78,18 @@ class TritonLlamacppRuntimeTest {
         }
     }
 
-    // The llama.cpp versions in Triton and in the container may differ, which changes the values slightly.
+    // The llama.cpp versions in Triton and in the Java bindings may differ, which changes the values slightly.
     @Test
-    void embeds_like_the_runtime_in_the_container() {
+    void embeds_like_the_embedded_runtime() {
         var text = "This is a test";
         var runtime = new TritonLlamacppRuntime(config());
         try (var inTriton = runtime.evaluatorOf(GGUF_MODEL_PATH, options(5));
-             var inContainer = new EmbeddedLlamacppRuntime().evaluatorOf(GGUF_MODEL_PATH, options(5))) {
+             var embedded = new EmbeddedLlamacppRuntime().evaluatorOf(GGUF_MODEL_PATH, options(5))) {
             var tritonEmbedding = inTriton.embed(text, Optional.empty());
-            var containerEmbedding = inContainer.embed(text, Optional.empty());
-            assertEquals(norm(containerEmbedding), norm(tritonEmbedding), 1e-4);
-            assertTrue(cosine(containerEmbedding, tritonEmbedding) > 0.99,
-                       "Cosine similarity " + cosine(containerEmbedding, tritonEmbedding));
+            var embeddedEmbedding = embedded.embed(text, Optional.empty());
+            assertEquals(norm(embeddedEmbedding), norm(tritonEmbedding), 1e-4);
+            assertTrue(cosine(embeddedEmbedding, tritonEmbedding) > 0.99,
+                       "Cosine similarity " + cosine(embeddedEmbedding, tritonEmbedding));
         } finally {
             runtime.deconstruct();
         }

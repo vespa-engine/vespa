@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
  * Tests when TritonLlamacppEvaluator reloads a model in Triton.
  *
  * @author ingridhabrekke
+ * @author glebashnik
  */
 class TritonLlamacppEvaluatorTest {
 
@@ -90,8 +91,9 @@ class TritonLlamacppEvaluatorTest {
         assertEquals(1, releases.get());
     }
 
-    private TritonLlamacppEvaluator evaluator(boolean explicitControl) {
-        return new TritonLlamacppEvaluator(MODEL, releases::incrementAndGet, llamacppClient, repositoryClient, explicitControl);
+    private TritonLlamacppEvaluator evaluator(boolean isModelControlExplicit) {
+        return new TritonLlamacppEvaluator(MODEL, releases::incrementAndGet, llamacppClient, repositoryClient,
+                                           isModelControlExplicit);
     }
 
 }

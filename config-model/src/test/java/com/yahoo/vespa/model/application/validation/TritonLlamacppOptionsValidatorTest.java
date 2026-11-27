@@ -110,7 +110,7 @@ class TritonLlamacppOptionsValidatorTest {
     }
 
     @Test
-    void accepts_the_same_options_in_the_container() {
+    void accepts_the_same_options_without_triton() {
         var services = services("""
                 <component id="gguf" type="gguf-embedder">
                   <transformer-model url="https://example.invalid/model.gguf"/>
