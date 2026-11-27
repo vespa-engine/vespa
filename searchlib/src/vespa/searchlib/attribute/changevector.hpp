@@ -61,9 +61,9 @@ template <typename T> vespalib::MemoryUsage ChangeVectorT<T>::getMemoryUsage() c
 
 template <typename T> ChangeVectorT<T>::DocIdInsertOrder::DocIdInsertOrder(const Vector& v) : _v(v), _adjacent() {
     _adjacent.reserve(v.size());
-    uint32_t index(0);
+    uint32_t index = 0;
     for (const auto& c : _v) {
-        _adjacent.push_back((uint64_t(c._doc) << 32) | index++);
+        _adjacent.emplace_back(c._doc, index++);
     }
     std::sort(_adjacent.begin(), _adjacent.end());
 }
