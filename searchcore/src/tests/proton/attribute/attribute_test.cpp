@@ -558,6 +558,10 @@ auto field_path_assign(const DocumentUpdate& upd, const std::string& field_path,
     return std::make_unique<AssignFieldPathUpdate>(upd.getType(), field_path, "", std::move(fv));
 }
 
+auto field_path_remove(const std::string& field_path) {
+    return std::make_unique<RemoveFieldPathUpdate>(field_path);
+}
+
 /** Regular field update */
 FieldUpdate remove_fupd(const DocumentUpdate& upd, const std::string& field, const std::string& value) {
     auto        remove_value = std::make_unique<RemoveValueUpdate>(StringFieldValue::make(value));
@@ -715,6 +719,22 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_from_earlier
     // the document model. Instead, field path updates commit pending changes before applying their
     // change, and we get ["bar"].
     assert_str_array(*_a2, LID1, {"bar"});
+}
+
+TEST_F(AttributeWriterFieldPathTest, removeelement_updates_array_attributes) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(field_path_remove("a1[1]"));
+    upd.addFieldPathUpdate(field_path_remove("a2[0]"));
+    apply(2, upd);
+    assert_int_array(*_a1, LID1, {10, 30});
+    assert_str_array(*_a2, LID1, {"bar"});
+}
+
+TEST_F(AttributeWriterFieldPathTest, remove_element_out_of_bounds_is_ignored) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(field_path_remove("a1[5]"));
+    apply(2, upd);
+    assert_int_array(*_a1, LID1, {10, 20, 30});
 }
 
 class AttributeCollectionSpecTest : public ::testing::Test {

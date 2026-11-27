@@ -30,6 +30,7 @@ public:
     enum class Kind : uint8_t {
         UNSUPPORTED = 0,
         ASSIGN_ELEMENT,
+        REMOVE_ELEMENT,
     };
 
 private:
@@ -49,6 +50,7 @@ public:
 
     static FieldPathTarget unsupported(Field field);
     static FieldPathTarget assign_element(Field field, uint32_t index);
+    static FieldPathTarget remove_element(Field field, uint32_t index);
 
     // parse does not throw, malformed or unsupported field paths become Kind::UNSUPPORTED.
     static FieldPathTarget parse(const FieldPathUpdate& update, const DocumentType& doc_type);

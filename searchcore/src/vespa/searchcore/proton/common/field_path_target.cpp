@@ -6,6 +6,7 @@
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/assignfieldpathupdate.h>
+#include <vespa/document/update/removefieldpathupdate.h>
 
 using document::AssignFieldPathUpdate;
 using document::DocumentType;
@@ -23,6 +24,10 @@ FieldPathTarget FieldPathTarget::unsupported(Field field) {
 
 FieldPathTarget FieldPathTarget::assign_element(Field field, uint32_t index) {
     return FieldPathTarget(Kind::ASSIGN_ELEMENT, std::move(field), index);
+}
+
+FieldPathTarget FieldPathTarget::remove_element(Field field, uint32_t index) {
+    return FieldPathTarget(Kind::REMOVE_ELEMENT, std::move(field), index);
 }
 
 namespace {
@@ -68,6 +73,9 @@ FieldPathTarget FieldPathTarget::parse(const FieldPathUpdate& update, const Docu
                 return unsupported(std::move(field));
             }
             return assign_element(std::move(field), field_path[1].getIndex());
+        }
+        case FieldPathUpdate::Remove: {
+            return remove_element(std::move(field), field_path[1].getIndex());
         }
         default:
             break;
