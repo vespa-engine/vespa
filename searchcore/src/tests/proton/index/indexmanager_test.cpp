@@ -180,7 +180,7 @@ struct IndexManagerTest : public ::testing::Test {
 
     ~IndexManagerTest() override;
 
-    template <class FunctionType> void runAsMaster(FunctionType&& function) {
+    template <class FunctionType> void run_in_main_thread_service_and_wait(FunctionType&& function) {
         vespalib::Gate gate;
         _service.write().main().execute(makeLambdaTask([&gate, function = std::move(function)]() {
             function();
@@ -188,7 +188,7 @@ struct IndexManagerTest : public ::testing::Test {
         }));
         gate.await();
     }
-    template <class FunctionType> void runAsIndex(FunctionType&& function) {
+    template <class FunctionType> void run_in_index_thread_service_and_wait(FunctionType&& function) {
         vespalib::Gate gate;
         _service.write().index().execute(makeLambdaTask([&gate, function = std::move(function)]() {
             function();
@@ -202,7 +202,7 @@ struct IndexManagerTest : public ::testing::Test {
     void resetIndexManager(SerialNum serial_num = 1);
     void removeDocument(uint32_t docId, SerialNum serialNum) {
         vespalib::Gate gate;
-        runAsIndex([&]() {
+        run_in_index_thread_service_and_wait([&]() {
             _index_manager->removeDocument(docId, serialNum);
             _index_manager->commit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
         });
@@ -214,7 +214,7 @@ struct IndexManagerTest : public ::testing::Test {
     }
     void compactLidSpace(uint32_t lidLimit) {
         SerialNum serialNum = ++_serial_num;
-        runAsIndex([&]() { _index_manager->compactLidSpace(lidLimit, serialNum); });
+        run_in_index_thread_service_and_wait([&]() { _index_manager->compactLidSpace(lidLimit, serialNum); });
     }
     void assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryIndexes, SerialNum expLastDiskIndexSerialNum,
                      SerialNum expLastMemoryIndexSerialNum);
@@ -223,7 +223,7 @@ struct IndexManagerTest : public ::testing::Test {
         return _index_manager->getMaintainer().getSourceCollection();
     }
     void set_schema(const Schema& schema, SerialNum serial_num) {
-        runAsMaster([&]() { _index_manager->setSchema(schema, serial_num); });
+        run_in_main_thread_service_and_wait([&]() { _index_manager->setSchema(schema, serial_num); });
     }
 
     bool has_pending_urgent_flush() const { return _index_manager->has_pending_urgent_flush(); }
@@ -241,7 +241,8 @@ void IndexManagerTest::flushIndexManager() {
     vespalib::Executor::Task::UP task;
     SerialNum                    serialNum = _index_manager->getCurrentSerialNum();
     EXPECT_EQ(serialNum > _index_manager->getFlushedSerialNum(), target.can_flush(serialNum));
-    runAsMaster([&]() { task = target.initFlush(serialNum, std::make_shared<search::FlushToken>()); });
+    run_in_main_thread_service_and_wait(
+        [&]() { task = target.initFlush(serialNum, std::make_shared<search::FlushToken>()); });
     if (task.get()) {
         task->run();
     }
@@ -251,7 +252,8 @@ void IndexManagerTest::run_fusion(bool exp_can_flush) {
     IndexFusionTarget                         target(_index_manager->getMaintainer());
     std::unique_ptr<vespalib::Executor::Task> task;
     EXPECT_EQ(exp_can_flush, target.can_flush(0));
-    runAsMaster([&]() { task = target.initFlush(0, std::make_shared<search::FlushToken>()); });
+    run_in_main_thread_service_and_wait(
+        [&]() { task = target.initFlush(0, std::make_shared<search::FlushToken>()); });
     if (task) {
         task->run();
     }
@@ -271,7 +273,7 @@ Document::UP IndexManagerTest::addDocument(uint32_t id) {
     Document::UP   doc = buildDocument(_builder, id, "foo");
     SerialNum      serialNum = ++_serial_num;
     vespalib::Gate gate;
-    runAsIndex([&]() {
+    run_in_index_thread_service_and_wait([&]() {
         _index_manager->putDocument(id, *doc, serialNum, {});
         _index_manager->commit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
     });
@@ -365,7 +367,8 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         EXPECT_EQ(vespalib::system_time(), target.getLastFlushTime());
         vespalib::Executor::Task::UP flushTask;
         EXPECT_TRUE(target.can_flush(2));
-        runAsMaster([&]() { flushTask = target.initFlush(2, std::make_shared<search::FlushToken>()); });
+        run_in_main_thread_service_and_wait(
+            [&]() { flushTask = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         flushTask->run();
         EXPECT_FALSE(target.can_flush(2));
         std::filesystem::path index_flush_1_path("test_data/index.flush.1");
@@ -399,7 +402,8 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         std::this_thread::sleep_for(2s);
         std::chrono::seconds         now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
         vespalib::Executor::Task::UP task;
-        runAsMaster([&]() { task = target.initFlush(3, std::make_shared<search::FlushToken>()); });
+        run_in_main_thread_service_and_wait(
+            [&]() { task = target.initFlush(3, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
         EXPECT_EQ(3u, target.getFlushedSerialNum());
         EXPECT_LT(modified_time, target.getLastFlushTime());
@@ -819,7 +823,7 @@ TEST_F(IndexManagerTest, require_that_setSchema_updates_schema_on_disk_wiping_re
     addDocument(docid);
     flushIndexManager();
     expectSchemaIndexFields(1);
-    runAsMaster([&]() { _index_manager->setSchema(empty_schema, ++_serial_num); });
+    run_in_main_thread_service_and_wait([&]() { _index_manager->setSchema(empty_schema, ++_serial_num); });
     expectSchemaIndexFields(0);
 }
 
@@ -1098,7 +1102,7 @@ struct StructFieldIndexManagerTest : public IndexManagerTest {
         auto           doc = make_struct_doc(id, names);
         SerialNum      serial_num = ++_serial_num;
         vespalib::Gate gate;
-        runAsIndex([&]() {
+        run_in_index_thread_service_and_wait([&]() {
             _index_manager->putDocument(id, *doc, serial_num, {});
             _index_manager->commit(serial_num, std::make_shared<vespalib::GateCallback>(gate));
         });

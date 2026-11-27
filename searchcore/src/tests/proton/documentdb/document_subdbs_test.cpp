@@ -323,11 +323,11 @@ template <typename Traits> struct FixtureBase {
         _subDb.setBucketStateCalculator(calc, std::make_shared<vespalib::GateCallback>(gate));
         gate.await();
     }
-    template <typename FunctionType> void runInMasterAndSync(FunctionType func) {
-        proton::test::runInMasterAndSync(_service.write(), func);
+    template <typename FunctionType> void run_in_main_thread_service_and_sync(FunctionType func) {
+        proton::test::run_in_main_thread_service_and_sync(_service.write(), func);
     }
-    template <typename FunctionType> void runInMaster(FunctionType func) {
-        proton::test::runInMaster(_service.write(), func);
+    template <typename FunctionType> void run_in_main_thread_service(FunctionType func) {
+        proton::test::run_in_main_thread_service(_service.write(), func);
     }
     void init() {
         DocumentSubDbInitializer::SP task =
@@ -335,14 +335,15 @@ template <typename Traits> struct FixtureBase {
         vespalib::ThreadStackExecutor executor(1);
         initializer::TaskRunner       taskRunner(executor);
         taskRunner.runTask(task);
-        runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg); });
+        run_in_main_thread_service_and_sync([&]() { _subDb.initViews(*_snapshot->_cfg); });
     }
     void basicReconfig(SerialNum serialNum) {
-        runInMasterAndSync(
+        run_in_main_thread_service_and_sync(
             [&]() { performReconfig(serialNum, make_all_attr_schema(two_attr_schema), ConfigDir2::dir()); });
     }
     void reconfig(SerialNum serialNum, Schema reconfigSchema, const std::string& reconfigConfigDir) {
-        runInMasterAndSync([&]() { performReconfig(serialNum, std::move(reconfigSchema), reconfigConfigDir); });
+        run_in_main_thread_service_and_sync(
+            [&]() { performReconfig(serialNum, std::move(reconfigSchema), reconfigConfigDir); });
     }
     void performReconfig(SerialNum serialNum, Schema reconfigSchema, const std::string& reconfigConfigDir) {
         auto newCfg =
@@ -367,7 +368,7 @@ template <typename Traits> struct FixtureBase {
         _subDb.onReprocessDone(serialNum);
     }
     void on_replay_done() {
-        runInMasterAndSync([&]() { perform_replay_done(); });
+        run_in_main_thread_service_and_sync([&]() { perform_replay_done(); });
     }
     void perform_replay_done() { _subDb.onReplayDone(); }
 
@@ -819,7 +820,7 @@ template <typename FixtureType> struct DocumentHandler {
     void putDoc(PutOperation& op) {
         IFeedView::SP  feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMaster([&]() {
+        _f.run_in_main_thread_service([&]() {
             feedView->preparePut(op);
             feedView->handlePut(FeedToken(), op);
             feedView->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP),
@@ -830,7 +831,7 @@ template <typename FixtureType> struct DocumentHandler {
     void moveDoc(MoveOperation& op) {
         IFeedView::SP  feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMaster([&]() {
+        _f.run_in_main_thread_service([&]() {
             auto onDone = std::make_shared<vespalib::GateCallback>(gate);
             feedView->handleMove(op, onDone);
             feedView->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP), onDone);
@@ -840,7 +841,7 @@ template <typename FixtureType> struct DocumentHandler {
     void removeDoc(RemoveOperation& op) {
         IFeedView::SP  feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMaster([&]() {
+        _f.run_in_main_thread_service([&]() {
             feedView->prepareRemove(op);
             feedView->handleRemove(FeedToken(), op);
             feedView->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP),

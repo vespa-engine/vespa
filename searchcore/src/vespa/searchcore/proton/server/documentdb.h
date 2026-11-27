@@ -226,7 +226,7 @@ private:
 
     void syncFeedView();
 
-    template <typename FunctionType> inline void masterExecute(FunctionType&& function);
+    template <typename FunctionType> inline void run_in_main_service_thread(FunctionType&& function);
 
     // Invokes initFinish() on self
     friend class InitDoneTask;

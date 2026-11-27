@@ -121,7 +121,7 @@ template <typename T> void forceCommitAndWait(IFeedView& feedView, SerialNum ser
 
 } // namespace
 
-template <typename FunctionType> void DocumentDB::masterExecute(FunctionType&& function) {
+template <typename FunctionType> void DocumentDB::run_in_main_service_thread(FunctionType&& function) {
     _writeService.main().execute(makeLambdaTask(std::forward<FunctionType>(function)));
 }
 
@@ -254,7 +254,7 @@ DocumentDBConfig::SP DocumentDB::getActiveConfig() const {
 
 void DocumentDB::internalInit() {
     (void)_state->enterLoadState();
-    masterExecute([this]() { initManagers(); });
+    run_in_main_service_thread([this]() { initManagers(); });
 }
 
 class InitDoneTask : public vespalib::Executor::Task {
@@ -500,7 +500,7 @@ void DocumentDB::close() {
     }
     // Abort any ongoing maintenance
     stopMaintenance();
-    masterExecute([this]() {
+    run_in_main_service_thread([this]() {
         _feedView.get()->forceCommitAndWait(
             search::CommitParam(getCurrentSerialNumber(), search::CommitParam::UpdateStats::SKIP));
         tearDownReferences();
@@ -510,7 +510,7 @@ void DocumentDB::close() {
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();
 
-    masterExecute([this]() {
+    run_in_main_service_thread([this]() {
         _feedView.get()->forceCommitAndWait(
             search::CommitParam(getCurrentSerialNumber(), search::CommitParam::UpdateStats::SKIP));
     });
@@ -524,7 +524,7 @@ void DocumentDB::close() {
     // Tear down index metrics
     _metricsWireService.set_index_fields(metrics.ready.index, {});
 
-    masterExecute([this]() { closeSubDBs(); });
+    run_in_main_service_thread([this]() { closeSubDBs(); });
     // What about queued tasks ?
     _writeService.shutdown();
     _maintenanceController.kill();
@@ -711,7 +711,7 @@ void DocumentDB::reconfigure(DocumentDBConfig::SP snapshot) {
     CHECK(_state->getAllowReconfig());
     snapshot = DocumentDBConfig::makeDelayedAttributeAspectConfig(snapshot, *active_snapshot);
     auto prepared_reconfig = prepare_reconfig(*snapshot, std::nullopt);
-    masterExecute([this, snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable {
+    run_in_main_service_thread([this, snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable {
         performReconfig(snapshot, std::move(prepared_reconfig));
     });
     // Wait for config to be applied, or for document db close
@@ -761,9 +761,10 @@ void DocumentDB::enterApplyLiveConfigState() {
     }
     auto new_config_snapshot = _pendingConfigSnapshot.get();
     auto prepared_reconfig = prepare_reconfig(*new_config_snapshot, std::nullopt);
-    masterExecute([this, new_config_snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable {
-        performReconfig(std::move(new_config_snapshot), std::move(prepared_reconfig));
-    });
+    run_in_main_service_thread(
+        [this, new_config_snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable {
+            performReconfig(std::move(new_config_snapshot), std::move(prepared_reconfig));
+        });
 }
 
 StatusReport::UP DocumentDB::reportStatus() const {

@@ -7,20 +7,20 @@
 namespace proton::test {
 
 /**
- * Run the given function in the master thread and wait until done.
+ * Run the given function in the document db main thread service and wait until done.
  */
 template <typename FunctionType>
-void runInMasterAndSync(searchcorespi::index::IThreadingService& writeService, FunctionType func) {
-    writeService.master().execute(vespalib::makeLambdaTask(std::move(func)));
-    writeService.master().sync();
+void run_in_main_thread_service_and_sync(searchcorespi::index::IThreadingService& writeService, FunctionType func) {
+    writeService.main().execute(vespalib::makeLambdaTask(std::move(func)));
+    writeService.main().sync();
 }
 
 /**
- * Run the given function in the master thread.
+ * Run the given function in the document db main thread service.
  */
 template <typename FunctionType>
-void runInMaster(searchcorespi::index::IThreadingService& writeService, FunctionType func) {
-    writeService.master().execute(vespalib::makeLambdaTask(std::move(func)));
+void run_in_main_thread_service(searchcorespi::index::IThreadingService& writeService, FunctionType func) {
+    writeService.main().execute(vespalib::makeLambdaTask(std::move(func)));
 }
 
 } // namespace proton::test

@@ -252,16 +252,16 @@ template <typename FeedViewType> struct FixtureBase {
         }
     }
 
-    template <typename FunctionType> void runInMasterAndSync(FunctionType func) {
-        test::runInMasterAndSync(_service.write(), func);
+    template <typename FunctionType> void run_in_main_thread_service_and_sync(FunctionType func) {
+        test::run_in_main_thread_service_and_sync(_service.write(), func);
     }
-    template <typename FunctionType> void runInMaster(FunctionType func) {
-        test::runInMaster(_service.write(), func);
+    template <typename FunctionType> void run_in_main_thread_service(FunctionType func) {
+        test::run_in_main_thread_service(_service.write(), func);
     }
 
     void force_commit() {
         vespalib::Gate gate;
-        runInMaster([this, &gate]() {
+        run_in_main_thread_service([this, &gate]() {
             feedview->forceCommit(search::CommitParam(serial_num, search::CommitParam::UpdateStats::SKIP),
                                   std::make_shared<vespalib::GateCallback>(gate));
         });
@@ -295,7 +295,7 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
 
     void handleMove(const MoveOperation& op, long expected) {
         auto ctx = beginMoveOp();
-        runInMasterAndSync([&, ctx]() { feedview->handleMove(op, std::move(ctx)); });
+        run_in_main_thread_service_and_sync([&, ctx]() { feedview->handleMove(op, std::move(ctx)); });
         // First we wait for everything propagated to MinimalFeedView
         while (ctx.use_count() > (expected + 1)) {
             std::this_thread::sleep_for(10ms);
@@ -309,7 +309,7 @@ TEST(StoreOnlyFeedViewTest, require_that_prepareMove_sets_target_db_document_id)
     Fixture       f;
     auto          doc = std::make_shared<Document>();
     MoveOperation op(BucketId(20, 42), Timestamp(10), doc, 1, subdb_id + 1);
-    f.runInMasterAndSync([&]() { f.feedview->prepareMove(op); });
+    f.run_in_main_thread_service_and_sync([&]() { f.feedview->prepareMove(op); });
 
     DbDocumentId targetId = op.getDbDocumentId();
     EXPECT_EQ(subdb_id, targetId.getSubDbId());
@@ -336,7 +336,7 @@ TEST(StoreOnlyFeedViewTest,
         {
             SCOPED_TRACE("before move here");
             f.assertPutCount(0);
-            f.runInMasterAndSync([&]() { f.feedview->prepareMove(*op); });
+            f.run_in_main_thread_service_and_sync([&]() { f.feedview->prepareMove(*op); });
         }
         f.handleMove(*op, 1);
         {
@@ -373,12 +373,12 @@ TEST(StoreOnlyFeedViewTest,
     auto        doc = std::make_shared<Document>();
     DocumentId  doc1id("id:test:foo:g=foo:1");
     uint32_t    docSize = 1;
-    f.runInMasterAndSync(
+    f.run_in_main_thread_service_and_sync(
         [&]() { f.metaStore->put(doc1id, doc1id.getGlobalId().convertToBucketId(), Timestamp(9), docSize, 1, 0u); });
-    f.runInMasterAndSync([&]() {
+    f.run_in_main_thread_service_and_sync([&]() {
         f.metaStore->put(doc->getId(), doc->getId().getGlobalId().convertToBucketId(), Timestamp(10), docSize, 2, 0u);
     });
-    f.runInMasterAndSync([&]() { f.metaStore->remove(1, 0u); });
+    f.run_in_main_thread_service_and_sync([&]() { f.metaStore->remove(1, 0u); });
     f.metaStore->removes_complete({1});
     MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
     op->setTargetLid(1);
@@ -411,7 +411,7 @@ TEST(StoreOnlyFeedViewTest, require_that_prune_removed_documents_removes_documen
     op.setLidsToRemove(lids);
     op.setSerialNum(1); // allows use of meta store.
     vespalib::Gate gate;
-    f.runInMaster([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
+    f.run_in_main_thread_service([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
         f.feedview->handlePruneRemovedDocuments(op, std::move(onDone));
     });
     gate.await();
@@ -431,7 +431,7 @@ TEST(StoreOnlyFeedViewTest, require_that_heartbeat_propagates_and_commits_meta_s
     EXPECT_EQ(0, f.feedview->heartBeatAttributesCount);
     EXPECT_EQ(0, f.heartbeatCount);
     vespalib::Gate gate;
-    f.runInMaster([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
+    f.run_in_main_thread_service([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
         f.feedview->heartBeat(2, std::move(onDone));
     });
     gate.await();
