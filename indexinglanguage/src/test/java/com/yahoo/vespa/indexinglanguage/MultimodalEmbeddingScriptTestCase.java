@@ -340,6 +340,18 @@ public class MultimodalEmbeddingScriptTestCase {
     }
 
     @Test
+    public void testEmbedWithoutOutputTypeFailsWithMessage() {
+        var e = assertThrows(IllegalStateException.class,
+                             () -> embed(tester, "input myText | embed", "hello", image));
+        assertEquals("The output type of embed is unresolved", e.getMessage());
+
+        // A comma in place of a pipe makes a multipart input of the outputs, which do not decide the output type of embed
+        e = assertThrows(IllegalStateException.class,
+                         () -> embed(tester, "input myText | embed | attribute 'myTensor', summary 'myTensor'", "hello", image));
+        assertEquals("The output type of embed is unresolved", e.getMessage());
+    }
+
+    @Test
     public void testMultipartInputInParenthesesAndBeforeChoice() {
         assertEmbedding("[5, 103, 0, 0]", "(input myText, input myImage) | embed | attribute 'myTensor'", "hello", image);
         assertEmbedding("[5, 103, 0, 0]", "input myText, input myImage | embed || embed | attribute 'myTensor'", "hello", image);

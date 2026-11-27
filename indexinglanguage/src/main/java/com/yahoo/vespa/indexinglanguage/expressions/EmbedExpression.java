@@ -512,7 +512,7 @@ public class EmbedExpression extends Expression  {
     }
 
     private TensorType getOutputTensorType() {
-        return ((TensorDataType)getOutputType()).getTensorType();
+        return ((TensorDataType)requireOutputType()).getTensorType();
     }
 
     private static TensorType toTargetTensor(DataType dataType) {
