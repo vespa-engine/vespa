@@ -227,7 +227,7 @@ public class EmbedExpression extends Expression  {
             output = embedSingleValue(context).orElse(null);
         }
         else if (context.getCurrentValue() instanceof Raw image) {
-            output = embedTextAndImage(null, image, context).orElse(null);
+            output = embedTextAndImage(Optional.empty(), image, context).orElse(null);
         }
         else if (MultipartExpression.isMultipartType(context.getCurrentValue().getDataType())) {
             output = embedMultipart((Array<?>)context.getCurrentValue(), context).orElse(null);
@@ -272,27 +272,16 @@ public class EmbedExpression extends Expression  {
                 throw new IllegalArgumentException("The parts to embed must be one string and one raw, but got another " +
                                                    part.getDataType().getName());
         }
-        return embedTextAndImage(text, image, context);
+        if (text == null || text.getString().isBlank()) return Optional.empty();
+        return embedTextAndImage(Optional.of(text.getString()), image, context);
     }
 
-    /** A null, blank or empty value is left out. */
-    private Optional<Tensor> embedTextAndImage(StringFieldValue textValue, Raw imageValue, ExecutionContext context) {
-        Optional<String> text = Optional.ofNullable(textValue).map(StringFieldValue::getString).filter(string -> ! string.isBlank());
-        Optional<Embedder.Image> image = Optional.ofNullable(imageValue).map(Raw::getByteBuffer)
-                                                 .filter(ByteBuffer::hasRemaining)
-                                                 .map(EmbedExpression::toImage);
-        if (text.isEmpty() && image.isEmpty()) return Optional.empty();
-
-        var input = new Embedder.Input(text, image);
-        // A document which lacks a part gives fewer modalities than the statement
-        rejectionReason(input.modalities()).ifPresent(rejection -> { throw new InvalidInputException(rejection); });
+    private Optional<Tensor> embedTextAndImage(Optional<String> text, Raw imageValue, ExecutionContext context) {
+        if (imageValue == null || ! imageValue.getByteBuffer().hasRemaining()) return Optional.empty();
+        var input = new Embedder.Input(text, Optional.of(toImage(imageValue.getByteBuffer())));
 
         // ExecutionContext.resolveLanguage detects the language from the string form of the current value
         text.ifPresent(string -> context.setCurrentValue(new StringFieldValue(string)));
-        // A text alone takes the same path as a string input, so that the text is batched in the same way
-        if (image.isEmpty())
-            return Optional.of(embed(text.get(), getOutputTensorType(), context));
-
         // An image has no language.
         // ExecutionContext.resolveLanguage would detect a language from the image,
         // and keep that language in the context.
