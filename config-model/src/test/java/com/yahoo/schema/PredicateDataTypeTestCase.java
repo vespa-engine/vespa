@@ -121,6 +121,18 @@ public class PredicateDataTypeTestCase {
     }
 
     @Test
+    void requireThatOmittedIndexUsesDefaultsAndOptimizesPredicate() throws ParseException {
+        var schema = ApplicationBuilder.createFromString(searchSd(predicateFieldSd("indexing: attribute\n"))).getSchema();
+        var field = schema.getConcreteField("pf");
+        var attribute = field.getAttributes().get("pf");
+        assertEquals(8, attribute.arity());
+        assertEquals(Long.MIN_VALUE, attribute.lowerBound());
+        assertEquals(Long.MAX_VALUE, attribute.upperBound());
+        assertEquals("{ 8 | set_var arity | { input pf | optimize_predicate | attribute pf; }; }",
+                     field.getIndexingScript().toString());
+    }
+
+    @Test
     void requireThatBuilderFailsIfNoArityValue() throws ParseException {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             String sd = searchSd(predicateFieldSd(attributeFieldSd("")));
