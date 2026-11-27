@@ -381,9 +381,7 @@ public class Model implements Cloneable {
         if ( ! Objects.equals(other.searchGroup, this.searchGroup)) return false;
         if ( ! Objects.equals(other.searchPath, this.searchPath)) return false;
         if ( ! Objects.equals(other.sources, this.sources)) return false;
-        if ( ! Objects.equals(other.excludedSources, this.excludedSources)) {
-            return false;
-        }
+        if ( ! Objects.equals(other.excludedSources, this.excludedSources)) return false;
         if ( ! Objects.equals(other.restrict, this.restrict)) return false;
         if ( ! Objects.equals(other.defaultIndex, this.defaultIndex)) return false;
         if ( ! Objects.equals(other.type, this.type)) return false;
