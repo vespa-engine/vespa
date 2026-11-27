@@ -54,14 +54,20 @@ public final class MultipartExpression extends ExpressionList<Expression> {
 
     @Override
     public DataType setOutputType(DataType outputType, TypeContext context) {
-        if (outputType != null && ! isMultipartType(outputType))
+        if (outputType != null && ! (outputType instanceof MultipartDataType))
             throw new VerificationException(this, "Required to produce " + outputType.getName() +
-                                                  ", but this produces parts, which only embed accepts");
-        if (outputType != null)
-            super.setOutputType(outputType, context);
-        for (var expression : expressions())
-            expression.setOutputType(AnyDataType.instance, context);
-        return AnyDataType.instance;
+                                                  ", but this produces a multipart input");
+        var multipart = (MultipartDataType)outputType;
+        if (multipart != null && multipart.partTypes().size() != expressions().size())
+            throw new VerificationException(this, "This has " + expressions().size() + " parts, " +
+                                                  "but the required number of parts is " + multipart.partTypes().size());
+        super.setOutputType(outputType, context);
+        DataType inputType = AnyDataType.instance;
+        for (int i = 0; i < expressions().size(); i++) {
+            DataType partType = multipart == null ? null : multipart.partTypes().get(i);
+            inputType = leastGeneralOf(inputType, expressions().get(i).setOutputType(partType, context));
+        }
+        return inputType;
     }
 
     @Override
