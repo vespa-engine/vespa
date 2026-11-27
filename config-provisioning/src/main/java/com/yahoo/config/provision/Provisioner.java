@@ -21,15 +21,7 @@ public interface Provisioner {
      * @param context the context this request is made in
      * @return the specification of the hosts allocated
      */
-    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, ProvisionContext context) {
-        return prepare(applicationId, cluster, cluster.capacity(), context);
-    }
-
-    @Deprecated // TODO: Remove after October 2026
-    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
-        cluster = cluster.builder().capacity(capacity).build();
-        return prepare(applicationId, cluster, context);
-    }
+    List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, ProvisionContext context);
 
     void activate(List<ClusterHosts> clusterHosts, ActivationContext context, ApplicationTransaction transaction);
 

@@ -24,21 +24,7 @@ public class Provisioned {
         clusters.putIfAbsent(cluster.id(), cluster);
     }
 
-    @Deprecated // TODO: Remove after October 2026
-    public void add(ClusterSpec cluster, Capacity capacity) {
-        clusters.putIfAbsent(cluster.id(), cluster.builder().capacity(capacity).build());
-    }
-
     /** Returns an unmodifiable map of all the cluster requests recorded during build of the model this belongs to */
     public Map<ClusterSpec.Id, ClusterSpec> clusters() { return Collections.unmodifiableMap(clusters); }
-
-    /** Returns an unmodifiable map of all the capacity provision requests recorded during build of the model this belongs to */
-    @Deprecated // TODO: Remove after October 2026
-    public Map<ClusterSpec.Id, Capacity> capacities() {
-        Map<ClusterSpec.Id, Capacity> c = new HashMap<>();
-        for (var entry : clusters.entrySet())
-            c.put(entry.getKey(), entry.getValue().capacity());
-        return c;
-    }
 
 }

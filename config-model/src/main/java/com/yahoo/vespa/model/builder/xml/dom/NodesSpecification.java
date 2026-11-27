@@ -10,7 +10,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -19,13 +18,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.HostSystem;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.ToDoubleFunction;
@@ -55,8 +51,6 @@ public class NodesSpecification {
      */
     private final boolean required;
 
-    private final boolean canFail;
-
     private final boolean exclusive;
 
     /** The repo part of a docker image (without tag), optional */
@@ -75,14 +69,12 @@ public class NodesSpecification {
 
     private final String profile;
 
-    private ClusterSpec cluster;
-
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
                                IntRange groupSize,
                                double maxCostFactor,
                                boolean dedicated, Version version,
-                               boolean required, boolean canFail, boolean exclusive,
+                               boolean required, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
                                CloudAccount cloudAccount,
                                CloudResourceTags cloudResourceTags,
@@ -110,7 +102,6 @@ public class NodesSpecification {
         this.dedicated = dedicated;
         this.version = version;
         this.required = required;
-        this.canFail = canFail;
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
@@ -120,7 +111,7 @@ public class NodesSpecification {
         this.profile = profile;
     }
 
-    static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
+    static NodesSpecification create(boolean dedicated, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
                                      CloudAccount cloudAccount,
                                      CloudResourceTags cloudResourceTags,
@@ -139,7 +130,6 @@ public class NodesSpecification {
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
-                                      canFail,
                                       resolvedElement.booleanAttribute("exclusive", false),
                                       dockerImageToUse(resolvedElement, dockerImageRepo, deployState),
                                       cloudAccount,
@@ -189,7 +179,6 @@ public class NodesSpecification {
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
     public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
         return create(true,
-                      ! context.getDeployState().getProperties().isBootstrap(),
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
@@ -210,7 +199,6 @@ public class NodesSpecification {
         ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
         return Optional.of(create(nodesElement.booleanAttribute("dedicated", false),
-                                  ! context.getDeployState().getProperties().isBootstrap(),
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
@@ -230,7 +218,6 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
-                                      false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
@@ -249,7 +236,6 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
-                                      false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
@@ -279,7 +265,6 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       allContent.stream().anyMatch(content -> content.required),
                                       ! context.getDeployState().getProperties().isBootstrap(),
-                                      false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
@@ -326,14 +311,14 @@ public class NodesSpecification {
         return makeClusterSpec(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of());
     }
 
-    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}, and returns this. */
+    /** Builds a cluster spec from this. */
     public ClusterSpec makeClusterSpec(ClusterSpec.Type clusterType,
                                        ClusterSpec.Id clusterId,
                                        ZoneEndpoint zoneEndpoint,
                                        boolean stateful,
                                        ClusterInfo clusterInfo,
                                        List<SidecarSpec> sidecars) {
-        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, clusterInfo);
+        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required);
         return ClusterSpec.builder(clusterType, clusterId, capacity, version)
                           .exclusive(exclusive)
                           .dockerImageRepository(dockerImageRepo)
@@ -346,19 +331,6 @@ public class NodesSpecification {
                           .cloudResourceTags(cloudResourceTags)
                           .clusterInfo(clusterInfo)
                           .build();
-    }
-
-    /** Allocates hosts. The cluster spec must have been set first. */
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, DeployState deployState) {
-        if (cluster == null)
-            throw new IllegalStateException("provision() can only be called after setClusterSpecFrom()");
-        return hostSystem.allocateHosts(cluster(), deployState);
-    }
-
-    public ClusterSpec cluster() {
-        if (cluster == null)
-            throw new IllegalStateException("cluster() can only be accessed after calling setClusterSpecFrom()");
-        return cluster;
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
@@ -544,4 +516,5 @@ public class NodesSpecification {
         return "specification of " + (dedicated ? "dedicated " : "") +
                (min.equals(max) ? min : "min " + min + " max " + max);
     }
+
 }

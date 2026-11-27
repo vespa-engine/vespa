@@ -35,25 +35,13 @@ public final class ClusterSpec {
                         Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
                         List<SidecarSpec> sidecars, List<AzName> availabilityZones, Optional<String> profile,
                         CloudAccount cloudAccount, CloudResourceTags cloudResourceTags, ClusterInfo clusterInfo) {
-        Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
-        Objects.requireNonNull(cloudResourceTags, "cloudResourceTags cannot be null");
-        Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
-        // TODO: Remove when all readers and writers use the ClusterSpec fields instead of the Capacity ones.
-        // During the transition cloud account, tags and cluster info are kept in both this and its Capacity,
-        // so that readers of either see them regardless of which place the writer used.
-        // Non-empty values in Capacity take precedence since it is the current source of truth.
-        // The builder lets values set after the capacity override it, so in a builder the value set last wins.
-        if (capacity == null) capacity = Capacity.unspecified();
-        if ( ! capacity.cloudAccount().isUnspecified()) cloudAccount = capacity.cloudAccount();
-        if ( ! capacity.cloudResourceTags().isEmpty()) cloudResourceTags = capacity.cloudResourceTags();
-        if ( ! capacity.clusterInfo().isEmpty()) clusterInfo = capacity.clusterInfo();
-        capacity = capacity.with(cloudAccount, cloudResourceTags, clusterInfo);
         if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
             throw new IllegalArgumentException("dockerImageRepo is not allowed to have a tag");
         if (type.isContent() && !stateful)
             throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
         if (cloudAccount.isUnspecified() && ! clusterInfo.hostTTL().isZero())
             throw new IllegalArgumentException("Cannot set hostTTL without a custom cloud account");
+
         this.type = type;
         this.id = id;
         this.capacity = capacity;
@@ -65,9 +53,9 @@ public final class ClusterSpec {
         this.sidecars = sidecars;
         this.availabilityZones = availabilityZones.isEmpty() ? List.of(AzName.unspecified()) : availabilityZones;
         this.profile = profile;
-        this.cloudAccount = cloudAccount;
-        this.cloudResourceTags = cloudResourceTags;
-        this.clusterInfo = clusterInfo;
+        this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
+        this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags, "cloudResourceTags cannot be null");
+        this.clusterInfo = Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
     }
 
     public Type type() { return type; }
@@ -106,10 +94,7 @@ public final class ClusterSpec {
      */
     public List<AzName> availabilityZones() { return availabilityZones; }
 
-    /**
-     * Returns a user-specified profile, which maps to hardware, templates, and other specifications depending on the vendor. This member
-     * is not required.
-     */
+    /** Returns a user-specified profile, which maps to hardware, templates, and other specifications depending on the vendor. */
     public Optional<String> profile() {
         return profile;
     }
@@ -124,7 +109,7 @@ public final class ClusterSpec {
     public ClusterInfo clusterInfo() { return clusterInfo; }
 
     public ClusterSpec with(CloudAccount account) {
-        return new ClusterSpec(type, id, capacity.with(account), vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+        return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                stateful, sidecars, availabilityZones, profile,
                                account, cloudResourceTags, clusterInfo);
     }
@@ -163,146 +148,8 @@ public final class ClusterSpec {
         return b;
     }
 
-    /** Creates a ClusterSpec builder for when requesting a cluster */
-    @Deprecated // TODO: Remove after September 2026
-    public static Builder request(Type type, Id id) {
-        return new Builder(type, id, Capacity.unspecified(), Version.emptyVersion);
-    }
-
-    /** Creates a ClusterSpec builder for an existing cluster, group id and Vespa version needs to be set */
-    @Deprecated // TODO: Remove after September 2026
-    public static Builder specification(Type type, Id id) {
-        return new Builder(type, id, Capacity.unspecified(), Version.emptyVersion);
-    }
-
     public static Builder builder(Type type, Id id, Capacity capacity, Version vespaVersion) {
         return new Builder(type, id, capacity, vespaVersion);
-    }
-
-    public static class Builder {
-
-        // Required
-        private final Type type;
-        private final Id id;
-        private Capacity capacity;
-        private Version vespaVersion;
-
-        // Optional
-        private Optional<DockerImage> dockerImageRepo = Optional.empty();
-        private boolean exclusive = false;
-        private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
-        private boolean stateful;
-        private List<SidecarSpec> sidecars = List.of();
-        private List<AzName> availabilityZones = List.of();
-        private Optional<String> profile = Optional.empty();
-        private CloudAccount cloudAccount = CloudAccount.unspecified();
-        private CloudResourceTags cloudResourceTags = CloudResourceTags.empty();
-        private ClusterInfo clusterInfo = ClusterInfo.empty();
-        // TODO: Remove when all readers and writers use the ClusterSpec fields instead of the Capacity ones.
-        // Whether the value was set after the capacity, in which case it overrides the one in the capacity.
-        private boolean cloudAccountOverridesCapacity = false;
-        private boolean cloudResourceTagsOverrideCapacity = false;
-        private boolean clusterInfoOverridesCapacity = false;
-
-        private Builder(Type type, Id id, Capacity capacity, Version vespaVersion) {
-            this.type = type;
-            this.id = id;
-            this.capacity = capacity;
-            this.vespaVersion = vespaVersion;
-            this.stateful = type.isContent(); // Default to true for content clusters
-        }
-
-        public ClusterSpec build() {
-            Capacity capacity = this.capacity;
-            if (capacity != null && (cloudAccountOverridesCapacity || cloudResourceTagsOverrideCapacity || clusterInfoOverridesCapacity))
-                capacity = capacity.with(cloudAccountOverridesCapacity ? cloudAccount : capacity.cloudAccount(),
-                                         cloudResourceTagsOverrideCapacity ? cloudResourceTags : capacity.cloudResourceTags(),
-                                         clusterInfoOverridesCapacity ? clusterInfo : capacity.clusterInfo());
-            return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                                   stateful, sidecars, availabilityZones, profile,
-                                   cloudAccount, cloudResourceTags, clusterInfo);
-        }
-
-        /** Sets the capacity. Non-empty cloud account, tags and cluster info in it override those set earlier. */
-        public Builder capacity(Capacity capacity) {
-            this.capacity = capacity;
-            cloudAccountOverridesCapacity = false;
-            cloudResourceTagsOverrideCapacity = false;
-            clusterInfoOverridesCapacity = false;
-            return this;
-        }
-
-        public Builder vespaVersion(Version vespaVersion) {
-            this.vespaVersion = vespaVersion;
-            return this;
-        }
-
-        public Builder vespaVersion(String vespaVersion) {
-            this.vespaVersion = Version.fromString(vespaVersion);
-            return this;
-        }
-
-        public Builder exclusive(boolean exclusive) {
-            this.exclusive = exclusive;
-            return this;
-        }
-
-        public Builder dockerImageRepository(Optional<DockerImage> dockerImageRepo) {
-            this.dockerImageRepo = dockerImageRepo;
-            return this;
-        }
-
-        public Builder loadBalancerSettings(ZoneEndpoint zoneEndpoint) {
-            this.zoneEndpoint = zoneEndpoint;
-            return this;
-        }
-
-        public Builder stateful(boolean stateful) {
-            this.stateful = stateful;
-            return this;
-        }
-
-        public Builder sidecars(List<SidecarSpec> sidecars) {
-            this.sidecars = sidecars;
-            return this;
-        }
-
-        public Builder availabilityZones(List<AzName> availabilityZones) {
-            this.availabilityZones = availabilityZones;
-            return this;
-        }
-
-        public Builder profile(String profile) {
-            this.profile = Optional.ofNullable(profile);
-            return this;
-        }
-
-        public Builder profile(Optional<String> profile) {
-            this.profile = profile;
-            return this;
-        }
-
-        /** Sets the cloud account, overriding any account in the capacity set earlier. */
-        public Builder cloudAccount(CloudAccount cloudAccount) {
-            this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
-            cloudAccountOverridesCapacity = true;
-            return this;
-        }
-
-        /** Sets the cloud resource tags, overriding any tags in the capacity set earlier. */
-        public Builder cloudResourceTags(CloudResourceTags cloudResourceTags) {
-            this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags, "cloudResourceTags cannot be null");
-            cloudResourceTagsOverrideCapacity = true;
-            return this;
-        }
-
-        /** Sets the cluster info, overriding any cluster info in the capacity set earlier. */
-        public Builder clusterInfo(ClusterInfo clusterInfo) {
-            this.clusterInfo = Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
-            clusterInfoOverridesCapacity = true;
-            return this;
-        }
-
     }
 
     @Override
@@ -402,6 +249,126 @@ public final class ClusterSpec {
         @Override
         public int hashCode() {
             return id.hashCode();
+        }
+
+    }
+
+    public static class Builder {
+
+        // Required
+        private final Type type;
+        private final Id id;
+        private Capacity capacity;
+        private Version vespaVersion;
+
+        // Optional
+        private Optional<DockerImage> dockerImageRepo = Optional.empty();
+        private boolean exclusive = false;
+        private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
+        private boolean stateful;
+        private List<SidecarSpec> sidecars = List.of();
+        private List<AzName> availabilityZones = List.of();
+        private Optional<String> profile = Optional.empty();
+        private CloudAccount cloudAccount = CloudAccount.unspecified();
+        private CloudResourceTags cloudResourceTags = CloudResourceTags.empty();
+        private ClusterInfo clusterInfo = ClusterInfo.empty();
+
+        @SuppressWarnings("deprecation")
+        private Builder(Type type, Id id, Capacity capacity, Version vespaVersion) {
+            this.type = type;
+            this.id = id;
+            this.capacity = capacity;
+            this.vespaVersion = vespaVersion;
+            this.stateful = type.isContent(); // Default to true for content clusters
+
+            // TODO: Remove these three lines after December 2026
+            this.cloudAccount = capacity.cloudAccount();
+            this.cloudResourceTags = capacity.cloudResourceTags();
+            this.clusterInfo = capacity.clusterInfo();
+        }
+
+        @SuppressWarnings("deprecation")
+        public Builder capacity(Capacity capacity) {
+            // TODO: Remove this check after December 2026
+            if ( ! capacity.cloudAccount().isUnspecified() &&
+                 ! capacity.cloudResourceTags().isEmpty() &&
+                 ! capacity.clusterInfo().isEmpty() &&
+                 ! capacity.canFail())
+                throw new IllegalArgumentException("Cannot set a capacity with deprecated settings");
+            this.capacity = capacity;
+            return this;
+        }
+
+        public Builder vespaVersion(Version vespaVersion) {
+            this.vespaVersion = vespaVersion;
+            return this;
+        }
+
+        public Builder vespaVersion(String vespaVersion) {
+            this.vespaVersion = Version.fromString(vespaVersion);
+            return this;
+        }
+
+        public Builder exclusive(boolean exclusive) {
+            this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder dockerImageRepository(Optional<DockerImage> dockerImageRepo) {
+            this.dockerImageRepo = dockerImageRepo;
+            return this;
+        }
+
+        public Builder loadBalancerSettings(ZoneEndpoint zoneEndpoint) {
+            this.zoneEndpoint = zoneEndpoint;
+            return this;
+        }
+
+        public Builder stateful(boolean stateful) {
+            this.stateful = stateful;
+            return this;
+        }
+
+        public Builder sidecars(List<SidecarSpec> sidecars) {
+            this.sidecars = sidecars;
+            return this;
+        }
+
+        public Builder availabilityZones(List<AzName> availabilityZones) {
+            this.availabilityZones = availabilityZones;
+            return this;
+        }
+
+        public Builder profile(String profile) {
+            this.profile = Optional.ofNullable(profile);
+            return this;
+        }
+
+        public Builder profile(Optional<String> profile) {
+            this.profile = profile;
+            return this;
+        }
+
+        public Builder cloudAccount(CloudAccount cloudAccount) {
+            this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
+            return this;
+        }
+
+        public Builder cloudResourceTags(CloudResourceTags cloudResourceTags) {
+            this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags, "cloudResourceTags cannot be null");
+            return this;
+        }
+
+        public Builder clusterInfo(ClusterInfo clusterInfo) {
+            this.clusterInfo = Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
+            return this;
+        }
+
+        public ClusterSpec build() {
+            Capacity capacity = this.capacity;
+            return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+                                   stateful, sidecars, availabilityZones, profile,
+                                   cloudAccount, cloudResourceTags, clusterInfo);
         }
 
     }

@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -42,91 +41,37 @@ public class ClusterSpecTest {
         });
     }
 
+    private static final ClusterResources resources = new ClusterResources(2, 1, NodeResources.unspecified());
+
     private static final CloudAccount account = CloudAccount.from("012345678912");
     private static final CloudResourceTags tags = CloudResourceTags.from(Map.of("team", "a"));
     private static final ClusterInfo info = new ClusterInfo.Builder().bcpDeadline(Duration.ofMinutes(30))
                                                                      .hostTTL(Duration.ofHours(1)).build();
-    private static final ClusterResources resources = new ClusterResources(2, 1, NodeResources.unspecified());
-
-    @Test
-    void valuesSetOnlyInCapacityAreCopiedToClusterSpec() {
-        var capacity = Capacity.from(resources, resources, IntRange.empty(), 1.0, false, true, account, tags, info);
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), capacity, Version.emptyVersion).build();
-        assertBothHave(account, tags, info, spec);
-        assertSame(capacity, spec.capacity());
-    }
-
-    @Test
-    void valuesSetOnlyInClusterSpecAreCopiedToCapacity() {
-        var capacity = Capacity.from(resources, resources, IntRange.empty(), 1.0, false);
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), capacity, Version.emptyVersion)
-                              .cloudAccount(account).cloudResourceTags(tags).clusterInfo(info).build();
-        assertBothHave(account, tags, info, spec);
-    }
 
     private static final CloudAccount otherAccount = CloudAccount.from("123456789012");
     private static final CloudResourceTags otherTags = CloudResourceTags.from(Map.of("team", "b"));
     private static final ClusterInfo otherInfo = new ClusterInfo.Builder().bcpDeadline(Duration.ofMinutes(60)).build();
 
     @Test
-    void capacitySetLastWinsOnConflict() {
+    @SuppressWarnings("deprecation")
+    void valuesSetOnlyInCapacityAreCopiedToClusterSpec() {
         var capacity = Capacity.from(resources, resources, IntRange.empty(), 1.0, false, true, account, tags, info);
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), Capacity.unspecified(), Version.emptyVersion)
-                              .cloudAccount(otherAccount).cloudResourceTags(otherTags).clusterInfo(otherInfo)
-                              .capacity(capacity).build();
-        assertBothHave(account, tags, info, spec);
+        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), capacity, Version.emptyVersion).build();
+        assertEquals(account, spec.cloudAccount());
+        assertEquals(tags, spec.cloudResourceTags());
+        assertEquals(info, capacity.clusterInfo());
     }
 
     @Test
-    void builderSettersSetLastWinOnConflict() {
-        var capacity = Capacity.from(resources, resources, IntRange.empty(), 1.0, false, true, account, tags, info);
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), capacity, Version.emptyVersion)
-                              .cloudAccount(otherAccount).cloudResourceTags(otherTags).clusterInfo(otherInfo).build();
-        assertBothHave(otherAccount, otherTags, otherInfo, spec);
-    }
-
-    @Test
+    @SuppressWarnings("deprecation")
     void builderSettersChangeValuesOfExistingSpec() {
         var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"),
                                        Capacity.from(resources, resources, IntRange.empty(), 1.0, false, true, account, tags, info),
                                        Version.emptyVersion).build();
         var changed = spec.builder().cloudAccount(otherAccount).cloudResourceTags(otherTags).clusterInfo(otherInfo).build();
-        assertBothHave(otherAccount, otherTags, otherInfo, changed);
-        var cleared = spec.builder().cloudResourceTags(CloudResourceTags.empty()).clusterInfo(ClusterInfo.empty()).build();
-        assertBothHave(account, CloudResourceTags.empty(), ClusterInfo.empty(), cleared);
-    }
-
-    @Test
-    void valuesAreKeptWhenCapacityIsReplaced() {
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"),
-                                       Capacity.from(resources, resources, IntRange.empty(), 1.0, false, true, account, tags, info),
-                                       Version.emptyVersion).build();
-        var replaced = spec.builder().capacity(Capacity.from(resources, resources, IntRange.empty(), 1.0, false)).build();
-        assertBothHave(account, tags, info, replaced);
-        assertEquals(spec, replaced);
-    }
-
-    @Test
-    void specsWithValuesInDifferentPlacesAreEqual() {
-        var inCapacity = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"),
-                                             Capacity.from(resources, resources, IntRange.empty(), 1.0, false, true, account, tags, info),
-                                             Version.emptyVersion).build();
-        var inSpec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"),
-                                         Capacity.from(resources, resources, IntRange.empty(), 1.0, false),
-                                         Version.emptyVersion)
-                                .cloudAccount(account).cloudResourceTags(tags).clusterInfo(info).build();
-        assertEquals(inCapacity, inSpec);
-        assertEquals(inCapacity.hashCode(), inSpec.hashCode());
-    }
-
-    @Test
-    void builderSetterOrderDoesNotMatter() {
-        var hostTTLInfo = new ClusterInfo.Builder().hostTTL(Duration.ofHours(1)).build();
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), Capacity.unspecified(), Version.emptyVersion)
-                              .clusterInfo(hostTTLInfo).cloudAccount(account).build();
-        assertBothHave(account, CloudResourceTags.empty(), hostTTLInfo, spec);
-        var cleared = spec.builder().cloudAccount(CloudAccount.unspecified()).clusterInfo(ClusterInfo.empty()).build();
-        assertBothHave(CloudAccount.unspecified(), CloudResourceTags.empty(), ClusterInfo.empty(), cleared);
+        assertEquals(otherAccount, changed.cloudAccount());
+        assertEquals(otherTags, changed.cloudResourceTags());
+        assertEquals(otherInfo, changed.clusterInfo());
     }
 
     @Test
@@ -138,26 +83,6 @@ public class ClusterSpecTest {
                      assertThrows(NullPointerException.class, () -> builder.cloudResourceTags(null)).getMessage());
         assertEquals("clusterInfo cannot be null",
                      assertThrows(NullPointerException.class, () -> builder.clusterInfo(null)).getMessage());
-    }
-
-    @Test
-    void nullCapacityIsReplacedByUnspecifiedWithValues() {
-        var spec = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), null, Version.emptyVersion)
-                              .cloudAccount(account).cloudResourceTags(tags).clusterInfo(info).build();
-        assertBothHave(account, tags, info, spec);
-        assertEquals(Capacity.unspecified().minResources(), spec.capacity().minResources());
-        assertEquals(Capacity.unspecified().maxResources(), spec.capacity().maxResources());
-        var plain = ClusterSpec.builder(ClusterSpec.Type.container, Id.from("c"), null, Version.emptyVersion).build();
-        assertSame(Capacity.unspecified(), plain.capacity());
-    }
-
-    private static void assertBothHave(CloudAccount account, CloudResourceTags tags, ClusterInfo info, ClusterSpec spec) {
-        assertEquals(account, spec.cloudAccount());
-        assertEquals(tags, spec.cloudResourceTags());
-        assertEquals(info, spec.clusterInfo());
-        assertEquals(account, spec.capacity().cloudAccount());
-        assertEquals(tags, spec.capacity().cloudResourceTags());
-        assertEquals(info, spec.capacity().clusterInfo());
     }
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
