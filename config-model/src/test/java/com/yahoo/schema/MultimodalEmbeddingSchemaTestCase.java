@@ -88,6 +88,43 @@ class MultimodalEmbeddingSchemaTestCase {
     }
 
     @Test
+    void testMultipartInputWhichNothingConsumesIsRejected() {
+        var commaInPlaceOfPipe = """
+                schema product {
+                  document product {
+                    field title type string {
+                      indexing: summary | index
+                    }
+                  }
+                  field title_embedding type tensor<float>(x[768]) {
+                    indexing: input title | embed myEmbedder | attribute, index
+                  }
+                }
+                """;
+        var e = assertThrows(IllegalArgumentException.class, () -> indexingScriptOf(commaInPlaceOfPipe));
+        assertTrue(e.getMessage().contains("Invalid expression 'attribute title_embedding, index title_embedding': " +
+                                           "A multipart input must be followed by an expression which consumes it, " +
+                                           "such as embed"),
+                   e.getMessage());
+
+        var twoOutputs = """
+                schema product {
+                  document product {
+                    field title type string {
+                      indexing: summary | index
+                    }
+                  }
+                  field title_copy type string {
+                    indexing: input title | summary, index
+                  }
+                }
+                """;
+        e = assertThrows(IllegalArgumentException.class, () -> indexingScriptOf(twoOutputs));
+        assertTrue(e.getMessage().contains("A multipart input must be followed by an expression which consumes it"),
+                   e.getMessage());
+    }
+
+    @Test
     void testTextOnlyEmbedderOnlyDeploysWithSingleTextInput() {
         var services = MultimodalEmbeddingSchemaTestCase.services.replace(
                 """

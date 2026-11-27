@@ -25,6 +25,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.MultipartExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -344,11 +346,33 @@ public class MultimodalEmbeddingScriptTestCase {
         var e = assertThrows(IllegalStateException.class,
                              () -> embed(tester, "input myText | embed", "hello", image));
         assertEquals("The output type of embed is unresolved", e.getMessage());
+    }
 
-        // A comma in place of a pipe makes a multipart input of the outputs, which do not decide the output type of embed
-        e = assertThrows(IllegalStateException.class,
-                         () -> embed(tester, "input myText | embed | attribute 'myTensor', summary 'myTensor'", "hello", image));
-        assertEquals("The output type of embed is unresolved", e.getMessage());
+    @Test
+    public void testMultipartInputWhichNothingConsumesIsRejected() {
+        String message = "A multipart input must be followed by an expression which consumes it, such as embed";
+        String type = tensorType.toString();
+        // A comma in place of a pipe
+        var e = assertThrows(VerificationException.class,
+                             () -> embed(script("input myText | embed | attribute 'myTensor', summary 'myTensor'"), type, "hello", image));
+        assertEquals("Invalid expression 'attribute myTensor, summary myTensor': " + message, e.getMessage());
+
+        e = assertThrows(VerificationException.class,
+                         () -> embed(script("input myText | (input myText, input myImage)"), type, "hello", image));
+        assertEquals("Invalid expression 'input myText, input myImage': " + message, e.getMessage());
+
+        e = assertThrows(VerificationException.class,
+                         () -> embed(script("(input myText, input myImage) || input myText"), type, "hello", image));
+        assertEquals("Invalid expression 'input myText, input myImage': " + message, e.getMessage());
+
+        assertEquals(embedding("[5, 103, 0, 0]"),
+                     embed(script("(input myText, input myImage) | embed | attribute 'myTensor'"), type, "hello", image));
+    }
+
+    /** Returns a script with the given statement, as the config model gives the statements of a field. */
+    private ScriptExpression script(String statement) {
+        Expression expression = tester.expressionFrom(statement);
+        return new ScriptExpression(expression instanceof StatementExpression s ? s : new StatementExpression(expression));
     }
 
     @Test
