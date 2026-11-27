@@ -26,11 +26,18 @@ constexpr uint64_t memory_usage = 420042;
 constexpr uint64_t create_serial_num = 17;
 constexpr uint32_t version = 19;
 
-vespalib::GenericHeader populate_header(const HnswIPO& hnsw_params) {
-    AttributeHeader header(file_name, tensor_cfg.basicType(), tensor_cfg.collectionType(), tensor_type, false,
+constexpr uint64_t total_tensor_subspaces = 29;
+constexpr uint64_t total_tensor_cells = 116;
+
+AttributeHeader make_header(const HnswIPO& hnsw_params) {
+    return AttributeHeader(file_name, tensor_cfg.basicType(), tensor_cfg.collectionType(), tensor_type, false,
                            PersistentPredicateParams(), hnsw_params, num_docs, unique_value_count, total_value_count,
                            memory_usage, create_serial_num, version);
+}
 
+vespalib::GenericHeader populate_header(const HnswIPO& hnsw_params) {
+    auto header = make_header(hnsw_params);
+    header.set_tensor_counts(total_tensor_subspaces, total_tensor_cells);
     vespalib::GenericHeader result;
     header.addTags(result);
     return result;
@@ -50,6 +57,8 @@ void verify_roundtrip_serialization(const HnswIPO& hnsw_params_in) {
     EXPECT_EQ(memory_usage, attr_header.get_memory_usage());
     EXPECT_EQ(version, attr_header.getVersion());
     EXPECT_EQ(false, attr_header.getPredicateParamsSet());
+    EXPECT_EQ(total_tensor_subspaces, attr_header.get_total_tensor_subspaces());
+    EXPECT_EQ(total_tensor_cells, attr_header.get_total_tensor_cells());
     const auto& hnsw_params_out = attr_header.get_hnsw_index_params();
     EXPECT_EQ(hnsw_params_in.has_value(), hnsw_params_out.has_value());
     if (hnsw_params_in.has_value()) {
@@ -65,6 +74,32 @@ TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header) {
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::PrenormalizedAngular}));
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::Hamming}));
     verify_roundtrip_serialization(HnswIPO());
+}
+
+TEST(AttributeHeaderTest, tensor_counts_have_placeholder_tags_when_not_set) {
+    auto                    header = make_header(HnswIPO());
+    vespalib::GenericHeader gen_header;
+    header.addTags(gen_header);
+    auto size_before = gen_header.getSize();
+    auto attr_header = AttributeHeader::extractTags(gen_header, file_name);
+    EXPECT_EQ(0, attr_header.get_total_tensor_subspaces());
+    EXPECT_EQ(0, attr_header.get_total_tensor_cells());
+    // Patching in the counts later does not change the size of the header
+    header.set_tensor_counts(total_tensor_subspaces, total_tensor_cells);
+    header.add_patchable_tags(gen_header);
+    EXPECT_EQ(size_before, gen_header.getSize());
+    attr_header = AttributeHeader::extractTags(gen_header, file_name);
+    EXPECT_EQ(total_tensor_subspaces, attr_header.get_total_tensor_subspaces());
+    EXPECT_EQ(total_tensor_cells, attr_header.get_total_tensor_cells());
+}
+
+TEST(AttributeHeaderTest, tensor_counts_are_not_set_when_tags_are_missing) {
+    auto gen_header = populate_header(HnswIPO());
+    gen_header.removeTag("tensor.total_subspace_count");
+    gen_header.removeTag("tensor.total_cell_count");
+    auto attr_header = AttributeHeader::extractTags(gen_header, file_name);
+    EXPECT_FALSE(attr_header.get_total_tensor_subspaces().has_value());
+    EXPECT_FALSE(attr_header.get_total_tensor_cells().has_value());
 }
 
 TEST(UndefinedValues, isUndefined) {
