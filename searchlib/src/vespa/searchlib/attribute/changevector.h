@@ -149,8 +149,8 @@ public:
             constexpr DocIdIndex(uint32_t doc_id, uint32_t index) noexcept
                 : _value((static_cast<uint64_t>(doc_id) << 32) | index) {}
 
-            constexpr uint32_t doc_id() const noexcept { return _value >> 32; }
-            constexpr uint32_t index() const noexcept { return static_cast<uint32_t>(_value); }
+            [[nodiscard]] constexpr uint32_t doc_id() const noexcept { return _value >> 32; }
+            [[nodiscard]] constexpr uint32_t index() const noexcept { return static_cast<uint32_t>(_value); }
             constexpr auto operator<=>(const DocIdIndex&) const noexcept = default;
         };
 
