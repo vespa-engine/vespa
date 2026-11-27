@@ -9,6 +9,8 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.Language;
@@ -25,21 +27,27 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 
 /**
- * Embeds a string in a tensor space using the configured Embedder component
+ * Embeds a string, an image in a raw value, or a string and an image as a multipart input,
+ * in a tensor space using the configured Embedder component
  *
  * @author bratseth
+ * @author glebashnik
  */
 public class EmbedExpression extends Expression  {
 
@@ -47,7 +55,7 @@ public class EmbedExpression extends Expression  {
     private final Components.Selected<Embedder> embedder;
     private final String requestedEmbedderId;
 
-    private final DynamicBatcher<BatchKey, EmbedInput, Tensor> batcher;
+    private final DynamicBatcher<BatchKey, BatchText, Tensor> batcher;
     private final Gauge batchSize;
     private final Gauge batchQueueTime;
     private final Counter batchCount;
@@ -80,7 +88,7 @@ public class EmbedExpression extends Expression  {
     }
 
     private record BatchKey(String destination, Language language, TensorType targetType) {}
-    private record EmbedInput(String text, Embedder.Context context, long enqueuedAtNanos) {}
+    private record BatchText(String text, Embedder.Context context, long enqueuedAtNanos) {}
 
     /** @return the requested embedder id. This will diverge from the selected embedder's id when executed in config-model */
     public Optional<String> requestedEmbedderId() { return Optional.of(requestedEmbedderId).filter(s -> !s.isEmpty()); }
@@ -103,9 +111,24 @@ public class EmbedExpression extends Expression  {
 
     private void validateInputAndOutput(DataType input, DataType output) {
         if (input != null) {
-            if (! (input.isAssignableTo(DataType.STRING)) &&
-                ! (input instanceof ArrayDataType array && array.getNestedType().isAssignableTo(DataType.STRING)))
-                invalid("This requires either a string or array<string> input type, but got " + input.getName());
+            if ( ! isSingleEmbedderInput(input) && ! isStringArray(input))
+                invalid("This requires either a string, raw or array<string> input type, " +
+                        "or a string and a raw separated by a comma, but got " + input.getName());
+            if (input instanceof MultipartDataType multipart) {
+                var modalities = new ArrayList<Embedder.Modality>();
+                for (int i = 0; i < multipart.partTypes().size(); i++) {
+                    DataType part = multipart.partTypes().get(i);
+                    if (part != null && ! (part instanceof AnyDataType) && modalityOf(part).isEmpty())
+                        invalid("Each part to embed must be a string or raw, but part " + (i + 1) + " is " + part.getName());
+                    modalityOf(part).ifPresent(modalities::add);
+                }
+                boolean hasModalityTwice = modalities.stream().distinct().count() < modalities.size();
+                boolean hasSeveralTexts = Collections.frequency(modalities, Embedder.Modality.TEXT) > 1;
+                if (multipart.partTypes().size() > 2 || hasModalityTwice)
+                    invalid("The parts to embed must be one string and one raw, but got " +
+                            multipart.partTypes().size() + " parts: " + typeNames(multipart.partTypes()) +
+                            (hasSeveralTexts ? ". Use '.' to join strings into one part" : ""));
+            }
         }
         if (output != null) {
             var outputTensor = toTargetTensor(output);
@@ -135,15 +158,54 @@ public class EmbedExpression extends Expression  {
         }
         if (input != null && output != null) { // verify input/output consistency
             var outputTensor = toTargetTensor(output);
-            if (input.isAssignableTo(DataType.STRING)
+            if (isSingleEmbedderInput(input)
                 && !(outputTensor.rank() == 1 || (outputTensor.rank() == 2 && outputTensor.mappedSubtype().rank() > 0)))
-                invalid("Input is a string, so output must be a rank 1 tensor, or a rank 2 tensor with " +
+                invalid("Input is a " + (input instanceof MultipartDataType ? "string and a raw" : input.getName()) +
+                        ", so output must be a rank 1 tensor, or a rank 2 tensor with " +
                         "one mapped dimension, but got " + outputTensor);
-            if ((input instanceof ArrayDataType)
+            if (isStringArray(input)
                 && !(outputTensor.rank() > 1 && outputTensor.mappedSubtype().rank() > 0))
                 invalid("Input is an array, so output must be a rank 2 or 3 tensor with " +
                         "at least one mapped dimension, but got " + outputTensor);
         }
+    }
+
+    /**
+     * An array gives each element to the embedder as an input of its own, so an array has the modality of its elements.
+     * Returns empty before this expression is verified, or when the type of a part is not known.
+     */
+    public Optional<Set<Embedder.Modality>> embedderInputModalities() {
+        DataType input = getInputType(null);
+        if (input instanceof MultipartDataType multipart) {
+            Set<Embedder.Modality> modalities = EnumSet.noneOf(Embedder.Modality.class);
+            for (DataType part : multipart.partTypes()) {
+                Optional<Embedder.Modality> modality = modalityOf(part);
+                if (modality.isEmpty()) return Optional.empty();
+                modalities.add(modality.get());
+            }
+            return Optional.of(modalities);
+        }
+        if (input instanceof ArrayDataType array) return modalityOf(array.getNestedType()).map(Set::of);
+        return modalityOf(input).map(Set::of);
+    }
+
+    private static List<String> typeNames(List<DataType> types) {
+        return types.stream().map(type -> type == null ? "unknown" : type.getName()).toList();
+    }
+
+    private static Optional<Embedder.Modality> modalityOf(DataType type) {
+        if (type == null) return Optional.empty();
+        if (type == DataType.RAW) return Optional.of(Embedder.Modality.IMAGE);
+        if (type.isAssignableTo(DataType.STRING)) return Optional.of(Embedder.Modality.TEXT);
+        return Optional.empty();
+    }
+
+    private static boolean isSingleEmbedderInput(DataType input) {
+        return input.isAssignableTo(DataType.STRING) || input == DataType.RAW || input instanceof MultipartDataType;
+    }
+
+    private static boolean isStringArray(DataType input) {
+        return input instanceof ArrayDataType array && array.getNestedType().isAssignableTo(DataType.STRING);
     }
 
     private void invalid(String message) {
@@ -158,16 +220,25 @@ public class EmbedExpression extends Expression  {
     @Override
     protected void doExecute(ExecutionContext context) {
         if (context.getCurrentValue() == null) return;
+        embedderInputModalities().flatMap(this::rejectionReason)
+                         .ifPresent(rejection -> { throw new IllegalArgumentException(rejection); });
         Tensor output;
         if (context.getCurrentValue().getDataType() == DataType.STRING) {
             output = embedSingleValue(context).orElse(null);
+        }
+        else if (context.getCurrentValue() instanceof Raw image) {
+            output = embedTextAndImage(Optional.empty(), image, context).orElse(null);
+        }
+        else if (MultipartExpression.isMultipartType(context.getCurrentValue().getDataType())) {
+            output = embedMultipart((Array<?>)context.getCurrentValue(), context).orElse(null);
         }
         else if (context.getCurrentValue().getDataType() instanceof ArrayDataType arrayType
                  && arrayType.getNestedType() == DataType.STRING) {
             output = embedArrayValue(getOutputTensorType(), context);
         }
         else {
-            throw new IllegalArgumentException("Embedding can only be done on string or string array fields, not " +
+            throw new IllegalArgumentException("Embedding can only be done on string, raw or string array fields, " +
+                                               "or on a string and a raw separated by a comma, not " +
                                                context.getCurrentValue().getDataType());
         }
         if (output != null) {
@@ -177,10 +248,54 @@ public class EmbedExpression extends Expression  {
         }
     }
 
+    private Optional<String> rejectionReason(Set<Embedder.Modality> inputModalities) {
+        String embedderName = embedder.id().isEmpty() ? "The embedder" : "Embedder '" + embedder.id() + "'";
+        return Embedder.rejectionReason(inputModalities, embedder.component().supportedModalities())
+                       .map(rejection -> embedderName + " " + rejection);
+    }
+
     private Optional<Tensor> embedSingleValue(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue)context.getCurrentValue();
         if (input.getString().isBlank()) return Optional.empty();
         return Optional.of(embed(input.getString(), getOutputTensorType(), context));
+    }
+
+    private Optional<Tensor> embedMultipart(Array<?> parts, ExecutionContext context) {
+        StringFieldValue text = null;
+        Raw image = null;
+        for (FieldValue part : parts) {
+            if (part instanceof StringFieldValue string && text == null)
+                text = string;
+            else if (part instanceof Raw raw && image == null)
+                image = raw;
+            else
+                throw new IllegalArgumentException("The parts to embed must be one string and one raw, but got another " +
+                                                   part.getDataType().getName());
+        }
+        if (text == null || text.getString().isBlank()) return Optional.empty();
+        return embedTextAndImage(Optional.of(text.getString()), image, context);
+    }
+
+    private Optional<Tensor> embedTextAndImage(Optional<String> text, Raw imageValue, ExecutionContext context) {
+        if (imageValue == null || ! imageValue.getByteBuffer().hasRemaining()) return Optional.empty();
+        var input = new Embedder.Input(text, Optional.of(toImage(imageValue.getByteBuffer())));
+
+        // ExecutionContext.resolveLanguage detects the language from the string form of the current value
+        text.ifPresent(string -> context.setCurrentValue(new StringFieldValue(string)));
+        // An image has no language.
+        // ExecutionContext.resolveLanguage would detect a language from the image,
+        // and keep that language in the context.
+        Language language = text.isPresent() ? context.resolveLanguage(linguistics) : context.getLanguage();
+        return Optional.of(invokeEmbedder(ctx -> embedder.component().embed(input, ctx, getOutputTensorType()), context, language));
+    }
+
+    private static Embedder.Image toImage(ByteBuffer data) {
+        try {
+            return new Embedder.Image(data);
+        } catch (IllegalArgumentException e) {
+            // The data is the value of one document, so it is invalid input, not an invalid statement
+            throw new InvalidInputException(e.getMessage());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -286,35 +401,35 @@ public class EmbedExpression extends Expression  {
         var language = context.resolveLanguage(linguistics);
         var key = new BatchKey(destination, language, targetType);
         var embedderContext = createEmbedderContext(context, language);
-        var embedInput = new EmbedInput(input, embedderContext, System.nanoTime());
-        return translateExceptions(() -> batcher.execute(key, embedInput));
+        var batchText = new BatchText(input, embedderContext, System.nanoTime());
+        return translateExceptions(() -> batcher.execute(key, batchText));
     }
 
-    private List<Tensor> executeBatch(BatchKey key, List<EmbedInput> inputs) {
-        var texts = inputs.stream().map(EmbedInput::text).toList();
-        var ctx = combineBatchContexts(inputs);
+    private List<Tensor> executeBatch(BatchKey key, List<BatchText> batchTexts) {
+        var texts = batchTexts.stream().map(BatchText::text).toList();
+        var ctx = combineBatchContexts(batchTexts);
         var result = embedder.component().embed(texts, ctx, key.targetType());
-        emitBatchMetrics(key, inputs);
+        emitBatchMetrics(key, batchTexts);
         return result;
     }
 
-    private void emitBatchMetrics(BatchKey key, List<EmbedInput> inputs) {
+    private void emitBatchMetrics(BatchKey key, List<BatchText> batchTexts) {
         if (batchSize == null) return;
         var point = new Point(Map.of("embedder", embedder.id(),
                                       "language", key.language().languageCode(),
                                       "destination", key.destination()));
-        batchSize.sample(inputs.size(), point);
+        batchSize.sample(batchTexts.size(), point);
         batchCount.add(1, point);
         long now = System.nanoTime();
-        for (var input : inputs) {
-            batchQueueTime.sample((now - input.enqueuedAtNanos()) / 1_000_000.0, point);
+        for (var batchText : batchTexts) {
+            batchQueueTime.sample((now - batchText.enqueuedAtNanos()) / 1_000_000.0, point);
         }
     }
 
-    private static Embedder.Context combineBatchContexts(List<EmbedInput> inputs) {
-        var first = inputs.get(0).context();
-        var earliestDeadline = inputs.stream()
-                .map(input -> input.context().getDeadline())
+    private static Embedder.Context combineBatchContexts(List<BatchText> batchTexts) {
+        var first = batchTexts.get(0).context();
+        var earliestDeadline = batchTexts.stream()
+                .map(batchText -> batchText.context().getDeadline())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .min(Comparator.comparing(InvocationContext.Deadline::asInstant))
@@ -340,7 +455,10 @@ public class EmbedExpression extends Expression  {
     }
 
     private <T> T invokeEmbedder(Function<Embedder.Context, T> embedFn, ExecutionContext context) {
-        var language = context.resolveLanguage(linguistics);
+        return invokeEmbedder(embedFn, context, context.resolveLanguage(linguistics));
+    }
+
+    private <T> T invokeEmbedder(Function<Embedder.Context, T> embedFn, ExecutionContext context, Language language) {
         var embedderContext = createEmbedderContext(context, language);
         return translateExceptions(() -> embedFn.apply(embedderContext));
     }
@@ -383,7 +501,7 @@ public class EmbedExpression extends Expression  {
     }
 
     private TensorType getOutputTensorType() {
-        return ((TensorDataType)getOutputType()).getTensorType();
+        return ((TensorDataType)requireOutputType()).getTensorType();
     }
 
     private static TensorType toTargetTensor(DataType dataType) {

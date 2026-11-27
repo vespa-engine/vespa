@@ -3,11 +3,15 @@ package com.yahoo.vespa.model.container.component;
 
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
 import java.util.Locale;
+import java.util.Set;
 
+import static com.yahoo.language.process.Embedder.Modality.IMAGE;
+import static com.yahoo.language.process.Embedder.Modality.TEXT;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.parseBatchingElement;
@@ -17,7 +21,7 @@ import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.p
  *
  * @author bjorncs
  */
-public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedderConfig.Producer {
+public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedderConfig.Producer, EmbedderComponent {
 
     private final String apiKeySecretRef;
     private final String model;
@@ -45,6 +49,13 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
                     "Invalid VoyageAI model name: " + model + ". " +
                     "Model name should start with 'voyage-' (e.g., voyage-3, voyage-code-3).");
         }
+    }
+
+    private boolean isMultimodal() { return model.startsWith("voyage-multimodal-"); }
+
+    @Override
+    public Set<Set<Embedder.Modality>> supportedModalities() {
+        return isMultimodal() ? Set.of(Set.of(TEXT), Set.of(IMAGE), Set.of(TEXT, IMAGE)) : Set.of(Set.of(TEXT));
     }
 
     @Override

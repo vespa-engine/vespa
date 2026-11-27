@@ -59,6 +59,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     public DataType setInputType(DataType inputType, TypeContext context) {
+        verifyMultipartInputsAreConsumed();
         super.setInputType(inputType, context);
         DataType currentOutput = null;
         for (var expression : expressions())
@@ -68,6 +69,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     public DataType setOutputType(DataType outputType, TypeContext context) {
+        verifyMultipartInputsAreConsumed();
         super.setOutputType(outputType, context);
         DataType currentInput = null;
         // The output of the last statement is used
@@ -78,8 +80,36 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     protected void doResolve(TypeContext context) {
+        verifyMultipartInputsAreConsumed();
         for (Expression exp : this)
             context.resolve(exp);
+    }
+
+    /** A script discards the value of each statement, so a multipart input which gives that value is never consumed. */
+    private void verifyMultipartInputsAreConsumed() {
+        for (var statement : expressions()) {
+            MultipartExpression multipart = multipartGivingValueOf(statement);
+            if (multipart != null)
+                throw new VerificationException(multipart, "A multipart input must be followed by an expression " +
+                                                            "which consumes it, such as embed");
+        }
+    }
+
+    /** Returns the multipart input whose value becomes the value of the given expression, or null if there is none. */
+    private static MultipartExpression multipartGivingValueOf(Expression expression) {
+        if (expression instanceof MultipartExpression multipart)
+            return multipart;
+        if (expression instanceof ParenthesisExpression parenthesis)
+            return multipartGivingValueOf(parenthesis.getInnerExpression());
+        if (expression instanceof StatementExpression statement && ! statement.expressions().isEmpty())
+            return multipartGivingValueOf(statement.expressions().get(statement.expressions().size() - 1));
+        if (expression instanceof ChoiceExpression choice) {
+            for (var alternative : choice.expressions()) {
+                MultipartExpression multipart = multipartGivingValueOf(alternative);
+                if (multipart != null) return multipart;
+            }
+        }
+        return null;
     }
 
     @Override

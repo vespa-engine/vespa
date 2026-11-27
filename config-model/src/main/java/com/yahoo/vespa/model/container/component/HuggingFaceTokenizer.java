@@ -19,7 +19,8 @@ import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
 /**
  * @author bjorncs
  */
-public class HuggingFaceTokenizer extends TypedComponent implements HuggingFaceTokenizerConfig.Producer {
+public class HuggingFaceTokenizer extends TypedComponent
+        implements HuggingFaceTokenizerConfig.Producer, EmbedderComponent {
 
     private final Map<String, ModelReference> langToModel = new TreeMap<>();
 

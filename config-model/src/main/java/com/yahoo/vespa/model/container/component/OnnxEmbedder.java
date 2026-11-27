@@ -21,7 +21,7 @@ import static com.yahoo.text.XML.getChildValue;
  * @author glebashnik
  * @author ingridhabrekke
  */
-public abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
+public abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer, EmbedderComponent {
     final protected OnnxModelOptions onnxModelOptions;
     private final boolean forceDisableOptimization;
 

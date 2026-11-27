@@ -11,24 +11,42 @@ import com.yahoo.text.Text;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.yahoo.language.process.Embedder.Modality.IMAGE;
+import static com.yahoo.language.process.Embedder.Modality.TEXT;
 
 /**
  * A class which knows how to convert an Object value to a tensor of a given type.
  *
  * @author bratseth
+ * @author glebashnik
  */
 public class TensorConverter {
 
     private static final Logger log = Logger.getLogger(TensorConverter.class.getName());
 
-    private static final Pattern embedderArgumentAndQuotedTextRegexp = Pattern.compile("^([A-Za-z0-9_@\\-.]+),\\s*([\"'].*[\"'])");
-    private static final Pattern embedderArgumentAndReferenceRegexp = Pattern.compile("^([A-Za-z0-9_@\\-.]+),\\s*(@.*)");
+    private static final Pattern embedderArgumentAndQuotedTextRegexp = Pattern.compile("^([A-Za-z0-9_\\-.][A-Za-z0-9_@\\-.]*),\\s*([\"'].*[\"'])");
+    private static final Pattern embedderArgumentAndReferenceRegexp = Pattern.compile("^([A-Za-z0-9_\\-.][A-Za-z0-9_@\\-.]*),\\s*(@.*)");
+    private static final Pattern twoReferencesRegexp = Pattern.compile("^(@[^,]+),\\s*(@[^,]+)$");
+    // A quoted text next to a reference, in either order: 'text', @image or @image, 'text'
+    private static final Pattern quotedTextNextToReferenceRegexp =
+            Pattern.compile("^(.*[\"']\\s*,\\s*@[^,\\s\"']+|@[^,\\s\"']+\\s*,\\s*[\"'].*)$", Pattern.DOTALL);
+    // The media type of a data URL may have parameters, and a data URL has no whitespace before its data.
+    // So a text such as "data:image/png files" is not a data URL.
+    private static final String imageDataUrlPrefix = "^\\s*data:image/[^\\s,;]*(?:;[^\\s,;]+)*";
+    // A data URL is case insensitive up to its data
+    private static final Pattern base64ImageDataUrlRegexp = Pattern.compile(imageDataUrlPrefix + ";base64,(.*)$",
+                                                                            Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private static final Pattern imageDataUrlRegexp = Pattern.compile(imageDataUrlPrefix + ",",
+                                                                      Pattern.CASE_INSENSITIVE);
 
     private final Map<String, Embedder> embedders;
 
@@ -90,19 +108,95 @@ public class TensorConverter {
             embedderId = entry.getKey();
             embedder = entry.getValue();
         }
-        var text = resolve(argument, contextValues, properties);
 
-        // Return zero tensor for empty input text as some embedder implementations does support blank or empty strings.
+        boolean acceptsImage = embedder.supportedModalities().stream()
+                                       .anyMatch(modalities -> modalities.contains(IMAGE));
+        if (acceptsImage && quotedTextNextToReferenceRegexp.matcher(argument).matches())
+            throw new IllegalArgumentException("embed() takes a text with an image as two references, as in " +
+                                               "embed(embedder-id, @text, @image), " +
+                                               "but got a quoted text next to a reference");
+
+        Matcher references = twoReferencesRegexp.matcher(argument);
+        List<String> values = embedder.supportedModalities().contains(Set.of(TEXT, IMAGE)) && references.matches()
+                              ? List.of(resolveReference(references.group(1).strip(), contextValues, properties),
+                                        resolveReference(references.group(2).strip(), contextValues, properties))
+                              : List.of(resolve(argument, contextValues, properties));
+
+        Optional<String> text = Optional.empty();
+        Optional<Embedder.Image> image = Optional.empty();
+        for (String value : values) {
+            if (value.isBlank()) continue;
+            Optional<Embedder.Image> imageOfValue = acceptsImage ? toImage(value) : Optional.empty();
+            if (imageOfValue.isPresent()) {
+                if (image.isPresent()) throw new IllegalArgumentException("embed() accepts one image, but got two");
+                image = imageOfValue;
+            } else {
+                if (text.isPresent()) throw new IllegalArgumentException("embed() accepts one text, but got two");
+                text = Optional.of(value);
+            }
+        }
+
+        // Return zero tensor for empty input as some embedder implementations does support blank or empty strings.
         // A zero vector might be close to a document embedding with a completely different semantic meaning.
         // Ideally we should include an additional annotation in the query to indicate empty input.
-        // The likelihood of searching on an empty input text is low, so this is an acceptable workaround.
-        if (text.isBlank()) {
+        // The likelihood of searching on an empty input is low, so this is an acceptable workaround.
+        if (text.isEmpty() && image.isEmpty()) {
             log.fine(() ->
-                    Text.format("Input text is blank, returning zero tensor of type %s using embedder '%s'", type, embedderId));
+                    Text.format("Input is blank, returning zero tensor of type %s using embedder '%s'", type, embedderId));
             return Tensor.generate(type, __ -> 0.0);
         }
 
-        return embedder.embed(text, embedderContext.copy().setEmbedderId(embedderId), type);
+        var input = new Embedder.Input(text, image);
+        Optional<String> rejection = Embedder.rejectionReason(input.modalities(), embedder.supportedModalities());
+        if (rejection.isPresent())
+            throw new IllegalArgumentException("Embedder '" + embedderId + "' " + rejection.get());
+
+        return embedder.embed(input, embedderContext.copy().setEmbedderId(embedderId), type);
+    }
+
+    /**
+     * A query parameter is an untyped string.
+     * Only a base64 data URL, such as 'data:image/jpeg;base64,/9j/...', marks the value as an image.
+     */
+    private static Optional<Embedder.Image> toImage(String value) {
+        Matcher dataUrl = base64ImageDataUrlRegexp.matcher(value);
+        if ( ! dataUrl.matches()) {
+            if (imageDataUrlRegexp.matcher(value).lookingAt())
+                throw new IllegalArgumentException("An argument of embed() is a data URL of an image " +
+                                                   "without ';base64', but only base64 data URLs are supported");
+            if (isBase64Image(value.strip()))
+                throw new IllegalArgumentException("An argument of embed() is a base64 encoded image " +
+                                                   "without the prefix 'data:image/[format];base64,'");
+            return Optional.empty();
+        }
+        byte[] data;
+        try {
+            data = decodeBase64(dataUrl.group(1));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("An argument of embed() is a data URL whose data is not valid base64", e);
+        }
+        return Optional.of(new Embedder.Image(data));
+    }
+
+    private static boolean isBase64Image(String value) {
+        // decodeBase64 reads a space as a '+'.
+        // A text such as "/9j/ starts a JPEG" then decodes to a JPEG.
+        if (value.contains(" ")) return false;
+        try {
+            new Embedder.Image(decodeBase64(value));
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * In a URL query parameter which is not URL encoded, each '+' arrives as a space.
+     * Base64 has no space.
+     * Tools such as GNU base64 wrap their output in lines, which Base64.getDecoder() rejects.
+     */
+    private static byte[] decodeBase64(String data) {
+        return Base64.getDecoder().decode(data.replaceAll("[\\r\\n]", "").replace(' ', '+'));
     }
 
     private Embedder requireEmbedder(String embedderId) {

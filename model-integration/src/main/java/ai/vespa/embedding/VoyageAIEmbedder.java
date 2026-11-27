@@ -15,9 +15,12 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Embedder using the VoyageAI embeddings API. Auto-selects between the text, multimodal,
@@ -25,6 +28,7 @@ import java.util.Map;
  *
  * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
  * @author bjorncs
+ * @author glebashnik
  */
 @Beta
 public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
@@ -63,6 +67,12 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         this.resolvedEndpoint = resolveEndpoint(config.endpoint(), isMultimodal, isContextual);
     }
 
+    @Override
+    public Set<Set<Modality>> supportedModalities() {
+        if ( ! isMultimodal) return Set.of(Set.of(Modality.TEXT));
+        return Set.of(Set.of(Modality.TEXT), Set.of(Modality.IMAGE), Set.of(Modality.TEXT, Modality.IMAGE));
+    }
+
     @Override public Batching batchingConfig() { return (isMultimodal || isContextual) ? Batching.DISABLED : batching; }
 
     @Override
@@ -95,8 +105,50 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         return tensors;
     }
 
+    @Override
+    public Tensor embed(Input input, Context context, TensorType targetType) {
+        if ( ! isMultimodal) return Embedder.super.embed(input, context, targetType);
+        long startTime = System.nanoTime();
+        EmbeddingQuantization.validateTensorType(targetType, config.dimensions(), quantization);
+        var inputType = context.getDestinationType() == Context.DestinationType.QUERY ? "query" : "document";
+        var outputDataType = EmbeddingQuantization.resolveOutputDataType(targetType, config.dimensions(), quantization);
+
+        record CacheKey(String embedderId, Input input, String inputType, String outputDataType) {}
+        var cacheKey = new CacheKey(context.getEmbedderId(), input, inputType, outputDataType);
+        var response = context.computeCachedValueIfAbsent(cacheKey, () -> {
+            var request = new MultimodalRequest(List.of(toMultimodalInput(input)), config.model(), inputType, config.truncate(),
+                                                config.dimensions(), outputDataType, "base64");
+            return sendJson(toJson(request), context);
+        });
+
+        if (response.totalTokens() > 0)
+            runtime.sampleSequenceLength(response.totalTokens(), context);
+        var tensor = toTensors(response, targetType, outputDataType).get(0);
+        runtime.sampleEmbeddingLatency(Duration.ofNanos(System.nanoTime() - startTime).toMillis(), context);
+        return tensor;
+    }
+
+    /** One input of the multimodal API gives one embedding of the text and the image together. */
+    private static MultimodalInput toMultimodalInput(Input input) {
+        List<MultimodalContentItem> items = new ArrayList<>();
+        input.text().ifPresent(text -> items.add(MultimodalContentItem.of(text)));
+        input.image().ifPresent(image -> items.add(MultimodalContentItem.ofImage(toDataUrl(image))));
+        return new MultimodalInput(items);
+    }
+
+    /** The multimodal API takes a base64 encoded image only as a data URL. */
+    private static String toDataUrl(Image image) {
+        var data = image.data();
+        var bytes = new byte[data.remaining()];
+        data.get(bytes);
+        return "data:" + image.mediaType() + ";base64," + Base64.getEncoder().encodeToString(bytes);
+    }
+
     private VoyageResponse sendRequest(List<String> texts, String inputType, String outputDataType, Context context) {
-        var json = buildRequestJson(texts, inputType, outputDataType);
+        return sendJson(buildRequestJson(texts, inputType, outputDataType), context);
+    }
+
+    private VoyageResponse sendJson(String json, Context context) {
         runtime.sampleRequestCount(context);
         var body = doHttpRequest(resolvedEndpoint, json, authHeaders(), context, runtime);
         return parseSuccess(body);
@@ -252,10 +304,13 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private record MultimodalContentItem(
             @JsonProperty("type") String type,
-            @JsonProperty("text") String text) {
-        static MultimodalContentItem of(String text) { return new MultimodalContentItem("text", text); }
+            @JsonProperty("text") String text,
+            @JsonProperty("image_base64") String imageBase64) {
+        static MultimodalContentItem of(String text) { return new MultimodalContentItem("text", text, null); }
+        static MultimodalContentItem ofImage(String dataUrl) { return new MultimodalContentItem("image_base64", null, dataUrl); }
     }
 
 }

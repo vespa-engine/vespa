@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.xml;
 
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.component.ComponentId;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.path.Path;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
@@ -12,6 +13,9 @@ import com.yahoo.vespa.model.container.component.VoyageAIEmbedder;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -137,6 +141,44 @@ public class VoyageAIEmbedderTest {
         var fullConfig = getConfig(cluster, "voyage-full");
         var minimalConfig = getConfig(cluster, "voyage-minimal");
         assertNotEquals(fullConfig.apiKeySecretRef(), minimalConfig.apiKeySecretRef());
+    }
+
+    @Test
+    void testOnlyMultimodalModelAcceptsImage() {
+        String servicesXml = """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <services version="1.0">
+                    <container id="container" version="1.0">
+                        <component id="text" type="voyage-ai-embedder">
+                            <api-key-secret-ref>key</api-key-secret-ref>
+                            <model>voyage-3.5</model>
+                            <dimensions>1024</dimensions>
+                        </component>
+                        <component id="multimodal" type="voyage-ai-embedder">
+                            <api-key-secret-ref>key</api-key-secret-ref>
+                            <model>voyage-multimodal-3.5</model>
+                            <dimensions>1024</dimensions>
+                        </component>
+                    </container>
+                </services>
+                """;
+        var cluster = buildModelFromXml(servicesXml).getContainerClusters().get("container");
+        var text = (VoyageAIEmbedder)cluster.getComponentsMap().get(new ComponentId("text"));
+        var multimodal = (VoyageAIEmbedder)cluster.getComponentsMap().get(new ComponentId("multimodal"));
+
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT)), text.supportedModalities());
+        assertEquals(Set.of(Set.of(Embedder.Modality.TEXT),
+                            Set.of(Embedder.Modality.IMAGE),
+                            Set.of(Embedder.Modality.TEXT, Embedder.Modality.IMAGE)),
+                     multimodal.supportedModalities());
+
+        // The embedder which gets the config accepts the same input as its component in the config model
+        for (var component : List.of(text, multimodal)) {
+            var embedder = new ai.vespa.embedding.VoyageAIEmbedder(getConfig(cluster, component.getComponentId().getName()),
+                                                                   Embedder.Runtime.testInstance(), key -> () -> "secret");
+            assertEquals(component.supportedModalities(), embedder.supportedModalities());
+            embedder.deconstruct();
+        }
     }
 
     // ===== Helper Methods =====
