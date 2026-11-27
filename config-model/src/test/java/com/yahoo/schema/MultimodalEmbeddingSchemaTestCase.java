@@ -68,7 +68,7 @@ class MultimodalEmbeddingSchemaTestCase {
     }
 
     @Test
-    void testPartsWithoutEmbedIsRejected() {
+    void testMultipartInputToStringFieldIsRejected() {
         var schema = """
                 schema product {
                   document product {
@@ -83,25 +83,8 @@ class MultimodalEmbeddingSchemaTestCase {
                 }
                 """;
         var e = assertThrows(IllegalArgumentException.class, () -> indexingScriptOf(schema));
-        assertTrue(e.getMessage().contains("parts must be directly followed by '| embed'"), e.getMessage());
-    }
-
-    @Test
-    void testCommaInPlaceOfPipeIsRejected() {
-        var schema = """
-                schema product {
-                  document product {
-                    field title type string {
-                      indexing: summary | index
-                    }
-                  }
-                  field title_embedding type tensor<float>(x[768]) {
-                    indexing: input title | embed myEmbedder | attribute, index
-                  }
-                }
-                """;
-        var e = assertThrows(IllegalArgumentException.class, () -> indexingScriptOf(schema));
-        assertTrue(e.getMessage().contains("A comma separates parts, and parts must be directly followed by '| embed'"), e.getMessage());
+        assertTrue(e.getMessage().contains("Invalid expression 'summary combined': Expected string input, got Array<any>"),
+                   e.getMessage());
     }
 
     @Test

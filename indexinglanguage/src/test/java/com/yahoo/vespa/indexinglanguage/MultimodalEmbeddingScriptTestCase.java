@@ -329,47 +329,20 @@ public class MultimodalEmbeddingScriptTestCase {
     }
 
     @Test
-    public void testOnlyEmbedAcceptsParts() {
+    public void testExpressionWhichDoesNotAcceptMultipartInputIsRejected() {
         var e = assertThrows(VerificationException.class,
                              () -> embed(tester, "input myText, input myImage | lowercase | embed | attribute 'myTensor'", "hello", image));
-        assertTrue(e.getMessage(), e.getMessage().contains("A comma separates parts, and parts must be directly followed by '| embed'"));
+        assertEquals("Invalid expression 'lowercase': Expected string input, got Array<any>", e.getMessage());
 
         e = assertThrows(VerificationException.class,
                          () -> embed(tester, "input myText, input myImage | attribute 'myTensor'", "hello", image));
-        assertTrue(e.getMessage(), e.getMessage().contains("A comma separates parts, and parts must be directly followed by '| embed'"));
+        assertEquals("Invalid expression 'attribute myTensor': Expected tensor(d[4]) input, got Array<any>", e.getMessage());
     }
 
     @Test
-    public void testPartsWhichEndStatementAreRejected() {
-        // A comma in place of a pipe makes a multipart input which ends the statement
-        var e = assertThrows(VerificationException.class,
-                             () -> embed(tester, "input myText | embed | attribute 'myTensor', summary 'myTensor'", "hello", image));
-        assertTrue(e.getMessage(), e.getMessage().contains("A comma separates parts, and parts must be directly followed by '| embed'"));
-    }
-
-    @Test
-    public void testPartsMustStandDirectlyBeforeEmbed() {
-        // Parentheses start a nested statement, which ends with the multipart input
-        var e = assertThrows(VerificationException.class,
-                             () -> embed(tester, "(input myText, input myImage) | embed | attribute 'myTensor'", "hello", image));
-        assertTrue(e.getMessage(), e.getMessage().contains("parts must be directly followed by '| embed'"));
-
-        // A choice follows the multipart input, not embed
-        e = assertThrows(VerificationException.class,
-                         () -> embed(tester, "input myText, input myImage | embed || embed | attribute 'myTensor'", "hello", image));
-        assertTrue(e.getMessage(), e.getMessage().contains("parts must be directly followed by '| embed'"));
-
-        // The statement in for_each ends with a multipart input
-        var expression = tester.expressionFrom("input myTexts | for_each { _, input myImage } | to_string | embed | " +
-                                               "attribute 'myTensor'");
-        var adapter = new SimpleTestAdapter();
-        adapter.createField(new Field("myTexts", new ArrayDataType(DataType.STRING)));
-        adapter.createField(new Field("myImage", DataType.RAW));
-        var tensorField = new Field("myTensor", new TensorDataType(tensorType));
-        adapter.createField(tensorField);
-        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
-        e = assertThrows(VerificationException.class, () -> expression.resolve(new TypeContext(adapter)));
-        assertTrue(e.getMessage(), e.getMessage().contains("parts must be directly followed by '| embed'"));
+    public void testMultipartInputInParenthesesAndBeforeChoice() {
+        assertEmbedding("[5, 103, 0, 0]", "(input myText, input myImage) | embed | attribute 'myTensor'", "hello", image);
+        assertEmbedding("[5, 103, 0, 0]", "input myText, input myImage | embed || embed | attribute 'myTensor'", "hello", image);
     }
 
     @Test
