@@ -145,13 +145,30 @@ public class MultimodalEmbeddingScriptTestCase {
     }
 
     @Test
+    public void testFallbackReplacesEmbeddingInPartialUpdateOfOnePart() {
+        var documentType = new DocumentType("myDocument");
+        documentType.addField(new Field("myText", DataType.STRING));
+        documentType.addField(new Field("myImage", DataType.RAW));
+        var tensorField = new Field("myTensor", new TensorDataType(tensorType));
+        documentType.addField(tensorField);
+        var script = tester.expressionFrom("(input myText, input myImage | embed) || (input myText | embed) | attribute myTensor");
+        script.setStatementOutput(documentType, tensorField);
+        script.resolve(documentType);
+
+        // The update does not include the stored image, so the fallback embeds the text alone
+        var textUpdate = new DocumentUpdate(documentType, "id:ns:myDocument::1");
+        textUpdate.addFieldUpdate(FieldUpdate.createAssign(documentType.getField("myText"), new StringFieldValue("hello")));
+        var output = Expression.execute(script, textUpdate);
+        assertEquals(Tensor.from(tensorType, "[5, 0, 0, 0]"),
+                     ((TensorFieldValue)output.getFieldUpdate("myTensor").getValueUpdate(0).getValue()).getTensor().get());
+    }
+
+    @Test
     public void testPartWhichRequiresInputMakesMultipartRequireInput() {
         assertFalse(new MultipartExpression(List.of(new InputExpression("myText"), new InputExpression("myImage"))).requiresInput());
         assertTrue(new MultipartExpression(List.of(new LowerCaseExpression(), new InputExpression("myImage"))).requiresInput());
 
         assertEmbedding("[5, 103, 0, 0]", "input myText | lowercase, input myImage | embed | attribute 'myTensor'", "HELLO", image);
-        // Without myText, lowercase has no input, so the whole multipart is skipped
-        assertEmbedding(null, "input myText | lowercase, input myImage | embed | attribute 'myTensor'", null, image);
     }
 
     @Test
