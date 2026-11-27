@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SidecarSpec;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -23,6 +24,12 @@ public interface SidecarProvider {
     /** The name for the Triton sidecar. */
     String TRITON_SIDECAR_NAME = "triton";
 
+    /** Capability of the Triton sidecar: running ONNX models. */
+    String TRITON_ONNX_CAPABILITY = "onnx";
+
+    /** Capability of the Triton sidecar: running GGUF models with llama.cpp, with Triton's OpenAI-compatible frontend. */
+    String TRITON_LLAMACPP_CAPABILITY = "llamacpp";
+
     /**
      * Returns sidecars to run alongside the nodes of the given cluster. Invoked before node
      * provisioning. Sidecar ids and names must be unique and stable within a cluster.
@@ -31,14 +38,24 @@ public interface SidecarProvider {
     List<SidecarSpec> getSidecars(ClusterSpec.Id clusterId, NodeResources minNodeResources, boolean needTriton);
 
     /**
-     /**
      * Returns sidecars to run alongside the nodes of the given cluster. Invoked before node
      * provisioning. Sidecar ids and names must be unique and stable within a cluster.
      * Application and vespaVersion are added to support corresponding dimensions in feature flags.
      */
     default List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
-                                          NodeResources minNodeResources, Set<String> neededSidecars) {
-        return getSidecars(clusterId, minNodeResources, neededSidecars.contains(TRITON_SIDECAR_NAME));
+                                          NodeResources minNodeResources, Set<String> sidecarNames) {
+        return getSidecars(clusterId, minNodeResources, sidecarNames.contains(TRITON_SIDECAR_NAME));
+    }
+
+    /**
+     * Returns sidecars to run alongside the nodes of the given cluster, as above, given also the capabilities
+     * the cluster needs from each sidecar, e.g. {"triton": {"onnx", "llamacpp"}}. The config model sends the
+     * capability names defined as constants here. By default, this calls the method above with the sidecar names
+     * only, so that providers that don't know about capabilities keep working.
+     */
+    default List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
+                                          NodeResources minNodeResources, Map<String, Set<String>> sidecarNamesWithCapabilities) {
+        return getSidecars(application, vespaVersion, clusterId, minNodeResources, sidecarNamesWithCapabilities.keySet());
     }
 
 }

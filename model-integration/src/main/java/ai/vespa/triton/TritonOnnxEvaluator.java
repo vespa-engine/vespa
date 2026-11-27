@@ -31,8 +31,9 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     private final String modelName;
     private final ResourceReference modelReference;
-    private final TritonOnnxClient tritonClient;
-    private final boolean isExplicitControl;
+    private final TritonOnnxClient onnxClient;
+    private final TritonModelRepositoryClient repositoryClient;
+    private final boolean isModelControlExplicit;
     private final Optional<OnnxPoolingOptions> runtimePooling;
 
     private TritonOnnxClient.ModelMetadata modelMetadata;
@@ -40,15 +41,17 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     TritonOnnxEvaluator(
             String modelName,
             ResourceReference modelReference,
-            TritonOnnxClient tritonClient,
-            boolean isExplicitControl,
+            TritonOnnxClient onnxClient,
+            TritonModelRepositoryClient repositoryClient,
+            boolean isModelControlExplicit,
             Optional<OnnxPoolingOptions> runtimePooling) {
         this.modelName = modelName;
         this.modelReference = modelReference;
-        this.tritonClient = tritonClient;
-        this.isExplicitControl = isExplicitControl;
+        this.onnxClient = onnxClient;
+        this.repositoryClient = repositoryClient;
+        this.isModelControlExplicit = isModelControlExplicit;
         this.runtimePooling = runtimePooling;
-        modelMetadata = tritonClient.getModelMetadata(modelName);
+        modelMetadata = onnxClient.getModelMetadata(modelName);
         runtimePooling.ifPresent(this::requirePooled);
     }
 
@@ -83,9 +86,9 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Optional<Instant> deadline) {
         Objects.requireNonNull(deadline, "deadline");
         try {
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
-        } catch (TritonOnnxClient.TritonException e) {
-            if (!isExplicitControl) {
+            return onnxClient.evaluate(modelName, modelMetadata, inputs, deadline);
+        } catch (TritonException e) {
+            if (!isModelControlExplicit) {
                 throw e;
             }
 
@@ -93,9 +96,9 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     Level.WARNING,
                     "Failed to evaluate ONNX model " + modelName + " in Triton, will retry after reload.",
                     e);
-            tritonClient.loadUntilModelReady(modelName);
-            modelMetadata = tritonClient.getModelMetadata(modelName);
-            return tritonClient.evaluate(modelName, modelMetadata, inputs, deadline);
+            repositoryClient.loadUntilModelReady(modelName);
+            modelMetadata = onnxClient.getModelMetadata(modelName);
+            return onnxClient.evaluate(modelName, modelMetadata, inputs, deadline);
         }
     }
 

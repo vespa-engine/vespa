@@ -120,6 +120,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -232,8 +233,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addHttp(deployState, spec, cluster, context);
 
         // Decided before addNodes, which provisions the Triton sidecar, and before addModelEvaluationRuntime,
-        // which chooses between the embedded ONNX runtime and TritonOnnxRuntime.
-        cluster.setUsesTriton(shouldUseTriton(cluster, spec, context));
+        // which chooses between the embedded and Triton runtimes for ONNX and for llama.cpp.
+        // The two are independent: GGUF embedders alone don't move the ONNX runtime to Triton, and vice versa.
+        cluster.setUsesTritonForOnnx(shouldUseTritonForOnnx(cluster, spec, context));
+        cluster.setUsesTritonForLlamacpp(shouldUseTritonForLlamacpp(cluster, context));
         addNodes(cluster, spec, context);
 
         addModelEvaluationRuntime(deployState, cluster);
@@ -253,18 +256,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addParameterStoreValidationHandler(cluster, deployState);
     }
 
-    private boolean shouldUseTriton(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
-        var deployState = context.getDeployState();
+    private boolean shouldUseTritonForOnnx(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
+        return isTritonEnabled(cluster, context.getDeployState()) && hasOnnxModels(cluster, spec, context);
+    }
+
+    private boolean shouldUseTritonForLlamacpp(ApplicationContainerCluster cluster, ConfigModelContext context) {
+        return isTritonEnabled(cluster, context.getDeployState()) && hasGgufEmbedders(cluster);
+    }
+
+    private static boolean isTritonEnabled(ApplicationContainerCluster cluster, DeployState deployState) {
         // The Triton runtime requires a sidecar provider, injected e.g. in hosted Vespa.
         if (deployState.getSidecarProvider().isEmpty()) return false;
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
-        var hasOnnxModels = hasOnnxModels(cluster, spec, context);
         var useTritonFeatureFlagValue = deployState.featureFlags()
                                                    .useTritonFlag()
                                                    .withClusterType(ClusterSpec.Type.container)
                                                    .withClusterId(cluster.id())
                                                    .value();
-        return useTritonFeatureFlagValue && isPublicCloud && hasOnnxModels;
+        return useTritonFeatureFlagValue && isPublicCloud;
+    }
+
+    // Matches by class name, so that it also finds GGUF embedders declared with a class instead of the gguf-embedder type.
+    private static boolean hasGgufEmbedders(ApplicationContainerCluster cluster) {
+        return cluster.getAllComponents().stream()
+                      .anyMatch(component -> ContainerModelEvaluation.GGUF_EMBEDDER_CLASS.equals(component.getClassId().getName()));
     }
 
     /**
@@ -292,13 +307,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         if (deployState.getSidecarProvider().isEmpty()) return List.of();
 
-        var neededSidecars = cluster.usesTriton() ? Set.of(SidecarProvider.TRITON_SIDECAR_NAME) : Set.<String>of();
+        var capabilities = new HashSet<String>();
+        if (cluster.usesTritonForOnnx()) capabilities.add(SidecarProvider.TRITON_ONNX_CAPABILITY);
+        if (cluster.usesTritonForLlamacpp()) capabilities.add(SidecarProvider.TRITON_LLAMACPP_CAPABILITY);
+        var sidecarNamesWithCapabilities = capabilities.isEmpty()
+                ? Map.<String, Set<String>>of()
+                : Map.of(SidecarProvider.TRITON_SIDECAR_NAME, Set.copyOf(capabilities));
         var sidecars = deployState.getSidecarProvider().get()
                 .getSidecars(deployState.getProperties().applicationId(),
                              deployState.getVespaVersion(),
                              cluster.id(),
                              nodesSpecification.minResources().nodeResources(),
-                             neededSidecars);
+                             sidecarNamesWithCapabilities);
         if (sidecars.stream().map(SidecarSpec::id).distinct().count() < sidecars.size()
                 || sidecars.stream().map(SidecarSpec::name).distinct().count() < sidecars.size())
             throw new IllegalArgumentException("Sidecars in " + cluster + " must have unique ids and names: " + sidecars);
@@ -1007,13 +1027,23 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
+
         /* The ONNX runtime is always available for injection to any component */
-        if (cluster.usesTriton()) {
+        if (cluster.usesTritonForOnnx()) {
             cluster.addSimpleComponent(
                     ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
         } else {
             cluster.addSimpleComponent(
                     ContainerModelEvaluation.EMBEDDED_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        }
+
+        /* The llama.cpp runtime is always available for injection to any component */
+        if (cluster.usesTritonForLlamacpp()) {
+            cluster.addSimpleComponent(
+                    ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        } else {
+            cluster.addSimpleComponent(
+                    ContainerModelEvaluation.EMBEDDED_LLAMACPP_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
         }
         /* Add runtime providing utilities such as metrics to embedder implementations */
         cluster.addSimpleComponent(

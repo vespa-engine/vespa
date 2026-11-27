@@ -83,7 +83,7 @@ ComponentDefinition =
 
 TypedComponentDefinition =
    attribute id { xsd:Name } &
-   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder | SpladeEmbedder | VoyageAIEmbedder | OpenAIEmbedder | MistralEmbedder ) &
+   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder | SpladeEmbedder | VoyageAIEmbedder | OpenAIEmbedder | MistralEmbedder | GgufEmbedder ) &
    GenericConfig* &
    Component*
 
@@ -105,6 +105,22 @@ PrependResources = element prepend {
   element query { xsd:string }? &
   element document { xsd:string }?
 }
+
+GgufEmbedder =
+   attribute type { "gguf-embedder" } &
+   element transformer-model { ModelReference } &
+   element max-tokens { xsd:positiveInteger }? &
+   element normalize { xsd:boolean }? &
+   EmbedderPoolingStrategy &
+   PrependResources? &
+   element parallel { xsd:positiveInteger }? &
+   element context-size { xsd:nonNegativeInteger }? &
+   element logical-max-batch-size { xsd:integer }? &
+   element physical-max-batch-size { xsd:integer }? &
+   element gpu-layers { xsd:integer }? &
+   element seed { xsd:integer }? &
+   element threads { xsd:double }? &
+   element batch-threads { xsd:double }?
 
 SpladeEmbedder =
    attribute type { "splade-embedder" } &

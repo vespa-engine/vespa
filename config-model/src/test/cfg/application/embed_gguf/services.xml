@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+    <container id="container" version="1.0">
+
+        <component id="gguf-full" type="gguf-embedder">
+            <transformer-model model-id="llama-3.2-1b" url="https://my/url/model.gguf"/>
+            <max-tokens>512</max-tokens>
+            <normalize>true</normalize>
+            <pooling-strategy>last</pooling-strategy>
+            <prepend>
+                <query>query: </query>
+                <document>passage: </document>
+            </prepend>
+            <parallel>4</parallel>
+            <context-size>8192</context-size>
+            <logical-max-batch-size>2048</logical-max-batch-size>
+            <physical-max-batch-size>1024</physical-max-batch-size>
+            <gpu-layers>99</gpu-layers>
+            <seed>42</seed>
+            <threads>-0.5</threads>
+            <batch-threads>6</batch-threads>
+        </component>
+
+        <component id="gguf-minimal" type="gguf-embedder">
+            <transformer-model path="models/embedder.gguf"/>
+        </component>
+
+    </container>
+</services>

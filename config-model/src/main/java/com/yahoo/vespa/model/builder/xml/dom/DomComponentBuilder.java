@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.container.component.SpladeEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.GgufEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
 import com.yahoo.vespa.model.container.component.MistralEmbedder;
@@ -60,6 +61,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
                 case "openai-embedder" -> new OpenAIEmbedder(cluster, spec, state);
                 case "mistral-embedder" -> new MistralEmbedder(cluster, spec, state);
                 case "voyage-ai-embedder" -> new VoyageAIEmbedder(cluster, spec, state);
+                case "gguf-embedder" -> new GgufEmbedder(cluster, spec, state);
                 default -> throw new IllegalArgumentException(Text.format("Unknown component type '%s'", type));
             };
         } else {

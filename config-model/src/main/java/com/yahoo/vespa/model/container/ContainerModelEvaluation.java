@@ -34,6 +34,9 @@ public class ContainerModelEvaluation implements
     public final static String LLAMA_BUNDLE_NAME = "container-llama.jar";
     public final static String EMBEDDED_ONNX_RUNTIME_CLASS = "ai.vespa.modelintegration.evaluator.EmbeddedOnnxRuntime";
     public final static String TRITON_ONNX_RUNTIME_CLASS = "ai.vespa.triton.TritonOnnxRuntime";
+    public final static String EMBEDDED_LLAMACPP_RUNTIME_CLASS = "ai.vespa.modelintegration.llamacpp.EmbeddedLlamacppRuntime";
+    public final static String TRITON_LLAMACPP_RUNTIME_CLASS = "ai.vespa.triton.TritonLlamacppRuntime";
+    public final static String GGUF_EMBEDDER_CLASS = "ai.vespa.embedding.GgufEmbedder";
 
     private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
     private final static String REST_HANDLER_NAME = "ai.vespa.models.handler.ModelsEvaluationHandler";

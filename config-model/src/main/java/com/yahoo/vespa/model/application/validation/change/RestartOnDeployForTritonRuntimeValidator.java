@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.component.Component;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,14 +19,22 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange.DEFER_UNTIL_RESTART;
 
 /**
- * Ensures that application container clusters are restarted when the TritonOnnx Runtime component
- * is added or removed, or when its config changes.
- * TritonOnnxRuntime holds state shared across reconfigurations,
- * which is only correct when its config never changes while the container serves.
+ * Ensures that application container clusters are restarted when a Triton runtime component (TritonOnnxRuntime or
+ * TritonLlamacppRuntime) is added or removed, or when their config changes.
+ * The runtimes hold state shared across reconfigurations, which is only correct when their config never changes
+ * while the container serves. Adding or removing one also changes the inference backends the cluster needs in the
+ * Triton sidecar, which the sidecar only gets when the nodes restart.
  *
  * @author glebashnik
  */
-public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValidator {
+public class RestartOnDeployForTritonRuntimeValidator implements ChangeValidator {
+
+    // The Triton runtime components, by class name, with the name used in restart messages.
+    private static final Map<String, String> RUNTIMES = new LinkedHashMap<>();
+    static {
+        RUNTIMES.put(ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS, "ONNX");
+        RUNTIMES.put(ContainerModelEvaluation.TRITON_LLAMACPP_RUNTIME_CLASS, "llama.cpp");
+    }
 
     @Override
     public void validate(ChangeContext context) {
@@ -41,16 +50,24 @@ public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValid
                 continue;
             }
 
-            var previousRuntime = getTritonOnnxRuntime(previousCluster);
-            var currentRuntime = getTritonOnnxRuntime(currentCluster);
+            boolean runtimeAddedOrRemoved = false;
+            for (var runtime : RUNTIMES.entrySet()) {
+                var wasPresent = getComponent(previousCluster, runtime.getKey()).isPresent();
+                var isPresent = getComponent(currentCluster, runtime.getKey()).isPresent();
+                if (wasPresent == isPresent) continue;
 
-            if (previousRuntime.isPresent() != currentRuntime.isPresent()) {
-                var message = currentRuntime.isPresent()
-                        ? "Triton ONNX runtime was enabled for cluster '%s', services require restart"
-                        : "Triton ONNX runtime was disabled for cluster '%s', services require restart";
-                var action = VespaRestartAction.ofCluster(currentCluster, Text.format(message, clusterId), DEFER_UNTIL_RESTART);
+                var message = isPresent
+                        ? "Triton %s runtime was enabled for cluster '%s', services require restart"
+                        : "Triton %s runtime was disabled for cluster '%s', services require restart";
+                var action = VespaRestartAction.ofCluster(currentCluster, Text.format(message, runtime.getValue(), clusterId), DEFER_UNTIL_RESTART);
                 context.require(action);
-            } else if (currentRuntime.isPresent()) {
+                runtimeAddedOrRemoved = true;
+            }
+            // All Triton runtimes in a cluster get the same config,
+            // so it's enough to compare the config of one of them.
+            var previousRuntime = getAnyTritonRuntime(previousCluster);
+            var currentRuntime = getAnyTritonRuntime(currentCluster);
+            if ( ! runtimeAddedOrRemoved && previousRuntime.isPresent() && currentRuntime.isPresent()) {
                 // Applies to self-hosted as well: without the restart, a config change would
                 // create runtimes with independent reference counts for the same Triton models.
                 var previousConfig = context.previousModel().getConfig(
@@ -75,10 +92,16 @@ public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValid
                 .collect(Collectors.toMap(ApplicationContainerCluster::id, cluster -> cluster));
     }
 
-    private static Optional<Component<?, ?>> getTritonOnnxRuntime(ApplicationContainerCluster cluster) {
+    private static Optional<Component<?, ?>> getComponent(ApplicationContainerCluster cluster, String className) {
         return cluster.getAllComponents().stream()
-                .filter(component ->
-                        component.getClassId().getName().equals(ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS))
+                .filter(component -> component.getClassId().getName().equals(className))
+                .findFirst();
+    }
+
+    private static Optional<Component<?, ?>> getAnyTritonRuntime(ApplicationContainerCluster cluster) {
+        return RUNTIMES.keySet().stream()
+                .map(className -> getComponent(cluster, className))
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 }

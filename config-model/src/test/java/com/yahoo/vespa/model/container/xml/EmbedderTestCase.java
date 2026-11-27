@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import ai.vespa.embedding.config.GgufEmbedderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.InnerNode;
 import com.yahoo.config.ModelNode;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.GgufEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
 import com.yahoo.vespa.model.container.component.SpladeEmbedder;
@@ -44,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -313,6 +316,65 @@ public class EmbedderTestCase {
     }
 
     @Test
+    void ggufEmbedder_selfhosted() throws Exception {
+        var cluster = loadModel(Path.fromString("src/test/cfg/application/embed_gguf/"), false).getContainerClusters().get("container");
+
+        var config = ggufEmbedderConfig(cluster, "gguf-full");
+        assertEquals("https://my/url/model.gguf", modelReference(config, "embeddingModel").url().orElseThrow().value());
+        assertEquals(512, config.maxPromptTokens());
+        assertTrue(config.normalize());
+        assertEquals(GgufEmbedderConfig.PoolingType.Enum.LAST, config.poolingType());
+        assertEquals("query: ", config.prependQuery());
+        assertEquals("passage: ", config.prependDocument());
+        assertEquals(4, config.parallel());
+        assertEquals(8192, config.contextSize());
+        assertEquals(2048, config.logicalMaxBatchSize());
+        assertEquals(1024, config.physicalMaxBatchSize());
+        assertEquals(99, config.gpuLayers());
+        assertEquals(42, config.seed());
+        assertEquals(-0.5, config.threads());
+        assertEquals(6.0, config.batchThreads());
+    }
+
+    @Test
+    void ggufEmbedder_keeps_config_defaults_for_elements_not_given() throws Exception {
+        var cluster = loadModel(Path.fromString("src/test/cfg/application/embed_gguf/"), false).getContainerClusters().get("container");
+
+        var config = ggufEmbedderConfig(cluster, "gguf-minimal");
+        assertEquals("models/embedder.gguf", modelReference(config, "embeddingModel").path().orElseThrow().value());
+        assertEquals(0, config.maxPromptTokens());
+        assertFalse(config.normalize());
+        assertEquals(GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED, config.poolingType());
+        assertEquals("", config.prependQuery());
+        assertEquals("", config.prependDocument());
+        assertEquals(1, config.parallel());
+        assertEquals(0, config.contextSize());
+        assertEquals(-1, config.logicalMaxBatchSize());
+        assertEquals(-1, config.physicalMaxBatchSize());
+        assertEquals(-1, config.gpuLayers());
+        assertEquals(-1, config.seed());
+        assertEquals(0.0, config.threads());
+        assertEquals(0.0, config.batchThreads());
+    }
+
+    @Test
+    void ggufEmbedder_hosted() throws Exception {
+        var cluster = loadModel(Path.fromString("src/test/cfg/application/embed_gguf/"), true).getContainerClusters().get("container");
+
+        var config = ggufEmbedderConfig(cluster, "gguf-full");
+        assertEquals("https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q8_0.gguf",
+                     modelReference(config, "embeddingModel").url().orElseThrow().value());
+    }
+
+    @Test
+    void ggufEmbedder_rejects_model_id_of_another_format() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> loadModel(Path.fromString("src/test/cfg/application/embed_gguf_onnx_model_id/"), true));
+        assertEquals("Model 'e5-small-v2' on 'transformer-model' has tags [onnx-model] but are missing required tags [gguf-model]",
+                     Exceptions.toMessageString(exception));
+    }
+
+    @Test
     void negativeGpuDevicePassesXmlValidation() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_negative_gpu/").create();
     }
@@ -337,6 +399,15 @@ public class EmbedderTestCase {
                                      () -> new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_bert_none_pooling/").create());
         assertEquals("Unsupported pooling-strategy 'none' for bert-embedder, supported values are [cls, mean, last]",
                      exception.getMessage());
+    }
+
+    // A GGUF embedder with rank pooling returns a vector of zeros, with either llama.cpp runtime.
+    @Test
+    void ggufEmbedderRejectsRankPoolingStrategy() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_gguf_rank_pooling/").create());
+        assertTrue(exception.getMessage().startsWith("Invalid XML according to XML schema"), exception.getMessage());
+        assertTrue(exception.getMessage().contains("<pooling-strategy>rank</pooling-strategy>"), exception.getMessage());
     }
 
     @Test
@@ -451,6 +522,14 @@ public class EmbedderTestCase {
         var hfEmbedder = (HuggingFaceEmbedder) cluster.getComponentsMap().get(new ComponentId("hf-embedder"));
         assertEquals("ai.vespa.embedding.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
         return hfEmbedder;
+    }
+
+    private static GgufEmbedderConfig ggufEmbedderConfig(ApplicationContainerCluster cluster, String componentId) {
+        var embedder = (GgufEmbedder) cluster.getComponentsMap().get(new ComponentId(componentId));
+        assertEquals("ai.vespa.embedding.GgufEmbedder", embedder.getClassId().getName());
+        var config = new GgufEmbedderConfig.Builder();
+        embedder.getConfig(config);
+        return config.build();
     }
 
     private static ColBertEmbedder assertColBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {

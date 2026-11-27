@@ -307,12 +307,13 @@ class TritonOnnxRuntimeTest {
                 Path.of("src/test/triton/config_with_model_config_override_input.pbtxt"))).build();
         var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false, Optional.empty());
         var runtimeClient = spy(createClient());
-        var runtime = new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false), runtimeClient);
+        var config = testConfig(TritonConfig.ModelControlMode.EXPLICIT, false);
+        var runtime = new TritonOnnxRuntime(config, new TritonOnnxClient(config), runtimeClient);
 
         try (var client = createClient()) {
             try {
                 runtime.evaluatorOf(MODEL_PATH, opts);
-                doThrow(new TritonOnnxClient.TritonException("unload unavailable"))
+                doThrow(new TritonException("unload unavailable"))
                         .when(runtimeClient).unloadUntilModelNotReady(modelName);
             } finally {
                 assertDoesNotThrow(runtime::deconstruct);
@@ -330,8 +331,8 @@ class TritonOnnxRuntimeTest {
         }
     }
 
-    private TritonOnnxClient createClient() {
-        return new TritonOnnxClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false));
+    private TritonModelRepositoryClient createClient() {
+        return new TritonModelRepositoryClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false));
     }
 
     private TritonOnnxRuntime createRuntime() {
@@ -351,7 +352,7 @@ class TritonOnnxRuntimeTest {
                 .build();
     }
 
-    private void assertModelRepo(TritonOnnxClient client, int numFiles, Map<String, Boolean> modelReady) {
+    private void assertModelRepo(TritonModelRepositoryClient client, int numFiles, Map<String, Boolean> modelReady) {
         assertRepoFileCount(tritonContainer, numFiles);
         modelReady.forEach((modelName, isReady) -> assertEquals(isReady, client.isModelReady(modelName)));
     }
@@ -436,7 +437,7 @@ class TritonOnnxRuntimeTest {
 
         try {
             var exception = assertThrows(
-                    TritonOnnxClient.TritonException.class,
+                    TritonException.class,
                     () -> runtime.evaluatorOf(faultyModelPath.toString(), opts));
             var message = Exceptions.toMessageString(exception);
             assertTrue(message.contains("faulty_model"), message);

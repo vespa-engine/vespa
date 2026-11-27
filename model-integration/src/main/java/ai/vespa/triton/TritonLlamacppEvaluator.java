@@ -1,0 +1,86 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package ai.vespa.triton;
+
+import ai.vespa.modelintegration.llamacpp.LlamacppEvaluator;
+import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.language.process.TimeoutException;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * A llama.cpp evaluator that uses Triton server for inference.
+ *
+ * @author ingridhabrekke
+ * @author glebashnik
+ */
+class TritonLlamacppEvaluator implements LlamacppEvaluator {
+
+    private static final Logger log = Logger.getLogger(TritonLlamacppEvaluator.class.getName());
+
+    private final String modelName;
+    private final ResourceReference modelReference;
+    private final TritonLlamacppClient llamacppClient;
+    private final TritonModelRepositoryClient repositoryClient;
+    private final boolean isModelControlExplicit;
+
+    TritonLlamacppEvaluator(String modelName, ResourceReference modelReference, TritonLlamacppClient llamacppClient,
+                         TritonModelRepositoryClient repositoryClient, boolean isModelControlExplicit) {
+        this.modelName = modelName;
+        this.modelReference = modelReference;
+        this.llamacppClient = llamacppClient;
+        this.repositoryClient = repositoryClient;
+        this.isModelControlExplicit = isModelControlExplicit;
+    }
+
+    @Override
+    public float[] embed(String text, Optional<Instant> deadline) {
+        return withReload(() -> llamacppClient.embed(modelName, text, deadline));
+    }
+
+    @Override
+    public int[] tokenize(String text, Optional<Instant> deadline) {
+        return withReload(() -> llamacppClient.tokenize(modelName, text, deadline));
+    }
+
+    @Override
+    public String detokenize(int[] tokens, Optional<Instant> deadline) {
+        return withReload(() -> llamacppClient.detokenize(modelName, tokens, deadline));
+    }
+
+    /**
+     * Retries once after loading the model again if Triton no longer has it, e.g. after Triton restarted.
+     * Triton's OpenAI frontend does not report a model it does not have with a distinct status,
+     * so this asks Triton after any failure other than invalid input, timeouts and overload.
+     * The retry keeps the request's deadline, so a retry after a slow reload times out.
+     */
+    private <T> T withReload(Supplier<T> request) {
+        try {
+            return request.get();
+        } catch (TritonException e) {
+            if ( ! isModelControlExplicit || isModelReady()) throw e;
+
+            log.log(Level.WARNING, "Failed to run llama.cpp model " + modelName + " in Triton, will retry after reload.", e);
+            repositoryClient.loadUntilModelReady(modelName);
+            return request.get();
+        }
+    }
+
+    private boolean isModelReady() {
+        try {
+            return repositoryClient.isModelReady(modelName);
+        } catch (TritonException | TimeoutException e) {
+            // Treat as not ready: if Triton is unreachable, the reload fails with the cause.
+            return false;
+        }
+    }
+
+    @Override
+    public void close() {
+        modelReference.close();
+    }
+
+}

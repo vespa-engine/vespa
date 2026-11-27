@@ -110,7 +110,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final int transport_connections_per_target;
     private final boolean tritonShareOnnxSession;
     private final boolean tritonOnnxPooling;
-    private boolean usesTriton = false;
+    private boolean usesTritonForOnnx = false;
+    private boolean usesTritonForLlamacpp = false;
     private int maxDocumentOperationRequestSizeMib = new DocumentOperationExecutorConfig.Builder().build().maxDocumentOperationRequestSizeMib();
 
     /** The heap size % of total memory available to the JVM process. */
@@ -176,9 +177,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     public void setSpec(ClusterSpec spec) { this.spec = spec; }
 
-    public boolean usesTriton() { return usesTriton; }
+    /** Whether ONNX models in this cluster run in the Triton sidecar, with TritonOnnxRuntime. */
+    public boolean usesTritonForOnnx() { return usesTritonForOnnx; }
 
-    public void setUsesTriton(boolean usesTriton) { this.usesTriton = usesTriton; }
+    public void setUsesTritonForOnnx(boolean usesTritonForOnnx) { this.usesTritonForOnnx = usesTritonForOnnx; }
+
+    /** Whether GGUF embedders in this cluster run their models with llama.cpp in the Triton sidecar, with TritonLlamacppRuntime. */
+    public boolean usesTritonForLlamacpp() { return usesTritonForLlamacpp; }
+
+    public void setUsesTritonForLlamacpp(boolean usesTritonForLlamacpp) { this.usesTritonForLlamacpp = usesTritonForLlamacpp; }
 
     public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
 
