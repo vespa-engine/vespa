@@ -90,6 +90,7 @@ public interface Embedder {
     /**
      * Converts input into a tensor.
      * An embedder which accepts an image overrides this method and {@link #supportedModalities()}.
+     * For a text alone, this must give the same tensor as {@link #embed(String, Context, TensorType)}.
      *
      * @throws IllegalArgumentException if this embedder does not accept the input
      */

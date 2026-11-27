@@ -78,7 +78,7 @@ public final class MultipartExpression extends ExpressionList<Expression> {
         for (Expression expression : this) {
             FieldValue part = context.setCurrentValue(input).execute(expression).getCurrentValue();
             if (part == null) {
-                // Without all parts there is no embedding, and a partial update leaves the stored embedding unchanged
+                // A partial update gives a missing part for each field which it does not assign
                 context.setCurrentValue(null);
                 return;
             }
