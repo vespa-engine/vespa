@@ -119,12 +119,26 @@ public class MultimodalEmbeddingScriptTestCase {
     }
 
     @Test
-    public void testMissingPartIsLeftOut() {
-        assertEmbedding("[5, 0, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", "hello", null);
-        assertEmbedding("[5, 0, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", "hello", new byte[0]);
-        assertEmbedding("[0, 103, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", null, image);
-        assertEmbedding("[0, 103, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", " ", image);
+    public void testMissingPartGivesNoEmbedding() {
+        assertEmbedding(null, "input myText, input myImage | embed | attribute 'myTensor'", "hello", null);
+        assertEmbedding(null, "input myText, input myImage | embed | attribute 'myTensor'", null, image);
         assertEmbedding(null, "input myText, input myImage | embed | attribute 'myTensor'", null, null);
+    }
+
+    @Test
+    public void testBlankOrEmptyPartIsLeftOut() {
+        assertEmbedding("[5, 0, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", "hello", new byte[0]);
+        assertEmbedding("[0, 103, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", " ", image);
+    }
+
+    @Test
+    public void testChoiceFallsBackToPartWhichDocumentHas() {
+        String statement = "(input myText, input myImage | embed) || (input myText | embed) || (input myImage | embed) | " +
+                           "attribute 'myTensor'";
+        assertEmbedding("[5, 103, 0, 0]", statement, "hello", image);
+        assertEmbedding("[5, 0, 0, 0]", statement, "hello", null);
+        assertEmbedding("[0, 103, 0, 0]", statement, null, image);
+        assertEmbedding(null, statement, null, null);
     }
 
     @Test
@@ -216,9 +230,9 @@ public class MultimodalEmbeddingScriptTestCase {
         assertEquals(2, embedder.inputWithImageCount);
         assertEquals(0, embedder.textBatchCount);
 
-        // A text whose image is missing is batched as a text
+        // A text whose image is empty is batched as a text
         assertEquals(embedding("[5, 0, 0, 0]"),
-                     embed(batching, "input myText, input myImage | embed | attribute 'myTensor'", "hello", null));
+                     embed(batching, "input myText, input myImage | embed | attribute 'myTensor'", "hello", new byte[0]));
         assertEquals(2, embedder.inputWithImageCount);
         assertEquals(1, embedder.textBatchCount);
     }
@@ -273,9 +287,9 @@ public class MultimodalEmbeddingScriptTestCase {
                          () -> embed(textOnly, "input myText, input myImage | embed emb1 | attribute 'myTensor'", "hello", image));
         assertEquals("Embedder 'emb1' accepts text, but is given text and image", e.getCause().getMessage());
 
-        // The rejection names the parts of the statement, also for a document without the image
+        // The rejection names the parts of the statement, also for a document with an empty image
         e = assertThrows(IllegalArgumentException.class,
-                         () -> embed(textOnly, "input myText, input myImage | embed emb1 | attribute 'myTensor'", "hello", null));
+                         () -> embed(textOnly, "input myText, input myImage | embed emb1 | attribute 'myTensor'", "hello", new byte[0]));
         assertEquals("Embedder 'emb1' accepts text, but is given text and image", e.getCause().getMessage());
     }
 
@@ -307,9 +321,11 @@ public class MultimodalEmbeddingScriptTestCase {
         String statement = "input myText, input myImage | embed emb1 | attribute 'myTensor'";
         assertEquals(embedding("[5, 103, 0, 0]"), embed(textWithImage, statement, "hello", image));
 
-        // The statement gives a text with an image, but a document which lacks the image only gives a text
-        var e = assertThrows(InvalidInputException.class, () -> embed(textWithImage, statement, "hello", null));
+        // The statement gives a text with an image, but a document with an empty image only gives a text
+        var e = assertThrows(InvalidInputException.class, () -> embed(textWithImage, statement, "hello", new byte[0]));
         assertEquals("Embedder 'emb1' accepts text and image, but is given text", e.getCause().getMessage());
+
+        assertEquals(Optional.empty(), embed(textWithImage, statement, "hello", null));
     }
 
     @Test
