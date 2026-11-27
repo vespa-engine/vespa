@@ -86,7 +86,8 @@ DirectTensorPostingAttribute::DirectTensorPostingAttribute(std::string_view base
     : DirectTensorAttribute(baseFileName, check_config(cfg)),
       _label_store(true, label_dictionary_config()),
       _posting_store(_label_store.get_dictionary(), getStatus(), getConfig()),
-      _posting_store_adapter(_posting_store, _label_store, getConfig().getIsFilter()) {
+      _posting_store_adapter(_posting_store, _label_store, getConfig().getIsFilter()),
+      _total_subspaces(0) {
     // We never want the default (empty string) value in the label dictionary.
     _label_store.clear_default_value_ref();
     setup_memory_usage_empty();
@@ -152,6 +153,7 @@ void DirectTensorPostingAttribute::on_tensor_ref_change(DocId docid, EntryRef ol
     std::vector<LabelWeight> new_labels;
     collect_labels(old_ref, old_labels);
     collect_labels(new_ref, new_labels);
+    _total_subspaces = _total_subspaces - old_labels.size() + new_labels.size();
     auto updater = _label_store.make_batch_updater();
     auto old_it = old_labels.begin();
     auto new_it = new_labels.begin();
@@ -196,17 +198,26 @@ void DirectTensorPostingAttribute::rebuild_postings() {
     CHECK(_label_store.get_num_uniques() == 0);
     uint32_t docid_limit = _refVector.size();
     (void)_posting_store.resizeBitVectors(docid_limit, docid_limit);
-    // Collect (label, posting) pairs; docids are visited in increasing order
-    std::vector<std::pair<string_id, LabelPostingStore::KeyDataType>> entries;
-    std::vector<LabelWeight>                                          labels;
+    // Count subspaces first, so the memory used for the entries below is exactly
+    // what rebuild_transient_memory() reports.
+    _total_subspaces = 0;
+    for (uint32_t docid = 0; docid < docid_limit; ++docid) {
+        _total_subspaces += _direct_store.get_counts(_refVector[docid].load_relaxed()).subspaces;
+    }
+    // Collect (label, posting) pairs
+    std::vector<RebuildEntry> entries;
+    entries.reserve(_total_subspaces);
+    std::vector<LabelWeight> labels;
     for (uint32_t docid = 0; docid < docid_limit; ++docid) {
         collect_labels(_refVector[docid].load_relaxed(), labels);
         for (const auto& [label, weight] : labels) {
             entries.emplace_back(label, LabelPostingStore::KeyDataType(docid, weight));
         }
     }
-    std::stable_sort(entries.begin(), entries.end(),
-                     [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+    // Sort in place on (label, docid); each docid is unique per label.
+    std::sort(entries.begin(), entries.end(), [](const auto& lhs, const auto& rhs) {
+        return (lhs.first < rhs.first) || ((lhs.first == rhs.first) && (lhs.second._key < rhs.second._key));
+    });
     auto                                        updater = _label_store.make_batch_updater();
     std::vector<LabelPostingStore::KeyDataType> additions;
     for (auto it = entries.begin(); it != entries.end();) {

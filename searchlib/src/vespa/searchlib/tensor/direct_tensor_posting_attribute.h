@@ -31,11 +31,14 @@ public:
     using PostingStoreAdapter =
         attribute::StringDirectPostingStoreAdapter<IDocidWithFloatWeightPostingStore, LabelPostingStore, LabelStore>;
     using LabelWeight = std::pair<vespalib::string_id, float>;
+    // Temporary (label, posting) entry used when rebuilding postings on load.
+    using RebuildEntry = std::pair<vespalib::string_id, LabelPostingStore::KeyDataType>;
 
 private:
     LabelStore          _label_store;
     LabelPostingStore   _posting_store;
     PostingStoreAdapter _posting_store_adapter;
+    uint64_t            _total_subspaces;
 
     void collect_labels(EntryRef ref, std::vector<LabelWeight>& labels) const;
     void add_to_posting_list(IEnumStore::Index idx, DocId docid, float weight);
@@ -61,6 +64,18 @@ public:
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
     const LabelStore& get_label_store() const noexcept { return _label_store; }
+    /*
+     * Total number of subspaces (labels) over all stored tensors, including
+     * labels that get no postings. Only to be used by the writer thread.
+     */
+    uint64_t get_total_subspaces() const noexcept { return _total_subspaces; }
+    /*
+     * Transient memory used when rebuilding postings on load, given the
+     * total number of subspaces over all stored tensors.
+     */
+    static constexpr size_t rebuild_transient_memory(uint64_t total_subspaces) noexcept {
+        return total_subspaces * sizeof(RebuildEntry);
+    }
     const LabelPostingStore& get_posting_store() const noexcept { return _posting_store; }
 };
 

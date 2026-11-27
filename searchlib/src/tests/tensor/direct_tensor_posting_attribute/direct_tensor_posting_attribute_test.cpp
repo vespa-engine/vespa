@@ -138,6 +138,7 @@ protected:
     }
 
     uint32_t num_labels() const { return _tensor_attr->get_label_store().get_num_uniques(); }
+    uint64_t total_subspaces() const { return _tensor_attr->get_total_subspaces(); }
 
     TensorSpec stored(uint32_t docid) const { return TensorSpec::from_value(_tensor_attr->get_tensor_ref(docid)); }
 
@@ -153,6 +154,7 @@ using WeightedDocids = std::vector<std::pair<uint32_t, float>>;
 
 TEST_F(DirectTensorPostingAttributeTest, empty_attribute_has_no_labels) {
     EXPECT_EQ(0u, num_labels());
+    EXPECT_EQ(0u, total_subspaces());
     EXPECT_EQ(Docids(), postings("a"));
     EXPECT_EQ(Docids(), postings(""));
 }
@@ -162,6 +164,7 @@ TEST_F(DirectTensorPostingAttributeTest, set_tensor_adds_postings_for_labels) {
     set_tensor(2, sparse({{"b", 3}, {"c", 4}}));
     set_tensor(3, sparse({{"a", 5}}));
     EXPECT_EQ(3u, num_labels());
+    EXPECT_EQ(5u, total_subspaces());
     EXPECT_EQ(Docids({1, 3}), postings("a"));
     EXPECT_EQ(Docids({1, 2}), postings("b"));
     EXPECT_EQ(Docids({2}), postings("c"));
@@ -185,6 +188,7 @@ TEST_F(DirectTensorPostingAttributeTest, replacing_tensor_updates_postings_and_d
     EXPECT_EQ(Docids({1, 2}), postings("b"));
     EXPECT_EQ(Docids({1}), postings("c"));
     EXPECT_EQ(2u, num_labels());
+    EXPECT_EQ(3u, total_subspaces());
     EXPECT_EQ(sparse({{"b", 7}, {"c", 8}}), stored(1));
 }
 
@@ -203,8 +207,10 @@ TEST_F(DirectTensorPostingAttributeTest, clear_doc_removes_postings) {
     EXPECT_EQ(Docids(), postings("a"));
     EXPECT_EQ(Docids({2}), postings("b"));
     EXPECT_EQ(1u, num_labels());
+    EXPECT_EQ(1u, total_subspaces());
     clear_doc(2);
     EXPECT_EQ(0u, num_labels());
+    EXPECT_EQ(0u, total_subspaces());
 }
 
 TEST_F(DirectTensorPostingAttributeTest, empty_label_is_handled) {
@@ -221,6 +227,7 @@ TEST_F(DirectTensorPostingAttributeTest, labels_with_nul_get_no_postings) {
     set_tensor(1, sparse({{ax, 1}, {ay, 2}, {"b", 3}}));
     set_tensor(2, sparse({{ay, 4}, {"b", 5}}));
     EXPECT_EQ(1u, num_labels());
+    EXPECT_EQ(5u, total_subspaces());
     EXPECT_EQ(Docids(), postings("a"));
     EXPECT_EQ(Docids({1, 2}), postings("b"));
     EXPECT_EQ(sparse({{ay, 4}, {"b", 5}}), stored(2));
@@ -228,11 +235,13 @@ TEST_F(DirectTensorPostingAttributeTest, labels_with_nul_get_no_postings) {
     set_tensor(1, sparse({{ax, 1}, {ay, 7}, {"b", 3}}));
     save_and_load();
     EXPECT_EQ(1u, num_labels());
+    EXPECT_EQ(5u, total_subspaces());
     EXPECT_EQ(Docids(), postings("a"));
     EXPECT_EQ(Docids({1, 2}), postings("b"));
     set_tensor(1, sparse({{ax, 1}}));
     clear_doc(2);
     EXPECT_EQ(0u, num_labels());
+    EXPECT_EQ(1u, total_subspaces());
     EXPECT_EQ(sparse({{ax, 1}}), stored(1));
 }
 
@@ -244,6 +253,7 @@ TEST_F(DirectTensorPostingAttributeTest, compact_lid_space_and_shrink_removes_po
     EXPECT_EQ(Docids({1}), postings("a"));
     EXPECT_EQ(Docids(), postings("b"));
     EXPECT_EQ(1u, num_labels());
+    EXPECT_EQ(1u, total_subspaces());
     _attr->shrinkLidSpace();
     EXPECT_EQ(Docids({1}), postings("a"));
 }
@@ -317,6 +327,7 @@ TEST_F(DirectTensorPostingAttributeTest, save_and_load_rebuilds_postings) {
     set_tensor(4, sparse({{"a", 5}}));
     save_and_load();
     EXPECT_EQ(3u, num_labels());
+    EXPECT_EQ(5u, total_subspaces());
     EXPECT_EQ(Docids({1, 4}), postings("a"));
     EXPECT_EQ(Docids({1, 2}), postings("b"));
     EXPECT_EQ(Docids({2}), postings("c"));
@@ -328,6 +339,7 @@ TEST_F(DirectTensorPostingAttributeTest, save_and_load_rebuilds_postings) {
     EXPECT_EQ(Docids({2}), postings("b"));
     EXPECT_EQ(Docids({2, 4}), postings("c"));
     EXPECT_EQ(2u, num_labels());
+    EXPECT_EQ(3u, total_subspaces());
 }
 
 TEST_F(DirectTensorPostingAttributeTest, address_space_usage_includes_label_store) {
