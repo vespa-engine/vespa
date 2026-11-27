@@ -21,7 +21,10 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
+import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.MultipartExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -122,6 +125,16 @@ public class MultimodalEmbeddingScriptTestCase {
         assertEmbedding("[0, 103, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", null, image);
         assertEmbedding("[0, 103, 0, 0]", "input myText, input myImage | embed | attribute 'myTensor'", " ", image);
         assertEmbedding(null, "input myText, input myImage | embed | attribute 'myTensor'", null, null);
+    }
+
+    @Test
+    public void testPartWhichRequiresInputMakesMultipartRequireInput() {
+        assertFalse(new MultipartExpression(List.of(new InputExpression("myText"), new InputExpression("myImage"))).requiresInput());
+        assertTrue(new MultipartExpression(List.of(new LowerCaseExpression(), new InputExpression("myImage"))).requiresInput());
+
+        assertEmbedding("[5, 103, 0, 0]", "input myText | lowercase, input myImage | embed | attribute 'myTensor'", "HELLO", image);
+        // Without myText, lowercase has no input, so the whole multipart is skipped
+        assertEmbedding(null, "input myText | lowercase, input myImage | embed | attribute 'myTensor'", null, image);
     }
 
     @Test

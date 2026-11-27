@@ -32,7 +32,9 @@ public final class MultipartExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public boolean requiresInput() { return false; }
+    public boolean requiresInput() {
+        return expressions().stream().anyMatch(expression -> expression.requiresInput());
+    }
 
     @Override
     public MultipartExpression convertChildren(ExpressionConverter converter) {
