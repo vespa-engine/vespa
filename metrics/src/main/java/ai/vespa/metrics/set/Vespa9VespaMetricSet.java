@@ -298,7 +298,6 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_DOCS_IN_MEMORY.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_HEART_BEAT_AGE.max());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCSUM_LATENCY, EnumSet.of(max, sum, count));
 
         // Search protocol
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY, EnumSet.of(max, sum, count));
