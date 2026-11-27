@@ -19,6 +19,7 @@ import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.test.QueryTestCase;
+import com.yahoo.search.yql.MinimalQueryInserter;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
 
@@ -284,6 +285,66 @@ public class FederationSearcherTestCase {
         assertTrue(error.getDetailedMessage().startsWith("Could not resolve source ref '-nonexistent'."),
                    error.getDetailedMessage());
         assertEquals(List.of("source:mySource1", "source:mySource2"), sourceGroupIds(result));
+    }
+
+    @Test
+    void testExcludedSourceSurvivesYqlSelectFromAllSources() {
+        addChained(new MockSearcher(), "mySource1");
+        addChained(new MockSearcher(), "mySource2");
+        Chain<Searcher> mainChain = new Chain<>("default", new MinimalQueryInserter(), createFederationSearcher());
+        Query query = new Query(QueryTestCase.httpEncode("?yql=select * from sources * where title contains \"test\"&model.sources=-mySource1"));
+
+        Result result = new Execution(mainChain, Execution.Context.createContextStub(chainRegistry)).search(query);
+        assertNull(result.hits().getError());
+        assertTrue(query.getModel().getSources().isEmpty());
+        assertEquals(Set.of("mySource1"), query.getModel().getExcludedSources());
+        assertEquals(List.of("source:mySource2"), sourceGroupIds(result));
+    }
+
+    @Test
+    void testSourceNamedInYqlOverridesItsExclusion() {
+        addChained(new MockSearcher(), "mySource1");
+        addChained(new MockSearcher(), "mySource2");
+        Chain<Searcher> mainChain = new Chain<>("default", new MinimalQueryInserter(), createFederationSearcher());
+        Execution.Context context = Execution.Context.createContextStub(chainRegistry);
+
+        Result result = new Execution(mainChain, context).search(new Query(QueryTestCase.httpEncode(
+                "?yql=select * from sources mySource1 where title contains \"test\"&model.sources=-mySource1")));
+        assertNull(result.hits().getError());
+        assertEquals(List.of("source:mySource1"), sourceGroupIds(result));
+
+        // Selecting one source in YQL does not lift the exclusion of another
+        result = new Execution(mainChain, context).search(new Query(QueryTestCase.httpEncode(
+                "?yql=select * from sources mySource1 where title contains \"test\"&model.sources=mySource2,-mySource2")));
+        assertNull(result.hits().getError());
+        assertEquals(List.of("source:mySource1"), sourceGroupIds(result));
+    }
+
+    @Test
+    void testClusterSchemaSourceNamedInYqlOverridesClusterExclusion() {
+        RecordingSearcher recorder = new RecordingSearcher();
+        addChained(recorder, "cluster1", "s1", "s2");
+        Chain<Searcher> mainChain = new Chain<>("default", new MinimalQueryInserter(), createFederationSearcher());
+        Execution.Context context = Execution.Context.createContextStub(chainRegistry);
+
+        new Execution(mainChain, context).search(new Query(QueryTestCase.httpEncode(
+                "?yql=select * from sources cluster1.s1 where title contains \"test\"&model.sources=-cluster1")));
+        assertEquals(List.of(Set.of("s1")), recorder.restricts);
+
+        // The same selection through model.sources does not override the exclusion
+        recorder.restricts.clear();
+        new Execution(mainChain, context).search(new Query(QueryTestCase.httpEncode(
+                "?yql=select * from sources * where title contains \"test\"&model.sources=cluster1.s1,-cluster1")));
+        assertEquals(List.of(), recorder.restricts);
+
+        // Naming the cluster in YQL does not override the exclusion of one schema within it:
+        // The cluster is searched, and the cluster searcher removes the schema
+        recorder.restricts.clear();
+        recorder.excludedSources.clear();
+        new Execution(mainChain, context).search(new Query(QueryTestCase.httpEncode(
+                "?yql=select * from sources cluster1 where title contains \"test\"&model.sources=-cluster1.s1")));
+        assertEquals(List.of(Set.of()), recorder.restricts);
+        assertEquals(List.of(Set.of("cluster1.s1")), recorder.excludedSources);
     }
 
     @Test
