@@ -46,7 +46,7 @@ vespa_add_library(searchlib_attribute OBJECT
     distance_metric_utils.cpp
     diversity.cpp
     empty_search_context.cpp
-    enum_lock.cpp
+    shared_enum_mutex.cpp
     enum_store_compaction_spec.cpp
     enum_store_dictionary.cpp
     enum_store_folded_dictionary.cpp

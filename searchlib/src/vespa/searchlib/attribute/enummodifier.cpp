@@ -4,7 +4,7 @@
 
 namespace search::attribute {
 
-EnumModifier::EnumModifier(EnumLock& lock, attribute::InterlockGuard& interlockGuard) : _enumLock(lock) {
+EnumModifier::EnumModifier(SharedEnumMutex& lock, attribute::InterlockGuard& interlockGuard) : _enumMutex(lock) {
     (void)interlockGuard;
 }
 

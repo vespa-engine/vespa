@@ -81,7 +81,7 @@ vespa_define_module(
     src/tests/attribute/direct_posting_store
     src/tests/attribute/enum_attribute_compaction
     src/tests/attribute/enum_comparator
-    src/tests/attribute/enum_lock
+    src/tests/attribute/shared_enum_mutex
     src/tests/attribute/enumeratedsave
     src/tests/attribute/enumstore
     src/tests/attribute/extendattributes

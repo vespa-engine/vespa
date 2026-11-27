@@ -5,8 +5,8 @@
 #include "address_space_usage.h"
 #include "basename.h"
 #include "changevector.h"
-#include "enum_lock.h"
 #include "readable_attribute_vector.h"
+#include "shared_enum_mutex.h"
 
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
@@ -172,7 +172,7 @@ public:
     bool hasActiveEnumGuards();
 
     // For tests and diagnostics.
-    const attribute::EnumLock& enum_lock() const noexcept { return _enumLock; }
+    const attribute::SharedEnumMutex& enum_mutex() const noexcept { return _enumMutex; }
 
     virtual IExtendAttribute* getExtendInterface();
 
@@ -430,7 +430,7 @@ private:
     attribute::BaseName                               _baseFileName;
     std::unique_ptr<Config>                           _config;
     std::shared_ptr<attribute::Interlock>             _interlock;
-    mutable attribute::EnumLock                       _enumLock;
+    mutable attribute::SharedEnumMutex                _enumMutex;
     GenerationHandler                                 _genHandler;
     GenerationHolder                                  _genHolder;
     Status                                            _status;

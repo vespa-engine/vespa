@@ -4,8 +4,8 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/enum_lock.h>
 #include <vespa/searchlib/attribute/enummodifier.h>
+#include <vespa/searchlib/attribute/shared_enum_mutex.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <chrono>
@@ -19,7 +19,7 @@ using search::AttributeFactory;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
-using search::attribute::EnumLock;
+using search::attribute::SharedEnumMutex;
 
 namespace {
 
@@ -43,8 +43,8 @@ template <typename T> bool is_ready(std::future<T>& future, std::chrono::millise
 
 } // namespace
 
-TEST(EnumLockTest, shared_lock_can_be_released_by_another_thread) {
-    EnumLock lock;
+TEST(SharedEnumMutexTest, shared_lock_can_be_released_by_another_thread) {
+    SharedEnumMutex lock;
     lock.lock_shared();
     EXPECT_EQ(1u, lock.readers());
     std::thread([&lock] { lock.unlock_shared(); }).join();
@@ -53,18 +53,18 @@ TEST(EnumLockTest, shared_lock_can_be_released_by_another_thread) {
     lock.unlock();
 }
 
-TEST(EnumLockTest, exclusive_lock_can_be_released_by_another_thread) {
-    EnumLock lock;
+TEST(SharedEnumMutexTest, exclusive_lock_can_be_released_by_another_thread) {
+    SharedEnumMutex lock;
     lock.lock();
     std::thread([&lock] { lock.unlock(); }).join();
     EXPECT_TRUE(lock.try_lock_shared());
     lock.unlock_shared();
 }
 
-TEST(EnumLockTest, try_lock_fails_while_read_held_and_succeeds_when_free) {
-    EnumLock lock;
+TEST(SharedEnumMutexTest, try_lock_fails_while_read_held_and_succeeds_when_free) {
+    SharedEnumMutex lock;
     {
-        std::shared_lock<EnumLock> reader(lock);
+        std::shared_lock<SharedEnumMutex> reader(lock);
         EXPECT_FALSE(lock.try_lock());
         EXPECT_TRUE(lock.try_lock_shared());
         lock.unlock_shared();
@@ -81,19 +81,19 @@ TEST(EnumLockTest, try_lock_fails_while_read_held_and_succeeds_when_free) {
  * destructors wait for those threads, and the test fails instead of hanging.
  */
 
-TEST(EnumLockTest, waiting_writer_does_not_block_a_reader_that_already_holds_the_lock) {
-    EnumLock                   lock;
-    std::future<void>          writer;
-    std::future<void>          other;
-    std::shared_lock<EnumLock> first(lock);
-    writer = std::async(std::launch::async, [&lock] { std::unique_lock<EnumLock> w(lock); });
+TEST(SharedEnumMutexTest, waiting_writer_does_not_block_a_reader_that_already_holds_the_lock) {
+    SharedEnumMutex                   lock;
+    std::future<void>                 writer;
+    std::future<void>                 other;
+    std::shared_lock<SharedEnumMutex> first(lock);
+    writer = std::async(std::launch::async, [&lock] { std::unique_lock<SharedEnumMutex> w(lock); });
     ASSERT_TRUE(wait_until([&lock] { return lock.waiting_writers() == 1; }));
 
     // Same thread, second shared lock, with a writer waiting: must not block.
-    std::shared_lock<EnumLock> second(lock);
+    std::shared_lock<SharedEnumMutex> second(lock);
     EXPECT_EQ(2u, lock.readers());
     // Another thread taking a shared lock is not blocked by the waiting writer either.
-    other = std::async(std::launch::async, [&lock] { std::shared_lock<EnumLock> r(lock); });
+    other = std::async(std::launch::async, [&lock] { std::shared_lock<SharedEnumMutex> r(lock); });
     EXPECT_TRUE(is_ready(other, hang_timeout));
 
     EXPECT_FALSE(is_ready(writer, 0ms));
@@ -104,22 +104,22 @@ TEST(EnumLockTest, waiting_writer_does_not_block_a_reader_that_already_holds_the
     EXPECT_EQ(0u, lock.waiting_writers());
 }
 
-TEST(EnumLockTest, writer_waits_for_reader_released_by_another_thread) {
-    EnumLock                   lock;
-    std::future<void>          writer;
-    std::shared_lock<EnumLock> reader(lock);
-    writer = std::async(std::launch::async, [&lock] { std::unique_lock<EnumLock> w(lock); });
+TEST(SharedEnumMutexTest, writer_waits_for_reader_released_by_another_thread) {
+    SharedEnumMutex                   lock;
+    std::future<void>                 writer;
+    std::shared_lock<SharedEnumMutex> reader(lock);
+    writer = std::async(std::launch::async, [&lock] { std::unique_lock<SharedEnumMutex> w(lock); });
     ASSERT_TRUE(wait_until([&lock] { return lock.waiting_writers() == 1; }));
     EXPECT_FALSE(is_ready(writer, 10ms));
     std::thread([reader = std::move(reader)]() mutable noexcept { reader.unlock(); }).join();
     EXPECT_TRUE(is_ready(writer, hang_timeout));
 }
 
-TEST(EnumLockTest, reader_waits_for_active_writer) {
-    EnumLock                   lock;
-    std::future<void>          reader;
-    std::unique_lock<EnumLock> writer(lock);
-    reader = std::async(std::launch::async, [&lock] { std::shared_lock<EnumLock> r(lock); });
+TEST(SharedEnumMutexTest, reader_waits_for_active_writer) {
+    SharedEnumMutex                   lock;
+    std::future<void>                 reader;
+    std::unique_lock<SharedEnumMutex> writer(lock);
+    reader = std::async(std::launch::async, [&lock] { std::shared_lock<SharedEnumMutex> r(lock); });
     EXPECT_FALSE(is_ready(reader, 10ms));
     writer.unlock();
     EXPECT_TRUE(is_ready(reader, hang_timeout));
@@ -130,11 +130,11 @@ TEST(EnumLockTest, reader_waits_for_active_writer) {
  * stable enum guard takes another on the same attribute while enum store compaction waits for
  * the enum lock, and the guards are released by other threads than the ones that took them.
  */
-TEST(EnumLockTest, stable_enum_guards_on_an_attribute_with_compaction_pending) {
+TEST(SharedEnumMutexTest, stable_enum_guards_on_an_attribute_with_compaction_pending) {
     using GuardUP = std::unique_ptr<search::attribute::AttributeReadGuard>;
     auto attr = AttributeFactory::createAttribute("a", Config(BasicType::STRING, CollectionType::ARRAY));
     ASSERT_TRUE(attr->hasEnum());
-    const auto&          lock = attr->enum_lock();
+    const auto&          lock = attr->enum_mutex();
     std::future<void>    compaction;
     std::future<GuardUP> second;
     GuardUP              first = attr->makeReadGuard(true);

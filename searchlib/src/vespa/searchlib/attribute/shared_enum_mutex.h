@@ -41,7 +41,7 @@ namespace search::attribute {
  * It meets the SharedMutex requirements, so std::shared_lock and
  * std::unique_lock work with it.
  */
-class EnumLock {
+class SharedEnumMutex {
     mutable std::mutex      _mutex;
     std::condition_variable _cond;
     uint32_t                _readers;
@@ -49,10 +49,10 @@ class EnumLock {
     bool                    _writer;
 
 public:
-    EnumLock() noexcept;
-    EnumLock(const EnumLock&) = delete;
-    EnumLock& operator=(const EnumLock&) = delete;
-    ~EnumLock();
+    SharedEnumMutex() noexcept;
+    SharedEnumMutex(const SharedEnumMutex&) = delete;
+    SharedEnumMutex& operator=(const SharedEnumMutex&) = delete;
+    ~SharedEnumMutex();
 
     void lock();
     bool try_lock();
