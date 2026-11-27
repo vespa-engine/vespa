@@ -35,9 +35,9 @@ public:
 
 } // namespace
 
-MaintenanceController::MaintenanceController(FNET_Transport& transport, ISyncableThreadService& masterThread,
+MaintenanceController::MaintenanceController(FNET_Transport& transport, ISyncableThreadService& main_thread_service,
                                              MonitoredRefCount& refCount, const DocTypeName& docTypeName)
-    : _main_thread_service(masterThread),
+    : _main_thread_service(main_thread_service),
       _refCount(refCount),
       _readySubDB(),
       _remSubDB(),

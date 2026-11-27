@@ -100,7 +100,7 @@ struct ControllerFixtureBase : public ::testing::Test {
         _main_thread_service.sync();
         _main_thread_service.sync(); // Handle that document db main thread service schedules onto main again
     }
-    template <typename FunctionType> void masterExecute(FunctionType&& function) {
+    template <typename FunctionType> void run_in_main_thread_service_and_sync(FunctionType&& function) {
         _main_thread_service.execute(vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
         _main_thread_service.sync();
     }
@@ -166,7 +166,7 @@ TEST_F(ControllerFixture, require_that_nothing_is_moved_if_bucket_state_says_so)
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     _bmj->recompute();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
     });
@@ -183,7 +183,7 @@ TEST_F(ControllerFixture, require_that_not_ready_bucket_is_moved_to_ready_if_buc
     EXPECT_EQ(0, numPending());
     _bmj->recompute();
     EXPECT_EQ(1, numPending());
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
@@ -202,7 +202,7 @@ TEST_F(ControllerFixture, require_that_ready_bucket_is_moved_to_not_ready_if_buc
     // bucket 2 should be moved
     addReady(_ready.bucket(1));
     _bmj->recompute();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
@@ -220,7 +220,7 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_error) {
     addReady(_ready.bucket(1));
     _bmj->recompute();
     failRetrieveForLid(5);
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
@@ -229,7 +229,7 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_error) {
     EXPECT_FALSE(_bmj->done());
     EXPECT_TRUE(docsMoved().empty());
     fixRetriever();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
     });
@@ -246,7 +246,7 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_handler_error) 
     addReady(_ready.bucket(1));
     _bmj->recompute();
     _moveHandler.addLid2Fail(5);
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
@@ -260,7 +260,7 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_handler_error) 
     EXPECT_TRUE(removeFromSubDB(doc.getPrevSubDbId(),
                                 doc.getPrevLid())); // Explicit remove as movehandler only observes move attempt.
     _moveHandler.removeLids2Fail(5);
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
         EXPECT_TRUE(_bmj->done());
     });
@@ -281,7 +281,7 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps) {
 
     _bmj->recompute();
     EXPECT_EQ(3, numPending());
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
 
         EXPECT_FALSE(_bmj->scanAndMove(1, 2));
@@ -291,7 +291,7 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps) {
     EXPECT_EQ(2, numPending());
     EXPECT_EQ(2u, docsMoved().size());
 
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->scanAndMove(1, 2));
         EXPECT_FALSE(_bmj->done());
     });
@@ -299,7 +299,7 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps) {
     EXPECT_EQ(2, numPending());
     EXPECT_EQ(4u, docsMoved().size());
 
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->scanAndMove(1, 2));
         EXPECT_FALSE(_bmj->done());
     });
@@ -308,7 +308,7 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps) {
     EXPECT_EQ(6u, docsMoved().size());
 
     // move bucket 4, docs 3
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(1, 2));
         EXPECT_TRUE(_bmj->done());
     });
@@ -327,7 +327,7 @@ TEST_F(ControllerFixture, require_that_last_bucket_is_moved_before_reporting_don
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(4));
     _bmj->recompute();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
 
         EXPECT_FALSE(_bmj->scanAndMove(1, 1));
@@ -336,7 +336,7 @@ TEST_F(ControllerFixture, require_that_last_bucket_is_moved_before_reporting_don
     sync();
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(1, 2));
         EXPECT_TRUE(_bmj->done());
     });
@@ -351,7 +351,7 @@ TEST_F(ControllerFixture, require_that_active_bucket_is_not_moved_from_ready_to_
     _bmj->recompute();
     EXPECT_FALSE(_bmj->done());
     activateBucket(_ready.bucket(1));
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(4, 3)); // scan all, delay active bucket 1
         EXPECT_TRUE(_bmj->done());
     });
@@ -360,7 +360,7 @@ TEST_F(ControllerFixture, require_that_active_bucket_is_not_moved_from_ready_to_
     EXPECT_EQ(0u, bucketsModified().size());
 
     deactivateBucket(_ready.bucket(1));
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(_bmj->scanAndMove(4, 3)); // move delayed and de-activated bucket 1
         EXPECT_TRUE(_bmj->done());
@@ -375,7 +375,7 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
 
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         _bmj->recompute();
         _bmj->scanAndMove(1, 1);
         EXPECT_FALSE(_bmj->done());
@@ -383,7 +383,7 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     sync();
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         changeCalc(); // Not cancelled, bucket 1 still moving to notReady
         EXPECT_EQ(4u, calcAsked().size());
         EXPECT_EQ(_ready.bucket(1), calcAsked()[0]);
@@ -395,7 +395,7 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(0u, calcAsked().size());
     addReady(_ready.bucket(1));
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         changeCalc(); // cancelled, bucket 1 no longer moving to notReady
         EXPECT_EQ(4u, calcAsked().size());
         EXPECT_EQ(_ready.bucket(1), calcAsked()[0]);
@@ -411,7 +411,7 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(2), calcAsked()[1]);
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[2]);
-    masterExecute([this]() { _bmj->scanAndMove(2, 3); });
+    run_in_main_thread_service_and_sync([this]() { _bmj->scanAndMove(2, 3); });
     EXPECT_TRUE(_bmj->done());
     sync();
     EXPECT_EQ(3u, docsMoved().size());
@@ -424,7 +424,7 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_new_c
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
     _bmj->recompute();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         activateBucket(_ready.bucket(1));
         _bmj->scanAndMove(4, 3); // scan all, delay active bucket 1
     });
@@ -432,7 +432,7 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_new_c
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         deactivateBucket(_ready.bucket(1));
         addReady(_ready.bucket(1));
         changeCalc();
@@ -449,7 +449,7 @@ TEST_F(ControllerFixture, ready_bucket_not_moved_to_not_ready_if_node_is_marked_
     // Bucket 2 would be moved from ready to not ready in a non-retired case, but not when retired.
     remReady(_ready.bucket(1));
     _calc->setNodeRetired(true);
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         _bmj->recompute();
         _bmj->scanAndMove(4, 3);
         EXPECT_TRUE(_bmj->done());
@@ -465,7 +465,7 @@ TEST_F(ControllerFixture, inactive_not_ready_bucket_not_moved_to_ready_if_node_i
     remReady(_ready.bucket(2));
     remReady(_notReady.bucket(3));
     _calc->setNodeRetired(true);
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         _bmj->recompute();
         _bmj->scanAndMove(4, 3);
         EXPECT_TRUE(_bmj->done());
@@ -480,7 +480,7 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_not_be_moved_to
     remReady(_notReady.bucket(3));
     _calc->setNodeRetired(true);
     _bmj->recompute();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         activateBucket(_notReady.bucket(3));
         _bmj->scanAndMove(4, 3);
         EXPECT_TRUE(_bmj->done());
@@ -495,7 +495,7 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_not_be_moved_to
     addReady(_ready.bucket(2));
     remReady(_notReady.bucket(3));
     _bmj->recompute();
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         activateBucket(_notReady.bucket(3));
         _bmj->scanAndMove(4, 3);
         EXPECT_TRUE(_bmj->done());
@@ -509,7 +509,7 @@ TEST_F(ControllerFixture, bucket_change_notification_is_not_lost_with_concurrent
     addReady(_ready.bucket(1));
     _bmj->recompute();                 // Bucket 1 should be (and is) ready, bucket 2 is ready (but should not be).
     _bucketExecutor.defer_new_tasks(); // Don't execute immediately, we need to force multiple pending moves
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         deactivateBucket(_ready.bucket(2));
         _bmj->scanAndMove(4, 3);
         // New deactivation received from above prior to completion of scan. This can happen since
@@ -548,7 +548,7 @@ TEST_F(ControllerFixture, require_that_notifyCreateBucket_causes_bucket_to_be_re
     EXPECT_TRUE(_bmj->done());     // move job still believes work done
     sync();
     EXPECT_TRUE(bucketsModified().empty());
-    masterExecute([this]() {
+    run_in_main_thread_service_and_sync([this]() {
         _bmj->notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
         EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(bucketsModified().empty());

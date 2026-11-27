@@ -536,7 +536,9 @@ struct FixtureBase {
 
     const test::ThreadingServiceObserver& writeServiceObserver() { return _writeService; }
 
-    template <typename FunctionType> void runInMaster(FunctionType func) { test::runInMaster(_writeService, func); }
+    template <typename FunctionType> void run_in_main_thread_service(FunctionType func) {
+        test::run_in_main_thread_service(_writeService, func);
+    }
 
     virtual IFeedView& getFeedView() = 0;
 
@@ -572,7 +574,8 @@ struct FixtureBase {
     void putAndWait(const DocumentContext& docCtx) {
         FeedTokenContext token(_tracer);
         PutOperation     op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([this, ft = std::move(token.ft), &op]() mutable { performPut(std::move(ft), op); });
+        run_in_main_thread_service(
+            [this, ft = std::move(token.ft), &op]() mutable { performPut(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -585,7 +588,8 @@ struct FixtureBase {
     void updateAndWait(const DocumentContext& docCtx) {
         FeedTokenContext token(_tracer);
         UpdateOperation  op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([this, ft = std::move(token.ft), &op]() mutable { performUpdate(std::move(ft), op); });
+        run_in_main_thread_service(
+            [this, ft = std::move(token.ft), &op]() mutable { performUpdate(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -600,7 +604,8 @@ struct FixtureBase {
     void removeAndWait(const DocumentContext& docCtx) {
         FeedTokenContext         token(_tracer);
         RemoveOperationWithDocId op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([this, ft = std::move(token.ft), &op]() mutable { performRemove(std::move(ft), op); });
+        run_in_main_thread_service(
+            [this, ft = std::move(token.ft), &op]() mutable { performRemove(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -620,7 +625,8 @@ struct FixtureBase {
                          pc._params._subDbId);
         op.setTargetLid(toLid);
         Gate gate;
-        runInMaster([&, onDone = std::make_shared<GateCallback>(gate)]() { performMove(op, std::move(onDone)); });
+        run_in_main_thread_service(
+            [&, onDone = std::make_shared<GateCallback>(gate)]() { performMove(op, std::move(onDone)); });
         gate.await();
     }
 
@@ -636,7 +642,7 @@ struct FixtureBase {
     }
     void forceCommitAndWait() {
         Gate gate;
-        runInMaster(
+        run_in_main_thread_service(
             [this, onDone = std::make_shared<GateCallback>(gate)]() { performForceCommit(std::move(onDone)); });
         gate.await();
         _writeService.main().sync();
@@ -654,7 +660,8 @@ struct FixtureBase {
     }
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
         Gate gate;
-        runInMaster([&]() { performCompactLidSpace(wantedLidLimit, std::make_shared<GateCallback>(gate)); });
+        run_in_main_thread_service(
+            [&]() { performCompactLidSpace(wantedLidLimit, std::make_shared<GateCallback>(gate)); });
         gate.await();
         _writeService.main().sync();
     }
@@ -949,7 +956,7 @@ TEST(FeedViewTest, require_that_handleDeleteBucket_removes_documents) {
     // delete bucket for user 1
     DeleteBucketOperation op(docs[0].bid);
     vespalib::Gate        gate;
-    f.runInMaster(
+    f.run_in_main_thread_service(
         [&, onDone = std::make_shared<GateCallback>(gate)]() { f.performDeleteBucket(op, std::move(onDone)); });
     gate.await();
     f.dms_commit();
@@ -1049,7 +1056,7 @@ TEST(FeedViewTest, require_that_removes_are_not_remembered) {
 TEST(FeedViewTest, require_that_heartbeat_propagates_to_index_and_attribute_adapter) {
     SearchableFeedViewFixture f;
     vespalib::Gate            gate;
-    f.runInMaster(
+    f.run_in_main_thread_service(
         [&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() { f.fv.heartBeat(2, std::move(onDone)); });
     gate.await();
     EXPECT_EQ(1, f.miw._heartBeatCount);
@@ -1318,7 +1325,7 @@ TEST(
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
     Gate gate;
-    f.runInMaster(
+    f.run_in_main_thread_service(
         [&, onDone = std::make_shared<GateCallback>(gate)]() { f.fv.handleCompactLidSpace(op, std::move(onDone)); });
     gate.await();
     f._writeService.main().sync();

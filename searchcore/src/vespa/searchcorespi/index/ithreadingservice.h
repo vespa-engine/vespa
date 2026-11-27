@@ -65,9 +65,6 @@ struct IThreadingService {
     [[nodiscard]] virtual vespalib::Executor& shared() noexcept = 0;
     [[nodiscard]] virtual FNET_Transport& transport() noexcept = 0;
     [[nodiscard]] virtual vespalib::ISequencedTaskExecutor& field_writer() noexcept = 0;
-
-    // Temporary compat shim
-    [[nodiscard]] ISyncableThreadService& master() noexcept { return main(); }
 };
 
 } // namespace searchcorespi::index

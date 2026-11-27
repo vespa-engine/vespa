@@ -97,8 +97,8 @@ protected:
     LidReuseDelayerTest();
     ~LidReuseDelayerTest() override;
 
-    template <typename FunctionType> void runInMasterAndSync(FunctionType func) {
-        test::runInMasterAndSync(_writeService, func);
+    template <typename FunctionType> void run_in_main_thread_service_and_sync(FunctionType func) {
+        test::run_in_main_thread_service_and_sync(_writeService, func);
     }
 
     void cycledLids(const std::vector<uint32_t>& lids) { _store.removes_complete(lids); }
@@ -108,18 +108,19 @@ protected:
     void cycleLids(const std::vector<uint32_t>& lids, vespalib::IDestructorCallback::SP onDone);
 
     void delayReuse(uint32_t lid) {
-        runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lid); });
+        run_in_main_thread_service_and_sync([&]() { _lidReuseDelayer->delayReuse(lid); });
     }
 
     void delayReuse(const std::vector<uint32_t>& lids) {
-        runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lids); });
+        run_in_main_thread_service_and_sync([&]() { _lidReuseDelayer->delayReuse(lids); });
     }
 
     void commit() {
         vespalib::Gate gate;
-        test::runInMaster(_writeService, [this, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
-            cycleLids(_lidReuseDelayer->getReuseLids(), std::move(onDone));
-        });
+        test::run_in_main_thread_service(_writeService,
+                                         [this, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
+                                             cycleLids(_lidReuseDelayer->getReuseLids(), std::move(onDone));
+                                         });
         gate.await();
     }
 };

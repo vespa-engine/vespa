@@ -217,8 +217,8 @@ struct ParallelAttributeManager {
     AllocStrategy                            alloc_strategy;
     bool                                     fastAccessAttributesOnly;
     std::shared_ptr<AttributeManager::SP>    mgr;
-    vespalib::ThreadStackExecutor            masterExecutor;
-    ExecutorThreadService                    master;
+    vespalib::ThreadStackExecutor            main_executor;
+    ExecutorThreadService                    main_thread_service;
     AttributeManagerInitializer::SP          initializer;
 
     ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager& baseAttrMgr,
@@ -234,11 +234,11 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
       alloc_strategy(),
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
-      masterExecutor(1),
-      master(masterExecutor),
+      main_executor(1),
+      main_thread_service(main_executor),
       initializer(std::make_shared<AttributeManagerInitializer>(
           configSerialNum, documentMetaStoreInitTask, documentMetaStore, baseAttrMgr, attrCfg, alloc_strategy,
-          fastAccessAttributesOnly, master, mgr)) {
+          fastAccessAttributesOnly, main_thread_service, mgr)) {
     documentMetaStore->setCommittedDocIdLimit(docIdLimit);
     vespalib::ThreadStackExecutor executor(3);
     initializer::TaskRunner       taskRunner(executor);
