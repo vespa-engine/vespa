@@ -394,9 +394,7 @@ class QueryMultimodalEmbeddingTest {
         public List<Integer> embed(String text, Context context) { throw new UnsupportedOperationException(); }
 
         @Override
-        public Tensor embed(String text, Context context, TensorType tensorType) {
-            return embed(Input.of(text), context, tensorType);
-        }
+        public Tensor embed(String text, Context context, TensorType tensorType) { throw new UnsupportedOperationException(); }
 
         @Override
         public Tensor embed(Input input, Context context, TensorType tensorType) {

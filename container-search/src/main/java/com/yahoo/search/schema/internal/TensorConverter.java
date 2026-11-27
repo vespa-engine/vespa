@@ -151,10 +151,7 @@ public class TensorConverter {
         if (rejection.isPresent())
             throw new IllegalArgumentException("Embedder '" + embedderId + "' " + rejection.get());
 
-        var context = embedderContext.copy().setEmbedderId(embedderId);
-        if (image.isEmpty())
-            return embedder.embed(text.get(), context, type);
-        return embedder.embed(input, context, type);
+        return embedder.embed(input, embedderContext.copy().setEmbedderId(embedderId), type);
     }
 
     /**
