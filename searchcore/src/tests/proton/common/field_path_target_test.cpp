@@ -23,7 +23,8 @@ std::unique_ptr<DocumentTypeRepo> make_document_type_repo() {
     auto&            doc = builder.document("testdoc", 222);
     auto             int_array = doc.createArray(builder.intTypeRef()).ref();
     auto             int_wset = doc.createWset(builder.intTypeRef()).ref();
-    doc.addField("aint", int_array).addField("wsint", int_wset);
+    auto             bool_array = doc.createArray(builder.boolTypeRef()).ref();
+    doc.addField("aint", int_array).addField("wsint", int_wset).addField("abool", bool_array);
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
@@ -80,7 +81,8 @@ TEST(FieldPathTargetTest, parse_expression_assign_to_array_index_is_unsupported)
 TEST(FieldPathTargetTest, parse_unsupported) {
     const auto& doc_type = *repo->getDocumentType("testdoc");
 
-    std::vector<std::string> unsupported_field_paths = {"abc", "bogus[0]", "wsint{5}", "aint[0].foo", "wsint[5]"};
+    std::vector<std::string> unsupported_field_paths = {"abc",         "bogus[0]", "wsint{5}",
+                                                        "aint[0].foo", "wsint[5]", "abool[0]"};
     for (const auto& field_path : unsupported_field_paths) {
         AssignFieldPathUpdate update(field_path, "", "some_string");
         auto                  target = FieldPathTarget::parse(update, doc_type);

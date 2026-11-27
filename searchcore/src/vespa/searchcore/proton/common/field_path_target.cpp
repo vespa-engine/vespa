@@ -4,11 +4,15 @@
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/fieldpath.h>
+#include <vespa/document/datatype/arraydatatype.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/removefieldpathupdate.h>
 
+using document::ArrayDataType;
 using document::AssignFieldPathUpdate;
+using document::DataType;
 using document::DocumentType;
 using document::Field;
 using document::FieldNotFoundException;
@@ -45,6 +49,10 @@ Field top_level_field(const FieldPath& field_path) {
     return Field();
 }
 
+bool is_array_of(const DataType& data_type, const DataType* nested) {
+    return data_type.isArray() && static_cast<const ArrayDataType&>(data_type).getNestedType().isA(*nested);
+}
+
 } // namespace
 
 FieldPathTarget FieldPathTarget::parse(const FieldPathUpdate& update, const DocumentType& doc_type) {
@@ -58,6 +66,11 @@ FieldPathTarget FieldPathTarget::parse(const FieldPathUpdate& update, const Docu
     }
 
     Field field = top_level_field(field_path);
+
+    // Currently not supporting field path updates on array<bool>.
+    if (is_array_of(field.getDataType(), DataType::BOOL)) {
+        return unsupported(field);
+    }
 
     if (!update.getOriginalWhereClause().empty()) {
         return unsupported(field);
