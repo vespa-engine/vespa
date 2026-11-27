@@ -383,6 +383,19 @@ public class FastMapSearcherTest {
                      rewrittenYql("range(longkeymap.lookup{1}, 5, 10)"));
     }
 
+    /** Parameters give the same lookup terms as the literals they hold. */
+    @Test
+    public void requireYqlMapLookupWithParametersRewritten() {
+        assertEquals("mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                     rewrittenYql("mymap.lookup{@key} contains @value", "&key=foo&value=bar"));
+        assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo", 42),
+                     rewrittenYql("intvaluemap.lookup{@key} = @value", "&key=foo&value=42"));
+        assertEquals(intKeyTerm("42"), rewrittenYql("intkeymap.lookup{@key} contains \"bar\"", "&key=42"));
+        assertEquals("STRING_RANGE intvaluemap$lookup:[\"" + FastMapSearch.toKeyValue8Term("foo", 5) + "\";\""
+                     + FastMapSearch.toKeyValue8Term("foo", 10) + "\"]",
+                     rewrittenYql("range(intvaluemap.lookup{@key}, 5, 10)", "&key=foo"));
+    }
+
     @Test
     public void requireIntValueEncodedInExcessHex() {
         String expected = "intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo", 10);
@@ -536,6 +549,11 @@ public class FastMapSearcherTest {
         // A fractional endpoint has no exact int encoding.
         assertNull(searcher.makeIntRange("foo", intRange(new Limit(1.5, true), new Limit(10, true)), "intvaluemap$lookup"));
 
+        // An infinite endpoint in the direction away from its end of the range, as from a value
+        // which overflows to infinity, is not unbounded, and has no encoding.
+        assertNull(searcher.makeIntRange("foo", intRange(Limit.POSITIVE_INFINITY, Limit.POSITIVE_INFINITY), "intvaluemap$lookup"));
+        assertNull(searcher.makeIntRange("foo", intRange(Limit.NEGATIVE_INFINITY, Limit.NEGATIVE_INFINITY), "intvaluemap$lookup"));
+
         // A range on a string-valued map is not an IntItem, and is rejected.
         assertRejected(mapMatch("mymap", new WordItem("foo", "key"),
                                 new StringRangeItem("a", true, "z", true, "value", false, null)));
@@ -612,6 +630,10 @@ public class FastMapSearcherTest {
         // An endpoint beyond the long range has no encoding.
         assertNull(searcher.makeLongRange("foo", new IntItem("[0;99999999999999999999]", "value"), "longvaluemap$lookup"));
         assertNull(searcher.makeLongRange("foo", intRange(new Limit(0, true), new Limit(1e19, true)), "longvaluemap$lookup"));
+
+        // An infinite endpoint in the direction away from its end of the range is not unbounded, and has no encoding.
+        assertNull(searcher.makeLongRange("foo", intRange(Limit.POSITIVE_INFINITY, Limit.POSITIVE_INFINITY), "longvaluemap$lookup"));
+        assertNull(searcher.makeLongRange("foo", intRange(Limit.NEGATIVE_INFINITY, Limit.NEGATIVE_INFINITY), "longvaluemap$lookup"));
     }
 
     @Test
@@ -874,7 +896,12 @@ public class FastMapSearcherTest {
 
     /** Returns the query tree after parsing the given YQL where clause and running the searcher. */
     private static String rewrittenYql(String where) {
-        Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8));
+        return rewrittenYql(where, "");
+    }
+
+    /** As rewrittenYql(where), with the given URL encoded request parameters, such as "&amp;key=foo", added. */
+    private static String rewrittenYql(String where, String parameters) {
+        Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8) + parameters);
         new Execution(new Chain<>(new MinimalQueryInserter(), new FastMapSearcher()), execution().context()).search(query);
         return query.getModel().getQueryTree().getRoot().toString();
     }
