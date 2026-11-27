@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  * @author Steinar Knutsen
- * @author geirst
+ * @author Geir Storli
  */
 @After("*")
 public class ClusterSearcher extends Searcher {
