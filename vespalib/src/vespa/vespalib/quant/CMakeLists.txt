@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_quant
     SOURCES
     eden.cpp
+    eden_evaluator.cpp
     rotator.cpp
     INSTALL lib64
     DEPENDS

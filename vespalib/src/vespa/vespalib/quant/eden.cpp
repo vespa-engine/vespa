@@ -18,45 +18,13 @@ using hwaccelerated::squared_euclidean_length;
 using hwaccelerated::sum_indexed_unrolled;
 namespace codebooks = hwaccelerated::codebooks;
 
-namespace {
-
-constexpr size_t scale_bytes = sizeof(float);
-
-[[nodiscard]] size_t compute_quantized_buffer_size(const size_t dimensions, const uint8_t bits) noexcept {
-    const size_t dim_bytes = hwaccelerated::packed_bytes(bits, dimensions);
-    return scale_bytes + dim_bytes;
-}
-
-// Precondition: buf must be valid for at least `scale_bytes` bytes
-[[nodiscard]] float extract_scale_factor(const uint8_t* buf) noexcept {
-    static_assert(scale_bytes == sizeof(float));
-    float scale;
-    memcpy(&scale, buf, sizeof(float));
-    return scale;
-}
-
-// Given an input ptr `buf` that is at the start of the "raw" quantized buffer, returns
-// an adjusted ptr that points to the first byte of the sequence of quantized bits.
-// Precondition: buf must be valid for at least `scale_bytes` bytes
-[[nodiscard]] const uint8_t* packed_bits_buf(const uint8_t* buf) noexcept {
-    return buf + scale_bytes; // Just skip past the scale factor
-}
-
-[[nodiscard]] uint8_t* packed_bits_buf(uint8_t* buf) noexcept {
-    return buf + scale_bytes;
-}
-
-} // namespace
-
 EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const uint64_t seed)
-    : _dimensions(dimensions),
-      _quantized_size(compute_quantized_buffer_size(dimensions, bits)),
+    : EdenEvaluator(dimensions, bits),
       _rotator(dimensions, seed),
       _rot_tmp(dimensions),
-      _idx_tmp(dimensions * 2), // also leave room for rhs bit unpacking storage
+      _idx_tmp(dimensions),
       _seed(seed),
-      _sqrt_d(std::sqrtf(static_cast<float>(dimensions))),
-      _bits(bits) {
+      _sqrt_d(std::sqrtf(static_cast<float>(dimensions))) {
     CHECK(bits >= 1 && bits <= 4);
 }
 
@@ -67,27 +35,12 @@ std::span<const float> EdenQuantizer::my_codebook() const noexcept {
 }
 
 EdenQuantizer::ScaleAndCentroidIndexesPtr
-EdenQuantizer::unary_unpack_bits_to_scratch_space(std::span<const uint8_t> buf) noexcept {
+EdenQuantizer::unpack_bits_to_scratch_space(std::span<const uint8_t> buf) noexcept {
     CHECK(buf.size() == _quantized_size);
     const float    scale = extract_scale_factor(buf.data());
     const uint8_t* in_bits = packed_bits_buf(buf.data());
-    hwaccelerated::unpack_bits(in_bits, lhs_scratch_idx_space(), _bits, _dimensions);
-    return {scale, lhs_scratch_idx_space()};
-}
-
-std::pair<EdenQuantizer::ScaleAndCentroidIndexesPtr, EdenQuantizer::ScaleAndCentroidIndexesPtr>
-EdenQuantizer::binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs,
-                                                   std::span<const uint8_t> rhs) noexcept {
-    CHECK(lhs.size() == _quantized_size);
-    CHECK(rhs.size() == _quantized_size);
-    // We have left room for an additional vector bit unpacking run in _idx_tmp
-    uint8_t* lhs_idx = lhs_scratch_idx_space();
-    uint8_t* rhs_idx = rhs_scratch_idx_space();
-    hwaccelerated::unpack_bits(packed_bits_buf(lhs.data()), lhs_idx, _bits, _dimensions);
-    hwaccelerated::unpack_bits(packed_bits_buf(rhs.data()), rhs_idx, _bits, _dimensions);
-    const float lhs_scale = extract_scale_factor(lhs.data());
-    const float rhs_scale = extract_scale_factor(rhs.data());
-    return {{lhs_scale, lhs_idx}, {rhs_scale, rhs_idx}};
+    hwaccelerated::unpack_bits(in_bits, scratch_idx_space(), _bits, _dimensions);
+    return {scale, scratch_idx_space()};
 }
 
 // Note for quantize() and dequantize(): the algorithm implementations try to closely
@@ -136,7 +89,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     // and EDEN-unbiased.
     float    yq_dot = 0; // <y, q>
     float    scale = 0;
-    uint8_t* idx_buf = lhs_scratch_idx_space();
+    uint8_t* idx_buf = scratch_idx_space();
     hwaccelerated::eden_quantize_centroids(y, idx_buf, _bits, nx, d);
     if (quant_mode == QuantMode::InnerProduct) { // EDEN-unbiased
         for (size_t i = 0; i < d; ++i) {
@@ -159,7 +112,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
 
 void EdenQuantizer::dequantize(std::span<const uint8_t> q_x, std::span<float> dq_x) noexcept {
     CHECK(dq_x.size() == _dimensions);
-    const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(q_x);
+    const auto [scale, centroid_idx] = unpack_bits_to_scratch_space(q_x);
     const auto codebook = my_codebook();
     for (size_t i = 0; i < _dimensions; ++i) {
         dq_x[i] = codebook[centroid_idx[i]] * scale;
@@ -170,74 +123,6 @@ void EdenQuantizer::dequantize(std::span<const uint8_t> q_x, std::span<float> dq
 void EdenQuantizer::rotate_vector_inplace(std::span<float> vec) const noexcept {
     CHECK(vec.size() == _dimensions);
     _rotator.rotate_forward(vec);
-}
-
-float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   query,
-                                                   std::span<const uint8_t> quant_vec) const noexcept {
-    CHECK(query.size() == _dimensions);
-    CHECK(quant_vec.size() == _quantized_size);
-    const float    rhs_scale = extract_scale_factor(quant_vec.data());
-    const uint8_t* rhs_bit_buf = packed_bits_buf(quant_vec.data());
-    return rhs_scale * hwaccelerated::eden_f32_q_dot_product(query.data(), rhs_bit_buf, _bits, _dimensions);
-}
-
-float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
-                                                   std::span<const uint8_t> rhs) const noexcept {
-    CHECK(lhs.size() == _quantized_size);
-    CHECK(rhs.size() == _quantized_size);
-    const float    lhs_scale = extract_scale_factor(lhs.data());
-    const uint8_t* lhs_bit_buf = packed_bits_buf(lhs.data());
-    const float    rhs_scale = extract_scale_factor(rhs.data());
-    const uint8_t* rhs_bit_buf = packed_bits_buf(rhs.data());
-    float          dot;
-    if (_bits == 1) {
-        // 1-bit quantized vs. quantized dot product can be optimized substantially by mapping it
-        // to a Hamming distance problem, i.e. popcount(lhs XOR rhs).
-        // Any 1-bit index maps to a single absolute centroid value `C`, i.e. only the sign differs.
-        // Assuming 0 maps to -C and 1 maps to +C (the inverse can be the case, it doesn't matter):
-        //
-        //  lhs   rhs   lhs XOR rhs    expr    result
-        //   0     0         0        -C*-C      C*C
-        //   0     1         1        -C* C    -(C*C)
-        //   1     0         1         C*-C    -(C*C)
-        //   1     1         0         C* C      C*C
-        //
-        // From this we can see that per-dimension products are always negative when lhs XOR rhs
-        // is 1, which in turn means the Hamming distance is exactly equal to the number of -(C*C)
-        // contributions. Conversely, the number of dimensions minus the Hamming distance is the
-        // number of +(C*C) contributions.
-        // Note that we require that any padding bits at the end of the vectors shall always be
-        // zero, so these shall never spuriously add to the Hamming distance.
-        const size_t    bit_buf_size = _quantized_size - scale_bytes;
-        const size_t    n_neg = hwaccelerated::binary_hamming_distance(lhs_bit_buf, rhs_bit_buf, bit_buf_size);
-        constexpr float c = codebooks::eden_bf16_codebook(1)[1]; // +C centroid value
-        dot = static_cast<float>(_dimensions - n_neg) * (c * c) + static_cast<float>(n_neg) * -(c * c);
-    } else {
-        dot = hwaccelerated::eden_q_q_dot_product(lhs_bit_buf, rhs_bit_buf, _bits, _dimensions);
-    }
-    return lhs_scale * rhs_scale * dot;
-}
-
-float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
-                                                                  std::span<const uint8_t> quant_vec) const noexcept {
-    CHECK(query.size() == _dimensions);
-    CHECK(quant_vec.size() == _quantized_size);
-    const float    rhs_scale = extract_scale_factor(quant_vec.data());
-    const uint8_t* rhs_bit_buf = packed_bits_buf(quant_vec.data());
-    return hwaccelerated::eden_f32_q_squared_euclidean_distance(query.data(), rhs_bit_buf, rhs_scale, _bits,
-                                                                _dimensions);
-}
-
-float EdenQuantizer::quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
-                                                                  std::span<const uint8_t> rhs) const noexcept {
-    CHECK(lhs.size() == _quantized_size);
-    CHECK(rhs.size() == _quantized_size);
-    const float    lhs_scale = extract_scale_factor(lhs.data());
-    const uint8_t* lhs_bit_buf = packed_bits_buf(lhs.data());
-    const float    rhs_scale = extract_scale_factor(rhs.data());
-    const uint8_t* rhs_bit_buf = packed_bits_buf(rhs.data());
-    return hwaccelerated::eden_q_q_squared_euclidean_distance(lhs_bit_buf, rhs_bit_buf, lhs_scale, rhs_scale, _bits,
-                                                              _dimensions);
 }
 
 } // namespace vespalib::quant
