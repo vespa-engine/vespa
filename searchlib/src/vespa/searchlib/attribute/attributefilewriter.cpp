@@ -40,20 +40,6 @@ void writeDirectIOAligned(FastOS_FileInterface& file, const void* buf, size_t le
     }
 }
 
-void updateHeader(const std::string& name, uint64_t fileBitSize) {
-    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
-    FastOS_File          f;
-    f.OpenReadWrite(name.c_str());
-    h.readFile(f);
-    FileHeaderContext::setFreezeTime(h);
-    using Tag = vespalib::GenericHeader::Tag;
-    h.putTag(Tag("frozen", 1));
-    h.putTag(Tag("fileBitSize", fileBitSize));
-    h.rewriteFile(f);
-    bool sync_ok = f.Sync();
-    CHECK(sync_ok);
-}
-
 /*
  * BufferWriter implementation that passes full buffers on to
  * AttributeFileWriter.
@@ -122,6 +108,22 @@ void AttributeFileWriter::writeHeader() {
     _fileBitSize = headerLen * 8;
 }
 
+void AttributeFileWriter::update_header() {
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
+    FastOS_File          f;
+    f.OpenReadWrite(_file->GetFileName());
+    h.readFile(f);
+    FileHeaderContext::setFreezeTime(h);
+    // Pick up values set in the attribute header while saving.
+    _header.add_patchable_tags(h);
+    using Tag = vespalib::GenericHeader::Tag;
+    h.putTag(Tag("frozen", 1));
+    h.putTag(Tag("fileBitSize", _fileBitSize));
+    h.rewriteFile(f);
+    bool sync_ok = f.Sync();
+    CHECK(sync_ok);
+}
+
 void AttributeFileWriter::addTags(vespalib::GenericHeader& header) {
     _header.addTags(header);
     using Tag = vespalib::GenericHeader::Tag;
@@ -157,7 +159,7 @@ void AttributeFileWriter::close() {
         CHECK(synk_ok);
         bool close_ok = _file->Close();
         CHECK(close_ok);
-        updateHeader(_file->GetFileName(), _fileBitSize);
+        update_header();
         DiskSpaceCalculator disk_space_calculator;
         _size_on_disk = disk_space_calculator(file_size);
     }

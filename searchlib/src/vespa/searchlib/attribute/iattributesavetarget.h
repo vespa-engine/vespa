@@ -21,6 +21,12 @@ public:
     IAttributeSaveTarget() : _header() {}
     void setHeader(const attribute::AttributeHeader& header) { _header = header; }
     const attribute::AttributeHeader& getHeader() const { return _header; }
+    /**
+     * Gives access to update the header while saving. Changes made before
+     * close() to values covered by AttributeHeader::add_patchable_tags()
+     * are written to the file headers; other changes are ignored.
+     **/
+    attribute::AttributeHeader& get_mutable_header() noexcept { return _header; }
 
     bool getEnumerated() const { return _header.getEnumerated(); }
 
