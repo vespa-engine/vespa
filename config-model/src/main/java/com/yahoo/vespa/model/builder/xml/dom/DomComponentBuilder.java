@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.container.component.MistralEmbedder;
 import com.yahoo.vespa.model.container.component.OpenAIEmbedder;
 import com.yahoo.vespa.model.container.component.VoyageAIEmbedder;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
+import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
 /**
@@ -50,6 +51,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
     private Component<? super Component<?, ?>, ?> buildComponent(
             Element spec, DeployState state, TreeConfigProducer<AnyConfigProducer> ancestor) {
         if (spec.hasAttribute("type")) {
+            ModelIdResolver.addModelDefaults(spec, state.isHosted());
             var type = spec.getAttribute("type");
             var cluster = (ApplicationContainerCluster) ancestor;
             return switch (type) {

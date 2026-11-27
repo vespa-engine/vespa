@@ -9,14 +9,17 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Replaces model id references in configs by their url.
+ * Replaces model id references in configs by their url,
+ * and adds model defaults to a typed component that names a model by model id.
  *
  * @author lesters
  * @author bratseth
@@ -90,6 +93,32 @@ public class ModelIdResolver {
         register(m, "lightonai-denseon-int8", "https://data.vespa-cloud.com/onnx_models/lightonai-denseon-int8/model.onnx", Set.of(ONNX_MODEL));
         register(m, "lightonai-denseon-int8-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-denseon-int8/tokenizer.json", Set.of(HF_TOKENIZER));
 
+        // LateOn's token ids are ModernBERT's [CLS], [SEP] and [MASK] and PyLate's "[Q] " and "[D] " prefixes.
+        // Its lengths are those of its config_sentence_transformers.json.
+        // attend-to-expansion-tokens is false, since that config sets do_query_expansion to false.
+        register(m, "lightonai-lateon", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon/model.onnx", Set.of(ONNX_MODEL), new ModelDefaults("colbert-embedder", parameters(
+                "transformer-output", "output",
+                "transformer-start-sequence-token", "50281",
+                "transformer-end-sequence-token", "50282",
+                "transformer-mask-token", "50284",
+                "query-token-id", "50368",
+                "document-token-id", "50369",
+                "max-query-tokens", "32",
+                "max-document-tokens", "300",
+                "attend-to-expansion-tokens", "false")));
+        register(m, "lightonai-lateon-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "lightonai-lateon-int8", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon-int8/model.onnx", Set.of(ONNX_MODEL), new ModelDefaults("colbert-embedder", parameters(
+                "transformer-output", "output",
+                "transformer-start-sequence-token", "50281",
+                "transformer-end-sequence-token", "50282",
+                "transformer-mask-token", "50284",
+                "query-token-id", "50368",
+                "document-token-id", "50369",
+                "max-query-tokens", "32",
+                "max-document-tokens", "300",
+                "attend-to-expansion-tokens", "false")));
+        register(m, "lightonai-lateon-int8-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-lateon-int8/tokenizer.json", Set.of(HF_TOKENIZER));
+
         register(m, "alibaba-gte-modernbert", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/model.onnx", Set.of(ONNX_MODEL));
         register(m, "alibaba-gte-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/tokenizer.json", Set.of(HF_TOKENIZER));
         register(m, "alibaba-gte-modernbert-int8", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-int8/model.onnx", Set.of(ONNX_MODEL));
@@ -121,15 +150,57 @@ public class ModelIdResolver {
         return Map.copyOf(m);
     }
 
-    private record ProvidedModel(String modelId, URI uri, Set<String> tags) {
+    private record ProvidedModel(String modelId, URI uri, Set<String> tags, Optional<ModelDefaults> modelDefaults) {
         ProvidedModel { tags = Set.copyOf(tags); }
     }
 
+    /**
+     * Parameters that a component of the given type gets for a model it names by model id, unless it sets them itself.
+     * Released model defaults must never change, since a change alters the output of every application using the model.
+     */
+    private record ModelDefaults(String componentType, Map<String, String> parameters) {
+        ModelDefaults { parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters)); }
+    }
+
+    private static Map<String, String> parameters(String... namesAndValues) {
+        var parameters = new LinkedHashMap<String, String>();
+        for (int i = 0; i < namesAndValues.length; i += 2)
+            parameters.put(namesAndValues[i], namesAndValues[i + 1]);
+        return parameters;
+    }
+
     private static void register(Map<String, ProvidedModel> models, String modelId, String uri, Set<String> tags) {
-        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags));
+        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags, Optional.empty()));
+    }
+
+    private static void register(Map<String, ProvidedModel> models, String modelId, String uri, Set<String> tags,
+                                 ModelDefaults modelDefaults) {
+        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags, Optional.of(modelDefaults)));
     }
 
     private static final Map<String, ProvidedModel> providedModels = setupProvidedModels();
+
+    /**
+     * Adds model defaults to a component whose transformer-model names a model by model-id.
+     * Keeps the parameters that the component sets itself.
+     * Applies only in hosted Vespa, since only hosted Vespa resolves model ids.
+     * Applies only to components of the type that the defaults are for.
+     */
+    public static void addModelDefaults(Element component, boolean hosted) {
+        if ( ! hosted) return;
+        Element model = XML.getChild(component, "transformer-model");
+        if (model == null || ! model.hasAttribute("model-id")) return;
+        var provided = providedModels.get(model.getAttribute("model-id"));
+        if (provided == null || provided.modelDefaults().isEmpty()) return;
+        var defaults = provided.modelDefaults().get();
+        if ( ! defaults.componentType().equals(component.getAttribute("type"))) return;
+        for (var parameter : defaults.parameters().entrySet()) {
+            if (XML.getChild(component, parameter.getKey()) != null) continue;
+            Element child = component.getOwnerDocument().createElement(parameter.getKey());
+            child.setTextContent(parameter.getValue());
+            component.appendChild(child);
+        }
+    }
 
     /**
      * Finds any config values of type 'model' below the given config element and
