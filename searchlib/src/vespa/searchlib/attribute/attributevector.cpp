@@ -31,6 +31,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <filesystem>
+#include <shared_mutex>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -93,7 +94,7 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config& c)
     : _baseFileName(baseFileName),
       _config(std::make_unique<Config>(c)),
       _interlock(std::make_shared<attribute::Interlock>()),
-      _enumLock(),
+      _enumMutex(),
       _genHandler(),
       _genHolder(),
       _status(),
@@ -529,8 +530,11 @@ void AttributeVector::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid
 }
 
 attribute::EnumModifier AttributeVector::getEnumModifier() {
+    // The interlock is held while waiting for the enum lock, which waits for all stable enum
+    // guards on this attribute to be released (see SharedEnumMutex). Until then, enum modifiers for
+    // other attributes sharing the interlock wait too.
     attribute::InterlockGuard interlockGuard(*_interlock);
-    return attribute::EnumModifier(_enumLock, interlockGuard);
+    return attribute::EnumModifier(_enumMutex, interlockGuard);
 }
 
 attribute::ValueModifier AttributeVector::getValueModifier() {
@@ -552,15 +556,8 @@ std::unique_ptr<AttributeSaver> AttributeVector::onInitSave(std::string_view) {
 }
 
 bool AttributeVector::hasActiveEnumGuards() {
-    std::unique_lock<std::shared_mutex> lock(_enumLock, std::defer_lock);
-    for (size_t i = 0; i < 1000; ++i) {
-        // Note: Need to run this in loop as try_lock() is allowed to fail spuriously and return false
-        // even if the mutex is not currently locked by any other thread.
-        if (lock.try_lock()) {
-            return false;
-        }
-    }
-    return true;
+    std::unique_lock<attribute::SharedEnumMutex> lock(_enumMutex, std::try_to_lock);
+    return !lock.owns_lock();
 }
 
 IExtendAttribute* AttributeVector::getExtendInterface() {
@@ -654,20 +651,21 @@ namespace {
 
 class ReadGuard : public attribute::AttributeReadGuard {
     GenerationGuard _generationGuard;
-    using EnumGuard = std::shared_lock<std::shared_mutex>;
+    using EnumGuard = std::shared_lock<attribute::SharedEnumMutex>;
     EnumGuard _enumGuard;
 
 public:
-    ReadGuard(const attribute::IAttributeVector* attr, GenerationGuard&& generationGuard, std::shared_mutex* enumLock)
+    ReadGuard(const attribute::IAttributeVector* attr, GenerationGuard&& generationGuard,
+              attribute::SharedEnumMutex* enumMutex)
         : attribute::AttributeReadGuard(attr),
           _generationGuard(std::move(generationGuard)),
-          _enumGuard(enumLock != nullptr ? EnumGuard(*enumLock) : EnumGuard()) {}
+          _enumGuard(enumMutex != nullptr ? EnumGuard(*enumMutex) : EnumGuard()) {}
 };
 
 } // namespace
 
 std::unique_ptr<attribute::AttributeReadGuard> AttributeVector::makeReadGuard(bool stableEnumGuard) const {
-    return std::make_unique<ReadGuard>(this, _genHandler.takeGuard(), stableEnumGuard ? &_enumLock : nullptr);
+    return std::make_unique<ReadGuard>(this, _genHandler.takeGuard(), stableEnumGuard ? &_enumMutex : nullptr);
 }
 
 vespalib::MemoryUsage AttributeVector::getChangeVectorMemoryUsage() const {

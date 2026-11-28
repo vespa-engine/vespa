@@ -27,6 +27,10 @@ public:
     /**
      * Returns the attribute vector with the given name.
      * Makes sure that the underlying enum values are stable during the use of this attribute.
+     * The stable enum guard is cached in the context and held until releaseEnumGuards() is
+     * called or the context is destroyed. The guard itself is not bound to a thread: it may be
+     * taken by one thread and released by another. Calling this concurrently from several
+     * threads still requires enableMultiThreadSafe() to have been called on the context.
      *
      * @param name the name of the attribute vector
      * @return const view of the attribute vector or NULL if the attribute vector does not exists.
@@ -41,7 +45,7 @@ public:
     virtual void getAttributeList(std::vector<const IAttributeVector*>& list) const = 0;
 
     /**
-     * Releases all cached attribute guards.
+     * Releases all cached stable enum guards (see getAttributeStableEnum()).
      **/
     virtual void releaseEnumGuards() {}
 

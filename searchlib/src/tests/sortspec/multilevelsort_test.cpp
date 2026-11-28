@@ -4,12 +4,10 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_to_number.h>
 #include <vespa/searchlib/common/sortresults.h>
@@ -19,8 +17,6 @@
 
 #include <cinttypes>
 #include <map>
-#include <mutex>
-#include <thread>
 #include <type_traits>
 
 #include <vespa/log/log.h>
@@ -831,106 +827,29 @@ TEST(SortTest, map_value_init_fails_for_unusable_attributes) {
 
 namespace {
 
-struct GuardEvent {
-    std::string     name;
-    std::thread::id acquired;
-    std::thread::id released;
-    bool            stable_enum = false;
-};
-
-class RecordingReadGuard : public search::attribute::AttributeReadGuard {
-    std::shared_ptr<GuardEvent> _event;
-
+// Records attribute lookups, and whether each asked for a stable enum guard.
+class RecordingAttributeContext : public search::attribute::IAttributeContext {
 public:
-    RecordingReadGuard(const search::attribute::IAttributeVector* attr, std::shared_ptr<GuardEvent> event)
-        : search::attribute::AttributeReadGuard(attr), _event(std::move(event)) {
-        _event->acquired = std::this_thread::get_id();
+    mutable std::vector<std::pair<std::string, bool>> lookups;
+    const search::attribute::IAttributeVector* getAttribute(std::string_view name) const override {
+        lookups.emplace_back(name, false);
+        return nullptr;
     }
-    ~RecordingReadGuard() override { _event->released = std::this_thread::get_id(); }
-};
-
-class RecordingAttributeManager : public IAttributeManager {
-    std::map<std::string, AttributeVector::SP>       _attributes;
-    mutable std::mutex                               _lock;
-    mutable std::vector<std::shared_ptr<GuardEvent>> _events;
-
-public:
-    void add(const AttributeVector::SP& attr) { _attributes[attr->getName()] = attr; }
-    std::vector<std::shared_ptr<GuardEvent>> events() const {
-        std::lock_guard guard(_lock);
-        return _events;
+    const search::attribute::IAttributeVector* getAttributeStableEnum(std::string_view name) const override {
+        lookups.emplace_back(name, true);
+        return nullptr;
     }
-    AttributeGuard::UP getAttribute(std::string_view) const override { return std::make_unique<AttributeGuard>(); }
+    void getAttributeList(std::vector<const search::attribute::IAttributeVector*>&) const override {}
     void asyncForAttribute(std::string_view, std::unique_ptr<search::attribute::IAttributeFunctor>) const override {}
-    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name,
-                                                                                 bool stable_enum) const override {
-        auto event = std::make_shared<GuardEvent>();
-        event->name = std::string(name);
-        event->stable_enum = stable_enum;
-        {
-            std::lock_guard guard(_lock);
-            _events.push_back(event);
-        }
-        auto                                       found = _attributes.find(std::string(name));
-        const search::attribute::IAttributeVector* attr =
-            (found == _attributes.end()) ? nullptr : found->second.get();
-        return std::make_unique<RecordingReadGuard>(attr, std::move(event));
-    }
-    void getAttributeList(std::vector<AttributeGuard>&) const override {}
-    search::attribute::IAttributeContext::UP createContext() const override {
-        return std::make_unique<AttributeContext>(*this);
-    }
-    std::shared_ptr<search::attribute::ReadableAttributeVector>
-    readable_attribute_vector(std::string_view name) const override {
-        auto found = _attributes.find(std::string(name));
-        if (found == _attributes.end()) {
-            return {};
-        }
-        return found->second;
-    }
 };
 
 } // namespace
 
-TEST(SortTest, map_sort_enum_guards_are_taken_and_released_on_the_setup_thread) {
-    RecordingAttributeManager mgr;
-    mgr.add(AttributeFactory::createAttribute("m.key", Config(BasicType::STRING, CollectionType::ARRAY)));
-    mgr.add(AttributeFactory::createAttribute("m.value", Config(BasicType::INT64, CollectionType::ARRAY)));
-    const auto setup_thread = std::this_thread::get_id();
-    {
-        search::AttributeContext ctx(mgr);
-        ctx.enableMultiThreadSafe();
-        FastS_SortSpec::prefetch_enum_guards(ctx, ParsedSortSpec("+m{\"k\"} -other"));
-
-        auto lookup = [&ctx] {
-            ctx.getAttributeStableEnum("m.key");
-            ctx.getAttribute("m.value");
-        };
-        std::thread worker_a(lookup);
-        std::thread worker_b(lookup);
-        worker_a.join();
-        worker_b.join();
-    }
-
-    auto events = mgr.events();
-    ASSERT_EQ(2u, events.size());
-    bool saw_key = false;
-    bool saw_value = false;
-    for (const auto& event : events) {
-        EXPECT_EQ(setup_thread, event->acquired);
-        EXPECT_EQ(setup_thread, event->released);
-        if (event->name == "m.key") {
-            saw_key = true;
-            EXPECT_TRUE(event->stable_enum);
-        } else if (event->name == "m.value") {
-            saw_value = true;
-            EXPECT_FALSE(event->stable_enum);
-        } else {
-            ADD_FAILURE() << event->name;
-        }
-    }
-    EXPECT_TRUE(saw_key);
-    EXPECT_TRUE(saw_value);
+TEST(SortTest, prefetch_enum_guards_looks_up_map_key_stable_enum_and_map_value) {
+    RecordingAttributeContext ctx;
+    FastS_SortSpec::prefetch_enum_guards(ctx, ParsedSortSpec("+m{\"k\"} -other"));
+    std::vector<std::pair<std::string, bool>> expected{{"m.key", true}, {"m.value", false}};
+    EXPECT_EQ(expected, ctx.lookups);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
