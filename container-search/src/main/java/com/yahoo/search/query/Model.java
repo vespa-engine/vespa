@@ -55,7 +55,6 @@ public class Model implements Cloneable {
     public static final String LOCALE = "locale";
     public static final String ENCODING = "encoding";
     public static final String SOURCES = "sources";
-    public static final String EXCLUDED_SOURCE_PREFIX = "-";
     public static final String SEARCH_GROUP = "searchGroup";
     public static final String SEARCH_PATH = "searchPath";
     public static final String RESTRICT = "restrict";
@@ -444,11 +443,11 @@ public class Model implements Cloneable {
         excludedSources.clear();
         for (String item : sourceString.split(",")) {
             item = item.trim();
-            if (item.startsWith(EXCLUDED_SOURCE_PREFIX)) {
-                String excluded = item.substring(EXCLUDED_SOURCE_PREFIX.length()).trim();
+            if (item.startsWith("-")) {
+                String excluded = item.substring(1).trim();
                 if (excluded.isEmpty()) {
                     throw new IllegalInputException("Invalid entry '" + item + "' in sources: " +
-                                                    "'" + EXCLUDED_SOURCE_PREFIX + "' must be followed by a source name");
+                                                    "'-' must be followed by a source name");
                 }
                 excludedSources.add(excluded);
             } else {
