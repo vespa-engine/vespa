@@ -5820,6 +5820,7 @@
       "public void setParent(com.yahoo.search.Query)",
       "public void setSources(java.lang.String)",
       "public java.util.Set getSources()",
+      "public java.util.Set getExcludedSources()",
       "public void setRestrict(java.lang.String)",
       "public java.util.Set getRestrict()",
       "public void setExecution(com.yahoo.search.searchchain.Execution)",
