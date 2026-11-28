@@ -57,7 +57,7 @@ class PredicateSearch : public SearchIterator {
 
 public:
     PredicateSearch(const uint8_t* minFeature, const IntervalRange* interval_range_vector,
-                    IntervalRange max_interval_range, SkipMinFeature::FeatureCounts counts,
+                    IntervalRange max_interval_range, SkipMinFeature::FeatureCounts feature_counts,
                     std::vector<predicate::PredicatePostingList::UP> posting_lists,
                     const fef::TermFieldMatchDataArray&              tfmda);
     ~PredicateSearch() override;
