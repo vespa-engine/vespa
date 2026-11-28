@@ -80,9 +80,9 @@ using IR = std::vector<uint16_t>;
 TEST(PredicateSearchTest, Require_that_the_skipping_is_efficient) {
     const uint8_t      min_feature[] = {7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
                                         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7};
-    const uint8_t      kv[] = {6, 7, 6, 7, 6, 7, 6, 8, 6, 5, 6, 7, 6, 0, 6, 7, 7,
-                               6, 7, 6, 6, 6, 6, 7, 7, 7, 8, 7, 8, 7, 7, 7, 6, 7};
-    SkipMinFeature::UP skip = SkipMinFeature::create(min_feature, kv, 34);
+    const uint8_t      feature_counts[] = {6, 7, 6, 7, 6, 7, 6, 8, 6, 5, 6, 7, 6, 0, 6, 7, 7,
+                                           6, 7, 6, 6, 6, 6, 7, 7, 7, 8, 7, 8, 7, 7, 7, 6, 7};
+    SkipMinFeature::UP skip = SkipMinFeature::create(min_feature, std::span{feature_counts});
     EXPECT_EQ(1u, skip->next());
     EXPECT_EQ(3u, skip->next());
     EXPECT_EQ(5u, skip->next());
