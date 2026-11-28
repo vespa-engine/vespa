@@ -29,6 +29,7 @@ import static com.yahoo.prelude.fastsearch.VespaBackend.SORTABLE_ATTRIBUTES_SUMM
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Validates the predicate fields.
@@ -36,6 +37,9 @@ import java.util.List;
  * @author Lester Solbakken
  */
 public class PredicateProcessor extends Processor {
+
+    private static final BooleanIndexDefinition DEFAULT_OPTIONS = new BooleanIndexDefinition(
+            Optional.of(BooleanIndexDefinition.DEFAULT_ARITY), Optional.empty(), Optional.empty(), Optional.empty());
 
     public PredicateProcessor(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
@@ -50,6 +54,9 @@ public class PredicateProcessor extends Processor {
                 }
                 if (field.doesAttributing()) {
                     Attribute attribute = field.getAttributes().get(field.getName());
+                    if (field.getIndices().isEmpty()) {
+                        addPredicateOptimizationIlScript(field, DEFAULT_OPTIONS);
+                    }
                     for (Index index : field.getIndices().values()) {
                         BooleanIndexDefinition booleanDefinition = index.getBooleanIndexDefiniton();
                         if (validate && (booleanDefinition == null ||  ! booleanDefinition.hasArity())) {
