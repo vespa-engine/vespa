@@ -36,14 +36,6 @@ public interface HostProvisioner {
      * @param  context the context in which this provisioning is made
      * @return the specification of the allocated hosts
      */
-    default List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
-        return prepare(cluster, cluster.capacity(), context);
-    }
-
-    @Deprecated // TODO: Remove after October 2026
-    default List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
-        cluster = cluster.builder().capacity(capacity).build();
-        return prepare(cluster, context);
-    }
+    List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context);
 
 }

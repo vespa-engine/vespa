@@ -31,34 +31,6 @@ public class ProvisionContext {
 
     public ValidationOverrides validationOverrides() { return validationOverrides; }
 
-    public static class Builder {
-
-        private final boolean canFail;
-        private ProvisionLogger provisionLogger;
-
-        private final ValidationOverrides.Builder validationOverrides = new ValidationOverrides.Builder();
-
-        public Builder() {
-            this.canFail = true;
-        }
-
-        public Builder(boolean canFail) {
-            this.canFail = canFail;
-        }
-
-        public Builder setLogger(ProvisionLogger provisionLogger) {
-            this.provisionLogger = provisionLogger;
-            return this;
-        }
-
-        public ValidationOverrides.Builder validationOverrides() { return validationOverrides; }
-
-        public ProvisionContext build() {
-            return new ProvisionContext(this);
-        }
-
-    }
-
     /**
      * Validation overrides available in provisioning.
      * These allow applications to override (disable) certain validations which will otherwise
@@ -101,6 +73,35 @@ public class ProvisionContext {
                 return new ValidationOverrides(this);
             }
 
+        }
+
+    }
+
+    public static class Builder {
+
+        private final boolean canFail;
+        private ProvisionLogger provisionLogger;
+
+        private final ValidationOverrides.Builder validationOverrides = new ValidationOverrides.Builder();
+
+        // TODO: Remove after December 2026
+        public Builder() {
+            this.canFail = true;
+        }
+
+        public Builder(boolean canFail) {
+            this.canFail = canFail;
+        }
+
+        public Builder setLogger(ProvisionLogger provisionLogger) {
+            this.provisionLogger = provisionLogger;
+            return this;
+        }
+
+        public ValidationOverrides.Builder validationOverrides() { return validationOverrides; }
+
+        public ProvisionContext build() {
+            return new ProvisionContext(this);
         }
 
     }
