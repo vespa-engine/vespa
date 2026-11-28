@@ -4,9 +4,12 @@
 
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 
+#include <gmock/gmock.h>
+
 #include <string>
 
 using namespace vespalib;
+using ::testing::ElementsAre;
 
 TEST(LruCacheMapTest, cache_basics) {
     lrucache_map<LruParam<int, std::string>> cache(7);
@@ -203,6 +206,45 @@ TEST(LruCacheMapTest, cache_erase_by_iterator) {
     cache.erase(it);
     EXPECT_EQ(lru_key_order(cache), "1");
     cache.verifyInternals();
+}
+
+TEST(LruCacheMapTest, erase_if_present_invokes_callback_and_erases_only_existing_keys) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(4);
+    // 1, 8 and 15 share a hash bucket, exercising erase both from chain head and within a chain.
+    cache.insert(1, "first");
+    cache.insert(8, "second");
+    cache.insert(15, "third");
+    cache.insert(2, "other");
+    EXPECT_EQ(lru_key_order(cache), "2 15 8 1");
+    // This test depends on its keys sharing a bucket to be really meaningful;
+    // unrelated changes in hash table code could break that assumption.
+    // Verify the collision assumption above still holds for the current table sizing.
+    ASSERT_EQ(cache.bucket_of(8), cache.bucket_of(1));
+    ASSERT_EQ(cache.bucket_of(15), cache.bucket_of(1));
+    ASSERT_NE(cache.bucket_of(2), cache.bucket_of(1));
+
+    std::vector<std::string> seen;
+    auto                     record = [&seen](const std::string& v) { seen.push_back(v); };
+
+    EXPECT_TRUE(cache.erase_if_present(8, record));
+    EXPECT_EQ(lru_key_order(cache), "2 15 1");
+    cache.verifyInternals();
+
+    EXPECT_FALSE(cache.erase_if_present(8, record));
+    EXPECT_FALSE(cache.erase_if_present(22, record));
+    EXPECT_EQ(lru_key_order(cache), "2 15 1");
+
+    EXPECT_TRUE(cache.erase_if_present(1, record));
+    EXPECT_TRUE(cache.erase_if_present(2, record));
+    EXPECT_EQ(lru_key_order(cache), "15");
+    cache.verifyInternals();
+
+    EXPECT_TRUE(cache.erase_if_present(15, record));
+    EXPECT_TRUE(cache.empty());
+    cache.verifyInternals();
+
+    EXPECT_THAT(seen, ElementsAre("second", "first", "other", "third"));
 }
 
 TEST(LruCacheMapTest, find_no_ref_returns_ptr_if_present_and_does_not_update_lru) {

@@ -287,7 +287,7 @@ public:
     iterator find(const Key& key) noexcept;
 
     template <typename AltKey> constexpr const_iterator find(const AltKey& key) const noexcept {
-        next_t h = hash(key);
+        next_t h = bucket_of(key);
         if (__builtin_expect(_nodes[h].valid(), true)) {
             do {
                 if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
@@ -336,7 +336,9 @@ protected:
     Value& getByInternalIndex(size_t index) noexcept { return _nodes[index].getValue(); }
     constexpr const Value& getByInternalIndex(size_t index) const noexcept { return _nodes[index].getValue(); }
     template <typename MoveHandler> void erase(MoveHandler& moveHandler, next_t h, const const_iterator& key);
-    template <typename K> constexpr next_t hash(const K& key) const noexcept { return modulator(_hasher(key)); }
+    /// Like find(), but with the bucket precomputed; h must be bucket_of(key).
+    iterator find_in_bucket(const Key& key, next_t h) noexcept;
+    template <typename K> constexpr next_t bucket_of(const K& key) const noexcept { return modulator(_hasher(key)); }
 
 private:
     Modulator  _modulator;
