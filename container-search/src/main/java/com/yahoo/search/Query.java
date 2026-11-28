@@ -720,9 +720,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         return "query=[" + new TextualQueryRepresentation(getModel().getQueryTree().getRoot()) + "]" +
                " offset=" + getOffset() + " hits=" + getHits() +
                " sources=" + getModel().getSources() +
-               " excludedSources=" + getModel().getExcludedSources() +
+               excludedSourcesString() +
                " restrict= " + getModel().getRestrict() +
                " rank profile=" + getRanking().getProfile();
+    }
+
+    private String excludedSourcesString() {
+        if (getModel().getExcludedSources().isEmpty()) return "";
+        return " excludedSources=" + getModel().getExcludedSources();
     }
 
     /**
