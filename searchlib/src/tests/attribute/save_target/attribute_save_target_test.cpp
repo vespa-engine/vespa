@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/check_require.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -49,6 +50,25 @@ public:
         buf->write(&value, sizeof(int));
         buf->flush();
     }
+    void set_tensor_header(const std::string& file_name) {
+        target.setHeader(AttributeHeader(file_name, BasicType::TENSOR, CollectionType::SINGLE,
+                                         vespalib::eval::ValueType::from_spec("tensor(x{})"), false,
+                                         PersistentPredicateParams(), std::nullopt, 0, 0, 0, 0, 0, 0));
+    }
+    void fill_and_update_header_while_saving() {
+        setup_writer_and_fill("my", "my desc", 123);
+        target.get_mutable_header().set_tensor_counts(17, 42);
+    }
+    void validate_updated_header() {
+        std::string file_name = base_file_name + ".my";
+        auto        loaded = FileUtil::loadFile(file_name);
+        const auto& header = loaded->getHeader();
+        EXPECT_EQ(1, header.getTag("frozen").asInteger());
+        auto attr_header = AttributeHeader::extractTags(header, file_name);
+        EXPECT_EQ(17, attr_header.get_total_tensor_subspaces());
+        EXPECT_EQ(42, attr_header.get_total_tensor_cells());
+        EXPECT_EQ(sizeof(int), loaded->size());
+    }
     void validate_loaded_file(const std::string& file_suffix, const std::string& exp_desc, int exp_value) {
         std::string file_name = base_file_name + "." + file_suffix;
         EXPECT_TRUE(std::filesystem::exists(std::filesystem::path(file_name)));
@@ -85,6 +105,13 @@ TEST_F(FileSaveTargetTest, can_setup_and_return_writers) {
     validate_loaded_file("my2", "desc 2", 456);
 }
 
+TEST_F(FileSaveTargetTest, header_changes_while_saving_are_written_to_file) {
+    set_tensor_header(base_file_name);
+    fill_and_update_header_while_saving();
+    target.close();
+    validate_updated_header();
+}
+
 TEST_F(FileSaveTargetTest, setup_fails_if_writer_already_exists) {
     setup_writer("my", "my desc");
     EXPECT_FALSE(target.setup_writer("my", "my desc"));
@@ -112,6 +139,13 @@ TEST_F(MemorySaveTargetTest, can_setup_and_return_writers) {
 
     validate_loaded_file("my1", "desc 1", 123);
     validate_loaded_file("my2", "desc 2", 456);
+}
+
+TEST_F(MemorySaveTargetTest, header_changes_while_saving_are_written_to_file) {
+    set_tensor_header(base_file_name);
+    fill_and_update_header_while_saving();
+    write_to_file();
+    validate_updated_header();
 }
 
 TEST_F(MemorySaveTargetTest, setup_fails_if_writer_already_exists) {

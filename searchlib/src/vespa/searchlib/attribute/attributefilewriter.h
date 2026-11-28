@@ -40,6 +40,7 @@ class AttributeFileWriter : public IAttributeFileWriter {
     void addTags(vespalib::GenericHeader& header);
 
     void writeHeader();
+    void update_header();
 
     void write_buf_helper(const BufferBuf& buf);
 

@@ -6,6 +6,9 @@
 #include "string_direct_posting_store_adapter.h"
 
 #include <vespa/check_require.h>
+#include <vespa/vespalib/btree/minmaxaggrcalc.h>
+
+#include <type_traits>
 
 namespace search::attribute {
 
@@ -29,7 +32,8 @@ StringDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::lo
     if (find_result.first.valid()) {
         auto pidx = find_result.second;
         if (pidx.valid()) {
-            if constexpr (PostingStoreType::AggrCalcType::hasAggregated()) {
+            // LookupResult only carries int32_t min/max weights
+            if constexpr (std::is_same_v<typename PostingStoreType::AggrCalcType, vespalib::btree::MinMaxAggrCalc>) {
                 auto minmax = this->_posting_store.getAggregated(pidx);
                 return LookupResult(pidx, this->_posting_store.frozenSize(pidx), minmax.getMin(), minmax.getMax(),
                                     find_result.first);

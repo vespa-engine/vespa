@@ -11,6 +11,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 
 using search::tensor::TensorBufferStore;
+using search::tensor::TensorStoreCounts;
 using vespalib::datastore::EntryRef;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
@@ -153,6 +154,20 @@ TEST_F(TensorBufferStoreTest, get_vectors) {
     }
     EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
     EXPECT_EQ(0, _store.get_vectors(EntryRef()).subspaces());
+}
+
+TEST_F(TensorBufferStoreTest, get_counts) {
+    auto ref = store_tensor(tensor_specs.back());
+    EXPECT_EQ((TensorStoreCounts{4, 4}), _store.get_counts(ref));
+    EXPECT_EQ((TensorStoreCounts{0, 0}), _store.get_counts(EntryRef()));
+}
+
+TEST_F(TensorBufferStoreTest, get_counts_for_mixed_tensor) {
+    std::string       mixed_type_spec("tensor(x{},y[3])");
+    TensorBufferStore store(ValueType::from_spec(mixed_type_spec), {}, 4);
+    auto tensor_spec = TensorSpec(mixed_type_spec).add({{"x", "a"}, {"y", 0}}, 1.0).add({{"x", "b"}, {"y", 1}}, 2.0);
+    auto ref = store.store_tensor(*value_from_spec(tensor_spec, FastValueBuilderFactory::get()));
+    EXPECT_EQ((TensorStoreCounts{2, 6}), store.get_counts(ref));
 }
 
 TEST_F(TensorBufferStoreTest, buffer_handles_range_of_subspaces) {

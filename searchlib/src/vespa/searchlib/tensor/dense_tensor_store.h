@@ -77,6 +77,10 @@ public:
     EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
+    TensorStoreCounts get_counts(EntryRef ref) const override {
+        auto vectors = get_vectors(ref);
+        return {vectors.subspaces(), vectors.num_cells()};
+    }
     const DenseTensorStore* as_dense() const override;
     DenseTensorStore* as_dense() override;
 

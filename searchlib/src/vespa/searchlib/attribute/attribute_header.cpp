@@ -36,6 +36,8 @@ const std::string enumerated_tag = "enumerated";
 const std::string unique_value_count_tag = "uniqueValueCount";
 const std::string total_value_count_tag = "totalValueCount";
 const std::string memory_usage_tag = "memory_usage";
+const std::string tensor_total_subspace_count_tag = "tensor.total_subspace_count";
+const std::string tensor_total_cell_count_tag = "tensor.total_cell_count";
 
 } // namespace
 
@@ -56,6 +58,8 @@ AttributeHeader::AttributeHeader(std::string fileName)
       _uniqueValueCount(0),
       _totalValueCount(0),
       _memory_usage(0),
+      _total_tensor_subspaces(),
+      _total_tensor_cells(),
       _createSerialNum(0u),
       _version(0),
       _extra_tags() {
@@ -81,6 +85,8 @@ AttributeHeader::AttributeHeader(std::string fileName, attribute::BasicType basi
       _uniqueValueCount(uniqueValueCount),
       _totalValueCount(totalValueCount),
       _memory_usage(memory_usage),
+      _total_tensor_subspaces(),
+      _total_tensor_cells(),
       _createSerialNum(createSerialNum),
       _version(version),
       _flush_duration(std::chrono::steady_clock::duration::zero()) {
@@ -111,6 +117,10 @@ void AttributeHeader::internalExtractTags(const vespalib::GenericHeader& header)
     if (_basicType.type() == BasicType::Type::TENSOR) {
         CHECK(header.hasTag(tensorTypeTag));
         _tensorType = vespalib::eval::ValueType::from_spec(header.getTag(tensorTypeTag).asString());
+        if (header.hasTag(tensor_total_subspace_count_tag) && header.hasTag(tensor_total_cell_count_tag)) {
+            _total_tensor_subspaces = header.getTag(tensor_total_subspace_count_tag).asInteger();
+            _total_tensor_cells = header.getTag(tensor_total_cell_count_tag).asInteger();
+        }
         if (header.hasTag(hnsw_max_links_tag)) {
             CHECK(header.hasTag(hnsw_neighbors_to_explore_tag));
             CHECK(header.hasTag(hnsw_distance_metric));
@@ -162,6 +172,16 @@ AttributeHeader AttributeHeader::extractTags(const vespalib::GenericHeader& head
     return result;
 }
 
+void AttributeHeader::add_patchable_tags(vespalib::GenericHeader& header) const {
+    using Tag = vespalib::GenericHeader::Tag;
+    if (_basicType.type() == attribute::BasicType::Type::TENSOR) {
+        // Always present for tensors (0 as placeholder), so the values can be
+        // patched in place when the save is complete without resizing the header.
+        header.putTag(Tag(tensor_total_subspace_count_tag, _total_tensor_subspaces.value_or(0)));
+        header.putTag(Tag(tensor_total_cell_count_tag, _total_tensor_cells.value_or(0)));
+    }
+}
+
 void AttributeHeader::addTags(vespalib::GenericHeader& header) const {
     using Tag = vespalib::GenericHeader::Tag;
     header.putTag(Tag(dataTypeTag, _basicType.asString()));
@@ -199,6 +219,7 @@ void AttributeHeader::addTags(vespalib::GenericHeader& header) const {
         header.putTag(Tag(predicateLowerBoundTag, params.lower_bound()));
         header.putTag(Tag(predicateUpperBoundTag, params.upper_bound()));
     }
+    add_patchable_tags(header);
     for (uint32_t i = 0; i < _extra_tags.getNumTags(); ++i) {
         auto& tag = _extra_tags.getTag(i);
         header.putTag(tag);

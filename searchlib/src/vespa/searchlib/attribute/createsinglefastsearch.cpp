@@ -10,6 +10,7 @@
 #include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
+#include <vespa/searchlib/tensor/direct_tensor_posting_attribute.h>
 
 #include <type_traits>
 
@@ -43,6 +44,10 @@ AttributeVector::SP AttributeFactory::createSingleFastSearch(std::string name, c
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
     case BasicType::TENSOR:
+        if (info.tensor_label_postings()) {
+            // Throws if the tensor type is not supported
+            return std::make_shared<tensor::DirectTensorPostingAttribute>(name, info);
+        }
         if (!info.tensorType().is_dense()) {
             return std::make_shared<tensor::DirectTensorAttribute>(name, info);
         }

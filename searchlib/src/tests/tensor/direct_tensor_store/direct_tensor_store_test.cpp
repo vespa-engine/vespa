@@ -11,6 +11,7 @@
 
 using namespace search::tensor;
 
+using search::tensor::TensorStoreCounts;
 using vespalib::MemoryUsage;
 using vespalib::datastore::EntryRef;
 using vespalib::eval::FastValueBuilderFactory;
@@ -135,6 +136,13 @@ TEST_F(DirectTensorStoreTest, get_vectors) {
     }
     EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
     EXPECT_EQ(0, store.get_vectors(EntryRef()).subspaces());
+}
+
+TEST_F(DirectTensorStoreTest, get_counts) {
+    auto tensor_spec = TensorSpec(tensor_type_spec).add({{"x", "a"}}, 4.5).add({{"x", "b"}}, 5.5);
+    auto ref = store.store_tensor(value_from_spec(tensor_spec, FastValueBuilderFactory::get()));
+    EXPECT_EQ((TensorStoreCounts{2, 2}), store.get_counts(ref));
+    EXPECT_EQ((TensorStoreCounts{0, 0}), store.get_counts(EntryRef()));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

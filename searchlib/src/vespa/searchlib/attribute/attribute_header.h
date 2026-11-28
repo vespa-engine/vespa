@@ -34,6 +34,8 @@ private:
     uint64_t                            _uniqueValueCount;
     uint64_t                            _totalValueCount;
     uint64_t                            _memory_usage;
+    std::optional<uint64_t>             _total_tensor_subspaces;
+    std::optional<uint64_t>             _total_tensor_cells;
     uint64_t                            _createSerialNum;
     uint32_t                            _version;
     std::chrono::steady_clock::duration _flush_duration;
@@ -71,9 +73,26 @@ public:
     const std::optional<HnswIndexParams>& get_hnsw_index_params() const { return _hnsw_index_params; }
     static AttributeHeader extractTags(const vespalib::GenericHeader& header, const std::string& file_name);
     void addTags(vespalib::GenericHeader& header) const;
+    /*
+     * Adds the tags whose values are only known when a save is complete
+     * (a subset of the tags added by addTags()). They are integer tags that
+     * are always present, so a file header can be patched in place with them.
+     */
+    void add_patchable_tags(vespalib::GenericHeader& header) const;
     vespalib::GenericHeader& get_extra_tags() noexcept { return _extra_tags; }
     std::chrono::steady_clock::duration get_flush_duration() const noexcept { return _flush_duration; }
     uint64_t get_memory_usage() const noexcept { return _memory_usage; }
+    /*
+     * Total number of subspaces (mapped addresses) and cells over all
+     * stored tensors, for tensor attributes. Not set when the header was
+     * read from a file saved by an older version.
+     */
+    const std::optional<uint64_t>& get_total_tensor_subspaces() const noexcept { return _total_tensor_subspaces; }
+    const std::optional<uint64_t>& get_total_tensor_cells() const noexcept { return _total_tensor_cells; }
+    void set_tensor_counts(uint64_t total_subspaces, uint64_t total_cells) noexcept {
+        _total_tensor_subspaces = total_subspaces;
+        _total_tensor_cells = total_cells;
+    }
 };
 
 } // namespace search::attribute

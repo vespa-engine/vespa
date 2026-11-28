@@ -13,6 +13,7 @@
 LOG_SETUP("dense_tensor_store_test");
 
 using search::tensor::DenseTensorStore;
+using search::tensor::TensorStoreCounts;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -61,6 +62,14 @@ TEST(DenseTensorStoreTest, require_that_correct_empty_tensor_is_returned_for_1d_
 size_t array_size(const std::string& tensorType) {
     Fixture f(tensorType);
     return f.store.getArraySize();
+}
+
+TEST(DenseTensorStoreTest, get_counts) {
+    Fixture   f("tensor(x[3])");
+    Value::UP tensor = makeTensor(TensorSpec("tensor(x[3])").add({{"x", 0}}, 2).add({{"x", 1}}, 3));
+    EntryRef  ref = f.store.store_tensor(*tensor);
+    EXPECT_EQ((TensorStoreCounts{1, 3}), f.store.get_counts(ref));
+    EXPECT_EQ((TensorStoreCounts{0, 0}), f.store.get_counts(EntryRef()));
 }
 
 TEST(DenseTensorStoreTest, require_that_array_size_is_calculated_correctly) {

@@ -8,6 +8,8 @@
 #include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/util/generation.h>
 
+#include <cstdint>
+
 namespace vespalib {
 struct StateExplorer;
 class nbostream;
@@ -22,6 +24,20 @@ struct Value;
 namespace search::tensor {
 
 class DenseTensorStore;
+
+/**
+ * Number of subspaces (mapped addresses) and cells in stored tensors.
+ */
+struct TensorStoreCounts {
+    uint64_t subspaces = 0;
+    uint64_t cells = 0;
+    TensorStoreCounts& operator+=(const TensorStoreCounts& rhs) noexcept {
+        subspaces += rhs.subspaces;
+        cells += rhs.cells;
+        return *this;
+    }
+    bool operator==(const TensorStoreCounts&) const noexcept = default;
+};
 
 /**
  * Class for storing serialized tensors in memory, used by TensorAttribute.
@@ -54,6 +70,11 @@ public:
     virtual EntryRef store_encoded_tensor(vespalib::nbostream& encoded) = 0;
     virtual std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const = 0;
     virtual bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const = 0;
+    /*
+     * Returns the number of subspaces and cells in the tensor referenced by ref
+     * (zero counts for an invalid ref).
+     */
+    virtual TensorStoreCounts get_counts(EntryRef ref) const = 0;
     virtual const DenseTensorStore* as_dense() const;
     virtual DenseTensorStore* as_dense();
 

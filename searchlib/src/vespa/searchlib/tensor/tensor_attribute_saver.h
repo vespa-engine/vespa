@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_attribute.h"
+#include "tensor_store.h"
 
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/attribute/save_utils.h>
@@ -13,7 +14,6 @@ class BufferWriter;
 
 namespace search::tensor {
 
-class TensorStore;
 class NearestNeighborIndexSaver;
 
 /**
@@ -28,8 +28,8 @@ class TensorAttributeSaver : public AttributeSaver {
     IndexSaverUP                      _index_saver;
 
     bool onSave(IAttributeSaveTarget& saveTarget) override;
-    void save_dense_tensor_store(BufferWriter& writer, const DenseTensorStore& dense_tensor_store) const;
-    void save_tensor_store(BufferWriter& writer) const;
+    TensorStoreCounts save_dense_tensor_store(BufferWriter& writer, const DenseTensorStore& dense_tensor_store) const;
+    TensorStoreCounts save_tensor_store(BufferWriter& writer) const;
 
 public:
     TensorAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,

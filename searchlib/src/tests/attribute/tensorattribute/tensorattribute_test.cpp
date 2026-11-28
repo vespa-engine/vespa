@@ -11,6 +11,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
@@ -51,6 +52,7 @@ using search::AddressSpaceUsage;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::CommitParam;
+using search::attribute::AttributeHeader;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
 using search::attribute::QuantizationParams;
@@ -807,6 +809,15 @@ void Fixture::testSaveLoad() {
         set_tensor(3, TensorSpec(sparseSpec).add({{"x", ""}, {"y", "1"}}, 11));
     }
     EXPECT_TRUE(save());
+    {
+        auto attr_header = AttributeHeader::extractTags(get_file_header(), attr_name + ".dat");
+        // dense: 2 tensors with 1 subspace each; sparse: one empty tensor and one with 1 cell.
+        // Cells are counted in the stored (possibly quantized) tensor type.
+        uint64_t exp_subspaces = _denseTensors ? 2 : 1;
+        uint64_t exp_cells = _denseTensors ? 2 * _stored_tensor_type.dense_subspace_size() : 1;
+        EXPECT_EQ(exp_subspaces, attr_header.get_total_tensor_subspaces());
+        EXPECT_EQ(exp_cells, attr_header.get_total_tensor_cells());
+    }
     EXPECT_TRUE(load());
     EXPECT_EQ(5u, _attr->getNumDocs());
     EXPECT_EQ(5u, _attr->getCommittedDocIdLimit());
@@ -1434,6 +1445,10 @@ TEST(TensorAttributeTest, Nearest_neighbor_index_type_is_added_to_attribute_file
     auto header = f.get_file_header();
     EXPECT_TRUE(header.hasTag("nearest_neighbor_index"));
     EXPECT_EQ("hnsw", header.getTag("nearest_neighbor_index").asString());
+    // tensor counts are patched into the .dat file header
+    auto attr_header = AttributeHeader::extractTags(header, "");
+    EXPECT_EQ(2, attr_header.get_total_tensor_subspaces());
+    EXPECT_EQ(4, attr_header.get_total_tensor_cells());
 }
 
 class DenseTensorAttributeMipsIndex : public Fixture {
