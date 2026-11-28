@@ -29,9 +29,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.security.tls.HostnameVerification.DISABLED;
+import static com.yahoo.security.tls.HostnameVerification.ENABLED;
+
 /**
  * A {@link TlsContext} that uses the tls configuration specified in the transport security options file.
- * The credentials are regularly reloaded to support short-lived certificates.
+ * The credentials and authorization rules are regularly reloaded to support short-lived certificates and policy changes.
  *
  * @author bjorncs
  */
@@ -42,6 +45,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private static final Logger log = Logger.getLogger(ConfigFileBasedTlsContext.class.getName());
 
     private final TlsContext tlsContext;
+    private final CryptoMaterialReloader reloader;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new ReloaderThreadFactory());
 
     public ConfigFileBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
@@ -58,9 +62,14 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         MutableX509KeyManager keyManager = new MutableX509KeyManager();
         reloadTrustManager(options, trustManager);
         reloadKeyManager(options, keyManager);
-        this.tlsContext = createDefaultTlsContext(options, mode, trustManager, keyManager, peerAuthentication);
-        this.scheduler.scheduleAtFixedRate(new CryptoMaterialReloader(tlsOptionsConfigFile, scheduler, trustManager, keyManager),
-                                           UPDATE_PERIOD.getSeconds()/*initial delay*/,
+        var hostnameVerification = options.isHostnameValidationDisabled() ? DISABLED : ENABLED;
+        var authorizedPeers = options.getAuthorizedPeers();
+        var authorizerTrustManager = new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, trustManager);
+        this.tlsContext = createDefaultTlsContext(options, authorizerTrustManager, keyManager, peerAuthentication);
+        this.reloader = new CryptoMaterialReloader(tlsOptionsConfigFile, trustManager, keyManager,
+                                                   authorizerTrustManager, authorizedPeers);
+        this.scheduler.scheduleAtFixedRate(reloader,
+                                           UPDATE_PERIOD.getSeconds() /*initial delay*/,
                                            UPDATE_PERIOD.getSeconds(),
                                            TimeUnit.SECONDS);
     }
@@ -105,14 +114,9 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     }
 
     private static DefaultTlsContext createDefaultTlsContext(TransportSecurityOptions options,
-                                                             AuthorizationMode mode,
-                                                             MutableX509TrustManager mutableTrustManager,
+                                                             PeerAuthorizerTrustManager authorizerTrustManager,
                                                              MutableX509KeyManager mutableKeyManager,
                                                              PeerAuthentication peerAuthentication) {
-
-        HostnameVerification hostnameVerification = options.isHostnameValidationDisabled() ? HostnameVerification.DISABLED : HostnameVerification.ENABLED;
-        PeerAuthorizerTrustManager authorizerTrustManager =
-                new PeerAuthorizerTrustManager(options.getAuthorizedPeers(), mode, hostnameVerification, mutableTrustManager);
         var sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
                 .withTrustManager(authorizerTrustManager)
@@ -127,6 +131,9 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     // Wrapped methods from TlsContext
     @Override public X509SslContext sslContext() { return tlsContext.sslContext(); }
     @Override public SSLParameters parameters() { return tlsContext.parameters(); }
+
+    /** Reloads credentials and authorization rules immediately. Intended for testing. */
+    void reload() { reloader.run(); }
 
     @Override
     public void close() {
@@ -143,33 +150,34 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private static class CryptoMaterialReloader implements Runnable {
 
         final Path tlsOptionsConfigFile;
-        final ScheduledExecutorService scheduler;
         final MutableX509TrustManager trustManager;
         final MutableX509KeyManager keyManager;
+        final PeerAuthorizerTrustManager authorizerTrustManager;
+        AuthorizedPeers currentAuthorizedPeers;
 
         CryptoMaterialReloader(Path tlsOptionsConfigFile,
-                               ScheduledExecutorService scheduler,
                                MutableX509TrustManager trustManager,
-                               MutableX509KeyManager keyManager) {
+                               MutableX509KeyManager keyManager,
+                               PeerAuthorizerTrustManager authorizerTrustManager,
+                               AuthorizedPeers currentAuthorizedPeers) {
             this.tlsOptionsConfigFile = tlsOptionsConfigFile;
-            this.scheduler = scheduler;
             this.trustManager = trustManager;
             this.keyManager = keyManager;
+            this.authorizerTrustManager = authorizerTrustManager;
+            this.currentAuthorizedPeers = currentAuthorizedPeers;
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             try {
-                if (this.trustManager == null && this.keyManager == null) {
-                    scheduler.shutdown();
-                    return;
-                }
                 TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
-                if (this.trustManager != null) {
-                    reloadTrustManager(options, this.trustManager);
-                }
-                if (this.keyManager != null) {
-                    reloadKeyManager(options, this.keyManager);
+                reloadTrustManager(options, trustManager);
+                reloadKeyManager(options, keyManager);
+                AuthorizedPeers authorizedPeers = options.getAuthorizedPeers();
+                if ( ! authorizedPeers.equals(currentAuthorizedPeers)) {
+                    authorizerTrustManager.updateAuthorizedPeers(authorizedPeers);
+                    currentAuthorizedPeers = authorizedPeers;
+                    log.log(Level.INFO, "Reloaded authorized peers from " + tlsOptionsConfigFile);
                 }
             } catch (Throwable t) {
                 log.log(Level.SEVERE, String.format(Locale.ROOT, "Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
